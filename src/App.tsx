@@ -66,8 +66,6 @@ export default function App() {
         Mục tiêu: {(CONFIG.mucTieuTaiSan / 1_000_000_000).toString().replace('.', ',')} tỷ
         {' · '}
         đã đạt {(tienDo * 100).toFixed(1).replace('.', ',')}%
-        {' · '}
-        còn {CONFIG.soNamToiDa - state.nam + 1} năm
       </div>
 
       <div className="noi-dung">

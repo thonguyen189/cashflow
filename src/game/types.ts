@@ -25,6 +25,7 @@ export interface Nghe {
 export interface TheTieuDung {
   id: string
   ten: string
+  emoji: string
   /** giá gốc năm 1; giá thực tế = gia * priceIndex */
   gia: Tien
   /** nhận thì +diem hạnh phúc, từ chối thì -diem */
@@ -62,7 +63,7 @@ export interface TaiSan {
   /** tỉ suất cổ tức / tiền thuê / lãi hàng năm */
   loiTucMin: number
   loiTucMax: number
-  /** true nếu giá bám theo lạm phát (vàng, BĐS) */
+  /** true nếu giá bám theo lạm phát (vàng, bất động sản) */
   bamLamPhat: boolean
 }
 

@@ -14,7 +14,7 @@ export default function KetThucModal({
   return (
     <div className="lop-phu">
       <div className="modal" style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 56, marginBottom: 8 }}>{thang ? '🎉' : '💤'}</div>
+        <div style={{ fontSize: 56, marginBottom: 8 }}>{thang ? '🎉' : '💔'}</div>
         <h2 className={`modal-tieu-de ${thang ? 'ket-thuc-thang' : 'ket-thuc-thua'}`}>
           {thang ? 'Bạn đã tự do tài chính' : 'Ván đấu kết thúc'}
         </h2>

@@ -54,6 +54,19 @@ describe('khởi tạo', () => {
     expect(s.theConLai.length).toBeGreaterThanOrEqual(CONFIG.soTheMoiNamMin)
     expect(s.theConLai.length).toBeLessThanOrEqual(CONFIG.soTheMoiNamMax)
   })
+
+  it('biểu đồ có sẵn lịch sử giá ngay từ năm 1, chốt tại giá hiện hành', () => {
+    const s = moiVan()
+    for (const [id, lichSu] of Object.entries(s.lichSuGia)) {
+      expect(lichSu.length).toBe(CONFIG.soDiemGiaQuaKhu + 1)
+      expect(lichSu[lichSu.length - 1]).toBe(s.giaTaiSan[id as keyof typeof s.giaTaiSan])
+      for (const gia of lichSu) expect(gia).toBeGreaterThan(0)
+    }
+  })
+
+  it('mọi thẻ tiêu dùng đều có biểu tượng minh hoạ', () => {
+    for (const the of THE_TIEU_DUNG) expect(the.emoji.length).toBeGreaterThan(0)
+  })
 })
 
 describe('chi phí hàng năm', () => {
@@ -256,11 +269,12 @@ describe('điều kiện kết thúc', () => {
     expect(reducer(giau, { type: 'ketThucNam' }).trangThai).toBe('thang')
   })
 
-  it('thua khi hết số năm tối đa mà chưa đạt mục tiêu', () => {
+  it('không có giới hạn số năm — qua năm 100 vẫn chơi tiếp bình thường', () => {
     const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
-    const cuoiDoi: GameState = { ...s0, nam: CONFIG.soNamToiDa }
-    const sau = reducer(cuoiDoi, { type: 'ketThucNam' })
-    expect(sau.trangThai).toBe('thua')
+    const lauNam: GameState = { ...s0, nam: 100 }
+    const sau = reducer(lauNam, { type: 'ketThucNam' })
+    expect(sau.trangThai).toBe('dangChoi')
+    expect(sau.nam).toBe(101)
   })
 })
 

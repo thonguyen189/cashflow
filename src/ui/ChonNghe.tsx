@@ -5,18 +5,17 @@ import { dinhDangTien } from '../game/format'
 export default function ChonNghe({ onChon }: { onChon: (ngheId: string) => void }) {
   return (
     <div className="man-chon">
-      <h1 className="tieu-de-lon">Dòng Tiền</h1>
+      <h1 className="tieu-de-lon">💰 Dòng Tiền</h1>
       <p className="mo-ta">
-        Mỗi lượt là một năm. Vừa tích luỹ tài sản, vừa giữ cho mình đủ hạnh phúc để
-        đi tiếp. Đạt{' '}
+        Mỗi lượt là một năm, không giới hạn số năm chơi. Vừa tích luỹ tài sản, vừa
+        giữ cho mình đủ hạnh phúc để đi tiếp. Tích luỹ đủ{' '}
         <strong>
           {(CONFIG.mucTieuTaiSan / 1_000_000_000).toString().replace('.', ',')} tỷ
         </strong>{' '}
-        trong vòng {CONFIG.soNamToiDa} năm là thắng. Để hạnh phúc rơi xuống dưới{' '}
-        {CONFIG.hanhPhucNguongThua} là thua.
+        là thắng. Để hạnh phúc rơi xuống dưới {CONFIG.hanhPhucNguongThua} là thua.
       </p>
 
-      <div className="muc">Chọn nghề nghiệp</div>
+      <div className="muc">🧑‍💼 Chọn nghề nghiệp</div>
       {NGHE.map((n) => {
         const thangDu = n.luong - n.chiPhi
         const tyLe = Math.round((thangDu / n.luong) * 100)

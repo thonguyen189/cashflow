@@ -1,6 +1,9 @@
 import { CONFIG } from './config'
 import type { GameState } from './types'
 
+/** Khoá lưu của các phiên bản cũ, dọn sạch khi nạp game. */
+const KHOA_LUU_CU = ['dong-tien-save-v1']
+
 /** Tự động lưu ván đang chơi vào localStorage. */
 export function luuVan(s: GameState): void {
   try {
@@ -12,6 +15,7 @@ export function luuVan(s: GameState): void {
 
 export function taiVan(): GameState | null {
   try {
+    for (const khoa of KHOA_LUU_CU) localStorage.removeItem(khoa)
     const raw = localStorage.getItem(CONFIG.luuKey)
     if (!raw) return null
     const s = JSON.parse(raw) as GameState

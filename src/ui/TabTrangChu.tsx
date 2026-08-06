@@ -24,6 +24,7 @@ function TheHanhDong({ state, dispatch }: Props) {
   if (state.phase === 'chiPhi') {
     return (
       <div className="the-quyet-dinh">
+        <div className="the-bieu-tuong">🧾</div>
         <div className="the-ten">Chi phí sinh hoạt năm nay</div>
         <p className="mo-ta">
           Tiền ăn, ở, đi lại, quần áo cho cả năm. Phải thanh toán trước khi làm gì khác.
@@ -47,6 +48,7 @@ function TheHanhDong({ state, dispatch }: Props) {
     const duTien = state.tienMat >= gia
     return (
       <div className="the-quyet-dinh">
+        <div className="the-bieu-tuong">{the.emoji}</div>
         <div className="the-ten">{the.ten}</div>
         <div className="the-gia">{dinhDangTien(gia)}</div>
         <div className="the-diem">
@@ -81,6 +83,7 @@ function TheHanhDong({ state, dispatch }: Props) {
   const sapThua = state.hanhPhuc < CONFIG.hanhPhucNguongThua
   return (
     <div className="the-quyet-dinh">
+      <div className="the-bieu-tuong">🗓️</div>
       <div className="the-ten">Trước khi kết thúc năm</div>
       <p className="mo-ta">
         Xem lại danh mục đầu tư, cân nhắc học thêm, mua bảo hiểm hoặc chốt một cơ hội
@@ -112,7 +115,7 @@ function KhuNganHang({ state, dispatch }: Props) {
 
   return (
     <div className="the">
-      <div className="the-tieu-de">Ngân hàng</div>
+      <div className="the-tieu-de">🏦 Ngân hàng</div>
       <p className="mo-ta">
         Lãi {Math.round(CONFIG.laiSuatVay * 100)}%/năm, kỳ hạn tối đa{' '}
         {CONFIG.kyHanVayToiDa} năm, không trả trước hạn được. Tổng nợ phải trả mỗi năm
@@ -197,7 +200,7 @@ export default function TabTrangChu({ state, dispatch }: Props) {
     <>
       <TheHanhDong state={state} dispatch={dispatch} />
 
-      <div className="muc">Bảo hiểm y tế</div>
+      <div className="muc">🛡️ Bảo hiểm y tế</div>
       <div className="the">
         <p className="mo-ta">
           Có bảo hiểm thì khi ốm đau được chi trả toàn bộ. Không có thì mất{' '}
@@ -218,7 +221,7 @@ export default function TabTrangChu({ state, dispatch }: Props) {
         </div>
       </div>
 
-      <div className="muc">Giáo dục — tăng lương vĩnh viễn</div>
+      <div className="muc">🎓 Giáo dục — tăng lương vĩnh viễn</div>
       {khoaHoc.length === 0 && (
         <div className="the">
           <p className="mo-ta" style={{ margin: 0 }}>
@@ -249,7 +252,7 @@ export default function TabTrangChu({ state, dispatch }: Props) {
         )
       })}
 
-      <div className="muc">Ước nguyện — hạnh phúc mỗi năm</div>
+      <div className="muc">🌠 Ước nguyện — hạnh phúc mỗi năm</div>
       {state.uocNguyenDaMua.map((id) => {
         const u = timUocNguyen(id)
         if (!u) return null
@@ -298,7 +301,7 @@ export default function TabTrangChu({ state, dispatch }: Props) {
         </p>
       )}
 
-      <div className="muc">Vay vốn</div>
+      <div className="muc">💳 Vay vốn</div>
       <KhuNganHang state={state} dispatch={dispatch} />
     </>
   )

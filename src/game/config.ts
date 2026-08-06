@@ -10,9 +10,11 @@ export const TRIEU = 1_000_000
 export const TY = 1_000_000_000
 
 export const CONFIG = {
-  /** ---------- Điều kiện thắng / thua ---------- */
+  /** ---------- Điều kiện thắng / thua ----------
+   * Không giới hạn số năm: chỉ thắng khi đạt mục tiêu tài sản,
+   * chỉ thua khi hạnh phúc rơi xuống dưới ngưỡng.
+   */
   mucTieuTaiSan: 10 * TY,
-  soNamToiDa: 50,
 
   /** ---------- Hạnh phúc ---------- */
   hanhPhucBanDau: 70,
@@ -79,8 +81,14 @@ export const CONFIG = {
   /** ---------- Cơ hội kinh doanh ---------- */
   soCoHoiMoiNam: 1,
 
+  /** ---------- Biểu đồ giá ----------
+   * Số điểm giá "quá khứ" sinh sẵn khi tạo ván, để biểu đồ đầu tư
+   * có đường giá sống động ngay từ năm đầu tiên.
+   */
+  soDiemGiaQuaKhu: 9,
+
   /** ---------- Lưu ván ---------- */
-  luuKey: 'dong-tien-save-v1',
+  luuKey: 'dong-tien-luu-v1-1',
 } as const
 
 export type Config = typeof CONFIG

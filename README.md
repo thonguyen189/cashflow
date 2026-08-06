@@ -3,8 +3,8 @@
 Game mô phỏng tài chính cá nhân, chơi trên trình duyệt, một người chơi.
 Mỗi lượt là một năm: vừa tích luỹ tài sản, vừa giữ đủ hạnh phúc để đi tiếp.
 
-- **Thắng:** đạt mục tiêu tài sản (mặc định 10 tỷ) trong vòng 50 năm
-- **Thua:** để hạnh phúc rơi xuống dưới 50 lúc kết thúc năm, hoặc hết 50 năm mà chưa đủ tài sản
+- **Thắng:** đạt mục tiêu tài sản (mặc định 10 tỷ) — không giới hạn số năm
+- **Thua:** để hạnh phúc rơi xuống dưới 50 lúc kết thúc năm
 
 ## Chạy
 
@@ -14,14 +14,14 @@ npm run dev        # mở http://localhost:5173
 ```
 
 ```bash
-npm test           # 46 test: logic engine + mô phỏng cân bằng
+npm test           # 53 test: logic engine + định dạng + mô phỏng cân bằng
 npm run build      # build ra thư mục dist/, mở bằng file:// cũng chạy
 ```
 
 ## Chỉnh độ khó
 
 Toàn bộ số liệu cân bằng nằm trong **[src/game/config.ts](src/game/config.ts)** — mục tiêu
-tài sản, số năm tối đa, ngưỡng hạnh phúc, biên độ lạm phát, lãi vay, xác suất sự kiện.
+tài sản, ngưỡng hạnh phúc, biên độ lạm phát, lãi vay, xác suất sự kiện.
 
 Nội dung game (nghề nghiệp, thẻ tiêu dùng, khoá học, tài sản, cơ hội kinh doanh)
 nằm trong **[src/game/content.ts](src/game/content.ts)**.
@@ -38,7 +38,7 @@ src/game/          lõi thuần, không phụ thuộc React — test được đ
   content.ts       nội dung: nghề, thẻ, khoá học, tài sản, cơ hội
   engine.ts        reducer thuần (state, action) => state + hàm dẫn xuất
   sim.ts           bot tự chơi, dùng để kiểm tra cân bằng
-  format.ts        định dạng tiền kiểu Việt Nam (12,5 tỷ · 350 tr)
+  format.ts        định dạng tiền kiểu Việt Nam, không viết tắt (12,5 tỷ · 350 triệu)
   luu.ts           tự động lưu ván vào localStorage
 src/ui/            các component React, chỉ hiển thị và phát action
 ```

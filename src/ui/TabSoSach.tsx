@@ -27,7 +27,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
 
   return (
     <>
-      <div className="muc">Dòng tiền một năm</div>
+      <div className="muc">💵 Dòng tiền một năm</div>
       <div className="the">
         <div className="hang">
           <span className="hang-nhan">Lương</span>
@@ -62,7 +62,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
         </p>
       </div>
 
-      <div className="muc">Tài sản</div>
+      <div className="muc">🏆 Tài sản</div>
       <div className="the">
         <div className="hang">
           <span className="hang-nhan">💵 Tiền mặt</span>
@@ -91,7 +91,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
         </div>
       </div>
 
-      <div className="muc">Nghĩa vụ &amp; bảo vệ</div>
+      <div className="muc">🛡️ Nghĩa vụ &amp; bảo vệ</div>
       <div className="the">
         <div className="hang">
           <span className="hang-nhan">Tổng nợ còn phải trả</span>
@@ -119,7 +119,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
         </div>
       </div>
 
-      <div className="muc">Lịch sử các năm</div>
+      <div className="muc">📜 Lịch sử các năm</div>
       {state.lichSu.length === 0 ? (
         <div className="the">
           <p className="mo-ta" style={{ margin: 0 }}>
@@ -137,7 +137,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
                 <th>Tiền mặt</th>
                 <th>Đầu tư</th>
                 <th>Tổng</th>
-                <th>HP</th>
+                <th>Hạnh phúc</th>
                 <th>Lạm phát</th>
               </tr>
             </thead>

@@ -223,6 +223,11 @@ body {
   text-align: center;
   margin-bottom: 12px;
 }
+.the-bieu-tuong {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 10px;
+}
 .the-ten {
   font-size: 19px;
   font-weight: 700;
@@ -365,6 +370,13 @@ body {
   font-size: 21px;
   font-weight: 800;
   margin: 0 0 14px;
+}
+
+.ghi-chu-luu {
+  text-align: center;
+  color: var(--chu-mo);
+  font-size: 12.5px;
+  margin: 14px 0 10px;
 }
 
 .su-kien {

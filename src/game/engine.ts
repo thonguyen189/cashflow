@@ -171,7 +171,17 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
   for (const ts of TAI_SAN) {
     giaTaiSan[ts.id] = ts.giaDonVi
     soHuu[ts.id] = 0
-    lichSuGia[ts.id] = [ts.giaDonVi]
+    // Dựng chuỗi giá "quá khứ" bằng cách đi lùi từ giá năm 1, biên độ mỗi
+    // bước tỉ lệ theo độ biến động thật của tài sản nhưng chặn ở ±15% để
+    // chỉ số thay đổi hiển thị năm đầu không bị thổi phồng phi lý.
+    const bienDoQuaKhu = Math.min(0.15, (ts.bienDongMax - ts.bienDongMin) / 4)
+    const quaKhu: Tien[] = [ts.giaDonVi]
+    for (let i = 0; i < CONFIG.soDiemGiaQuaKhu; i++) {
+      const bienDong = rng.khoang(-bienDoQuaKhu, bienDoQuaKhu)
+      const giaTruoc = Math.max(1, Math.round(quaKhu[0]! / (1 + bienDong)))
+      quaKhu.unshift(giaTruoc)
+    }
+    lichSuGia[ts.id] = quaKhu
   }
 
   const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax))
@@ -610,14 +620,6 @@ export function reducer(s: GameState, a: Action): GameState {
           ...sau,
           trangThai: 'thang',
           lyDoKetThuc: `Đạt mục tiêu tài sản sau ${s.nam} năm.`,
-        }
-      }
-      if (sau.nam > CONFIG.soNamToiDa) {
-        return {
-          ...sau,
-          phase: 'ketThuc',
-          trangThai: 'thua',
-          lyDoKetThuc: `Hết ${CONFIG.soNamToiDa} năm mà chưa đạt mục tiêu tài sản.`,
         }
       }
       return sau

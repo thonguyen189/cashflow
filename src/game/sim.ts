@@ -10,7 +10,6 @@ import {
   taoGameMoi,
   tongTaiSan,
 } from './engine'
-import type { GameState } from './types'
 
 export interface KetQuaSim {
   thang: boolean

@@ -1,6 +1,14 @@
 import { CONFIG } from '../game/config'
 import { dinhDangTien, dinhDangPhanTram } from '../game/format'
-import type { Action, GameState } from '../game/types'
+import type { Action, GameState, SuKienLoai } from '../game/types'
+
+const BIEU_TUONG_SU_KIEN: Record<SuKienLoai, string> = {
+  lamPhat: '📈',
+  omDau: '🏥',
+  sinhCon: '👶',
+  thuongTet: '🧧',
+  canhBacKetQua: '🎲',
+}
 
 export default function TongKetModal({
   state,
@@ -16,7 +24,7 @@ export default function TongKetModal({
   return (
     <div className="lop-phu">
       <div className="modal">
-        <h2 className="modal-tieu-de">Tổng kết năm {tk.nam}</h2>
+        <h2 className="modal-tieu-de">📋 Tổng kết năm {tk.nam}</h2>
 
         <div className="the">
           <div className="hang">
@@ -31,7 +39,7 @@ export default function TongKetModal({
           </div>
         </div>
 
-        <div className="muc">Thu nhập</div>
+        <div className="muc">💰 Thu nhập</div>
         <div className="the">
           <div className="hang">
             <span className="hang-nhan">Lương năm tới</span>
@@ -52,7 +60,7 @@ export default function TongKetModal({
 
         {tk.loiTucTaiSan.length > 0 && (
           <>
-            <div className="muc">Danh mục đầu tư</div>
+            <div className="muc">📊 Danh mục đầu tư</div>
             <div className="the">
               {tk.loiTucTaiSan.map((l) => (
                 <div className="hang" key={l.id}>
@@ -71,7 +79,7 @@ export default function TongKetModal({
           </>
         )}
 
-        <div className="muc">Hạnh phúc</div>
+        <div className="muc">😊 Hạnh phúc</div>
         <div className="the">
           {tk.phatKhatVong > 0 && (
             <div className="hang">
@@ -91,11 +99,11 @@ export default function TongKetModal({
           </div>
         </div>
 
-        <div className="muc">Sự kiện</div>
+        <div className="muc">📰 Sự kiện</div>
         {tk.suKien.map((sk, i) => (
           <div className="su-kien" key={i}>
             <div className="su-kien-tieu-de">
-              {sk.tieuDe}
+              {BIEU_TUONG_SU_KIEN[sk.loai]} {sk.tieuDe}
               {sk.tienThayDoi !== 0 && (
                 <span className={sk.tienThayDoi > 0 ? ' duong' : ' am'}>
                   {' '}
@@ -107,7 +115,7 @@ export default function TongKetModal({
                 <span className={sk.hanhPhucThayDoi > 0 ? ' duong' : ' am'}>
                   {' '}
                   {sk.hanhPhucThayDoi > 0 ? '+' : ''}
-                  {sk.hanhPhucThayDoi} HP
+                  {sk.hanhPhucThayDoi} hạnh phúc
                 </span>
               )}
             </div>
@@ -115,7 +123,9 @@ export default function TongKetModal({
           </div>
         ))}
 
-        <div style={{ height: 12 }} />
+        <p className="ghi-chu-luu">
+          💾 Ván chơi đã được lưu tự động trên máy của bạn.
+        </p>
         <button
           className="nut nut-chinh nut-rong"
           onClick={() => dispatch({ type: 'dongTongKet' })}

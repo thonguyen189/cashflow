@@ -1,3 +1,4 @@
+import { timCoHoi } from '../game/content'
 import { giaThucTe } from '../game/engine'
 import { dinhDangTien } from '../game/format'
 import type { Action, GameState } from '../game/types'
@@ -11,7 +12,7 @@ export default function TabKinhDoanh({
 }) {
   return (
     <>
-      <div className="muc">Cơ hội năm nay</div>
+      <div className="muc">💼 Cơ hội năm nay</div>
       {state.coHoiNamNay.length === 0 && (
         <div className="the">
           <p className="mo-ta" style={{ margin: 0 }}>
@@ -99,12 +100,16 @@ export default function TabKinhDoanh({
 
       {state.canhBacDangCho.length > 0 && (
         <>
-          <div className="muc">Đang chờ kết quả</div>
+          <div className="muc">🎲 Đang chờ kết quả</div>
           {state.canhBacDangCho.map((c, i) => (
             <div className="muc-mua" key={`${c.coHoiId}-${i}`}>
-              <span className="muc-mua-emoji">🎲</span>
+              <span className="muc-mua-emoji">
+                {timCoHoi(c.coHoiId)?.emoji ?? '🎲'}
+              </span>
               <div className="muc-mua-than">
-                <div className="muc-mua-ten">{c.coHoiId}</div>
+                <div className="muc-mua-ten">
+                  {timCoHoi(c.coHoiId)?.ten ?? c.coHoiId}
+                </div>
                 <div className="muc-mua-phu">
                   Đã đặt {dinhDangTien(c.gia)} — mở vào cuối năm
                 </div>
@@ -114,7 +119,7 @@ export default function TabKinhDoanh({
         </>
       )}
 
-      <div className="muc">Doanh nghiệp đang sở hữu</div>
+      <div className="muc">🏪 Doanh nghiệp đang sở hữu</div>
       {state.doanhNghiep.length === 0 ? (
         <div className="the">
           <p className="mo-ta" style={{ margin: 0 }}>
@@ -125,7 +130,9 @@ export default function TabKinhDoanh({
       ) : (
         state.doanhNghiep.map((d, i) => (
           <div className="muc-mua" key={`${d.coHoiId}-${i}`}>
-            <span className="muc-mua-emoji">💼</span>
+            <span className="muc-mua-emoji">
+              {timCoHoi(d.coHoiId)?.emoji ?? '💼'}
+            </span>
             <div className="muc-mua-than">
               <div className="muc-mua-ten">{d.ten}</div>
               <div className="muc-mua-phu">

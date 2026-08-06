@@ -5,31 +5,26 @@ import { dinhDangTien, dinhDangPhanTram } from '../game/format'
 import type { Action, AssetId, GameState, TaiSan } from '../game/types'
 
 function BieuDo({ dulieu }: { dulieu: number[] }) {
-  if (dulieu.length < 2) {
-    return (
-      <p className="mo-ta" style={{ margin: '8px 0 0' }}>
-        Chưa có lịch sử giá — hết năm đầu tiên sẽ có biểu đồ.
-      </p>
-    )
-  }
+  if (dulieu.length < 2) return null
   const min = Math.min(...dulieu)
   const max = Math.max(...dulieu)
   const bien = max - min || 1
-  const diem = dulieu
-    .map((v, i) => {
-      const x = (i / (dulieu.length - 1)) * 100
-      const y = 96 - ((v - min) / bien) * 92
-      return `${x.toFixed(2)},${y.toFixed(2)}`
-    })
-    .join(' ')
+  const toaDo = dulieu.map((v, i) => {
+    const x = (i / (dulieu.length - 1)) * 100
+    const y = 96 - ((v - min) / bien) * 92
+    return `${x.toFixed(2)},${y.toFixed(2)}`
+  })
+  const diem = toaDo.join(' ')
   const len = dulieu.length
   const tang = (dulieu[len - 1] ?? 0) >= (dulieu[0] ?? 0)
+  const mau = tang ? 'var(--xanh)' : 'var(--do)'
   return (
     <svg className="bieu-do" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <polygon points={`0,100 ${diem} 100,100`} fill={mau} opacity={0.12} />
       <polyline
         points={diem}
         fill="none"
-        stroke={tang ? 'var(--xanh)' : 'var(--do)'}
+        stroke={mau}
         strokeWidth={2}
         vectorEffect="non-scaling-stroke"
         strokeLinejoin="round"
@@ -168,14 +163,14 @@ export default function TabDauTu({
 
   return (
     <>
-      <div className="muc">Danh mục đầu tư</div>
+      <div className="muc">📊 Danh mục đầu tư</div>
       {moKhoa.map((ts) => (
         <TheTaiSan key={ts.id} ts={ts} state={state} dispatch={dispatch} />
       ))}
 
       {chuaMo.length > 0 && (
         <>
-          <div className="muc">Chưa mở khoá</div>
+          <div className="muc">🔒 Chưa mở khoá</div>
           {chuaMo.map((ts) => (
             <div className="muc-mua the-da-mua" key={ts.id}>
               <span className="muc-mua-emoji">🔒</span>
