@@ -2,7 +2,7 @@ import { CONFIG } from './config'
 import type { GameState } from './types'
 
 /** Khoá lưu của các phiên bản cũ, dọn sạch khi nạp game. */
-const KHOA_LUU_CU = ['dong-tien-save-v1']
+const KHOA_LUU_CU = ['dong-tien-save-v1', 'dong-tien-luu-v1-1']
 
 /** Tự động lưu ván đang chơi vào localStorage. */
 export function luuVan(s: GameState): void {

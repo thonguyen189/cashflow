@@ -140,8 +140,11 @@ export const TAI_SAN: TaiSan[] = [
     moTa: 'Có thể nhân nhiều lần hoặc bốc hơi. Chỉ nên chơi bằng tiền nhàn rỗi.',
     giaDonVi: 250 * TRIEU,
     donViTen: 'đơn vị',
-    bienDongMin: -0.6,
-    bienDongMax: 1.5,
+    // Cân bằng v1.2: hạ biên độ 1.5 → 1.1 và −0.6 → −0.65 để trung bình nhân
+    // của giá còn ≈ +10%/năm — vẫn là kênh sinh lời cao nhất nhưng không còn
+    // trội tuyệt đối so với cổ phiếu hay bất động sản.
+    bienDongMin: -0.65,
+    bienDongMax: 1.1,
     loiTucMin: 0,
     loiTucMax: 0,
     bamLamPhat: false,
@@ -167,10 +170,17 @@ export const TAI_SAN: TaiSan[] = [
  */
 export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't01', ten: 'Cà phê cuối tuần với bạn cũ', emoji: '☕', gia: 500_000, diem: 3 },
-  { id: 't02', ten: 'Về quê thăm bố mẹ', emoji: '🏡', gia: 1.5 * TRIEU, diem: 8 },
-  { id: 't03', ten: 'Chạy giải marathon thành phố', emoji: '🏃', gia: 800_000, diem: 4 },
+  { id: 't02', ten: 'Về quê thăm bố mẹ', emoji: '🏡', gia: 1.5 * TRIEU, diem: 8, tuoiToiDa: 75 },
+  {
+    id: 't03',
+    ten: 'Chạy giải marathon thành phố',
+    emoji: '🏃',
+    gia: 800_000,
+    diem: 4,
+    tuoiToiDa: 65,
+  },
   { id: 't04', ten: 'Vé xem bóng đá V-League', emoji: '⚽', gia: 600_000, diem: 2 },
-  { id: 't05', ten: 'Lớp học nhảy buổi tối', emoji: '💃', gia: 3 * TRIEU, diem: 6 },
+  { id: 't05', ten: 'Lớp học nhảy buổi tối', emoji: '💃', gia: 3 * TRIEU, diem: 6, tuoiToiDa: 70 },
   { id: 't06', ten: 'Đi Đà Lạt ba ngày hai đêm', emoji: '⛰️', gia: 6 * TRIEU, diem: 12 },
   { id: 't07', ten: 'Thẻ tập gym cả năm', emoji: '🏋️', gia: 9 * TRIEU, diem: 15 },
   { id: 't08', ten: 'Bữa hải sản với gia đình', emoji: '🦐', gia: 2 * TRIEU, diem: 3 },
@@ -180,12 +190,37 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't12', ten: 'Máy ảnh cũ chụp đường phố', emoji: '📷', gia: 12 * TRIEU, diem: 10 },
   { id: 't13', ten: 'Đổi điện thoại đời mới', emoji: '📱', gia: 20 * TRIEU, diem: 12 },
   { id: 't14', ten: 'Tiệc sinh nhật ở nhà hàng', emoji: '🎂', gia: 15 * TRIEU, diem: 8 },
-  { id: 't15', ten: 'Xe đạp thể thao', emoji: '🚴', gia: 25 * TRIEU, diem: 12 },
+  { id: 't15', ten: 'Xe đạp thể thao', emoji: '🚴', gia: 25 * TRIEU, diem: 12, tuoiToiDa: 70 },
   { id: 't16', ten: 'Ngắm hoa anh đào ở Nhật', emoji: '🌸', gia: 60 * TRIEU, diem: 25 },
   { id: 't17', ten: 'Thuê thợ chụp ảnh gia đình', emoji: '📸', gia: 8 * TRIEU, diem: 3 },
   { id: 't18', ten: 'Đồng hồ hàng hiệu', emoji: '⌚', gia: 45 * TRIEU, diem: 10 },
   { id: 't19', ten: 'Dàn karaoke tại nhà', emoji: '🎤', gia: 35 * TRIEU, diem: 6 },
-  { id: 't20', ten: 'Drone quay phim', emoji: '🚁', gia: 30 * TRIEU, diem: 4 },
+  { id: 't20', ten: 'Drone quay phim', emoji: '🚁', gia: 30 * TRIEU, diem: 4, tuoiToiDa: 75 },
+
+  /* --- Giai đoạn gia đình: chỉ xuất hiện khi đã kết hôn --- */
+  { id: 't21', ten: 'Kỷ niệm ngày cưới ở nhà hàng', emoji: '💐', gia: 4 * TRIEU, diem: 8, giaiDoan: 'giaDinh' },
+  { id: 't22', ten: 'Du lịch Nha Trang cùng bạn đời', emoji: '🏖️', gia: 12 * TRIEU, diem: 15, giaiDoan: 'giaDinh' },
+  { id: 't23', ten: 'Sửa sang lại tổ ấm', emoji: '🔨', gia: 40 * TRIEU, diem: 14, giaiDoan: 'giaDinh' },
+  { id: 't24', ten: 'Tặng bạn đời chiếc nhẫn vàng', emoji: '💍', gia: 25 * TRIEU, diem: 9, giaiDoan: 'giaDinh' },
+  { id: 't25', ten: 'Bữa tối dưới ánh nến hâm nóng tình cảm', emoji: '🕯️', gia: 1.5 * TRIEU, diem: 4, giaiDoan: 'giaDinh' },
+  { id: 't26', ten: 'Cả nhà về quê ngoại ăn Tết', emoji: '🏮', gia: 5 * TRIEU, diem: 10, giaiDoan: 'giaDinh' },
+
+  /* --- Giai đoạn con cái: chỉ xuất hiện khi đang nuôi con nhỏ --- */
+  { id: 't27', ten: 'Mua bộ đồ chơi xếp hình cho con', emoji: '🧸', gia: 1 * TRIEU, diem: 5, giaiDoan: 'conCai' },
+  { id: 't28', ten: 'Lớp học thêm tiếng Anh cho con', emoji: '📖', gia: 8 * TRIEU, diem: 10, giaiDoan: 'conCai' },
+  { id: 't29', ten: 'Tiệc sinh nhật cho con ở nhà', emoji: '🎈', gia: 3 * TRIEU, diem: 8, giaiDoan: 'conCai' },
+  { id: 't30', ten: 'Đưa con đi công viên nước cả ngày', emoji: '🎢', gia: 2.5 * TRIEU, diem: 6, giaiDoan: 'conCai' },
+  { id: 't31', ten: 'Chiếc xe đạp đầu tiên cho con', emoji: '🚲', gia: 4 * TRIEU, diem: 7, giaiDoan: 'conCai' },
+  { id: 't32', ten: 'Du lịch Đà Nẵng cùng các con', emoji: '✈️', gia: 20 * TRIEU, diem: 18, giaiDoan: 'conCai' },
+  { id: 't33', ten: 'Sắm góc học tập mới cho con', emoji: '📚', gia: 15 * TRIEU, diem: 6, giaiDoan: 'conCai' },
+
+  /* --- Giai đoạn tuổi già: chỉ xuất hiện từ tuổi 60 --- */
+  { id: 't34', ten: 'Khám sức khoẻ tổng quát đầu năm', emoji: '🏥', gia: 10 * TRIEU, diem: 12, giaiDoan: 'tuoiGia' },
+  { id: 't35', ten: 'Câu lạc bộ dưỡng sinh buổi sáng', emoji: '🌳', gia: 2 * TRIEU, diem: 8, giaiDoan: 'tuoiGia' },
+  { id: 't36', ten: 'Chuyến du lịch chậm miền Tây sông nước', emoji: '⛵', gia: 15 * TRIEU, diem: 14, giaiDoan: 'tuoiGia' },
+  { id: 't37', ten: 'Làm vườn trồng rau sau nhà', emoji: '🌱', gia: 3 * TRIEU, diem: 9, giaiDoan: 'tuoiGia' },
+  { id: 't38', ten: 'Họp lớp bạn cũ sau mấy chục năm', emoji: '🍵', gia: 1.2 * TRIEU, diem: 7, giaiDoan: 'tuoiGia' },
+  { id: 't39', ten: 'Ghế massage cho tấm lưng đã mỏi', emoji: '💆', gia: 30 * TRIEU, diem: 10, giaiDoan: 'tuoiGia' },
 ]
 
 /** ---------------- Cơ hội kinh doanh ---------------- */
@@ -229,22 +264,24 @@ export const CO_HOI: CoHoi[] = [
   {
     id: 'boSuuTapNft',
     ten: 'Bộ sưu tập NFT',
-    moTa: 'Có thể nhân năm lần, cũng có thể thành giấy vụn ngay trong năm nay.',
+    // Cân bằng v1.2: heSoNhan 5 → 3.6 để kỳ vọng = 0.25 × 3.6 = 0,9 (âm nhẹ).
+    moTa: 'Nếu trúng thì nhân 3,6 lần vốn, còn không thì thành giấy vụn ngay trong năm nay.',
     emoji: '🖼️',
     loai: 'canhBac',
     gia: 150 * TRIEU,
     xacSuatThang: 0.25,
-    heSoNhan: 5,
+    heSoNhan: 3.6,
   },
   {
     id: 'coinMoi',
     ten: 'Đầu cơ coin mới lên sàn',
-    moTa: 'Xác suất thắng thấp nhưng nếu trúng thì nhân tám lần vốn.',
+    // Cân bằng v1.2: heSoNhan 8 → 4.5 để kỳ vọng = 0.2 × 4.5 = 0,9 (âm nhẹ).
+    moTa: 'Xác suất thắng thấp, nếu trúng thì nhân 4,5 lần vốn.',
     emoji: '🎲',
     loai: 'canhBac',
     gia: 100 * TRIEU,
     xacSuatThang: 0.2,
-    heSoNhan: 8,
+    heSoNhan: 4.5,
   },
 ]
 

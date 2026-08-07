@@ -92,11 +92,11 @@ export function moPhongMotVan(
       }
     }
 
-    // 2. khát vọng, để cắt khoản phạt hạnh phúc hàng năm
+    // 2. khát vọng, để cắt khoản phạt hạnh phúc hàng năm (giá khoá thời trẻ)
     if (cl.muaUocNguyen && !s.uocNguyenDaMua.includes(s.khatVongId)) {
       const un = timUocNguyen(s.khatVongId)
       if (un) {
-        const gia = giaThucTe(s, un.gia)
+        const gia = un.gia
         if (s.tienMat > gia * 1.5) {
           const sau = reducer(s, { type: 'muaUocNguyen', uocNguyenId: un.id })
           if (sau !== s) {

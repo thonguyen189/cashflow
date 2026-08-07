@@ -8,6 +8,17 @@ const BIEU_TUONG_SU_KIEN: Record<SuKienLoai, string> = {
   sinhCon: '👶',
   thuongTet: '🧧',
   canhBacKetQua: '🎲',
+  ketHon: '💍',
+  conVaoDaiHoc: '🎓',
+  conTuLap: '🧳',
+  lenChucOngBa: '👴',
+  tuoiGia: '🍂',
+  nghiHuu: '🌇',
+  mungTho: '🎊',
+  thangChuc: '🏆',
+  suCo: '🔧',
+  banTaiSan: '📉',
+  mocTaiSan: '🚩',
 }
 
 export default function TongKetModal({
@@ -42,10 +53,14 @@ export default function TongKetModal({
         <div className="muc">💰 Thu nhập</div>
         <div className="the">
           <div className="hang">
-            <span className="hang-nhan">Lương năm tới</span>
+            <span className="hang-nhan">
+              {state.daNghiHuu ? 'Lương hưu năm tới' : 'Lương năm tới'}
+            </span>
             <span className="hang-gia-tri">
               {dinhDangTien(tk.luong)}{' '}
-              <span className="duong">{dinhDangPhanTram(tk.tangLuong)}</span>
+              <span className={tk.tangLuong >= 0 ? 'duong' : 'am'}>
+                {dinhDangPhanTram(tk.tangLuong)}
+              </span>
             </span>
           </div>
           {tk.thuNhapThuDong > 0 && (
@@ -53,6 +68,14 @@ export default function TongKetModal({
               <span className="hang-nhan">Thu nhập thụ động</span>
               <span className="hang-gia-tri duong">
                 {dinhDangTien(tk.thuNhapThuDong)}
+              </span>
+            </div>
+          )}
+          {tk.thuNhapBanDoi > 0 && (
+            <div className="hang">
+              <span className="hang-nhan">Thu nhập của bạn đời</span>
+              <span className="hang-gia-tri duong">
+                {dinhDangTien(tk.thuNhapBanDoi)}
               </span>
             </div>
           )}
@@ -130,7 +153,7 @@ export default function TongKetModal({
           className="nut nut-chinh nut-rong"
           onClick={() => dispatch({ type: 'dongTongKet' })}
         >
-          {state.trangThai === 'thang' ? 'Xem kết quả' : `Bắt đầu năm ${state.nam}`}
+          {state.trangThai !== 'dangChoi' ? 'Xem kết quả' : `Bắt đầu năm ${state.nam}`}
         </button>
       </div>
     </div>

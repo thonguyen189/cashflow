@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CONFIG } from './game/config'
-import { reducer, taoGameMoi, tongTaiSan } from './game/engine'
+import { reducer, taoGameMoi, tongTaiSan, tuoiHienTai } from './game/engine'
 import { luuVan, taiVan, xoaVan } from './game/luu'
 import type { Action, GameState } from './game/types'
 import ChonNghe from './ui/ChonNghe'
@@ -45,13 +45,25 @@ export default function App() {
 
   if (!state) return <ChonNghe onChon={batDau} />
 
+  const ct = CONFIG.cotTruyen
   const tong = tongTaiSan(state)
-  const tienDo = Math.min(1, tong / CONFIG.mucTieuTaiSan)
+  const tyLeMucTieu = tong / CONFIG.mucTieuTaiSan
+  const tuoi = Math.min(tuoiHienTai(state), ct.tuoiVienMan)
+  const namConLai = Math.max(0, ct.tuoiVienMan - tuoi)
+  // Sau khi đã chinh phục mục tiêu tài sản, thanh tiến độ chuyển sang đo
+  // hành trình cuộc đời — nếu không thì nó đứng im ở 100% suốt sáu chục năm.
+  const doDoiNguoi = state.daDatMucTieu
+  const tienDo = doDoiNguoi
+    ? (tuoi - ct.tuoiBatDau) / (ct.tuoiVienMan - ct.tuoiBatDau)
+    : Math.min(1, tyLeMucTieu)
 
   return (
     <>
       <div className="dau-trang">
-        <div className="nam">Năm {state.nam}</div>
+        <div className="nam">
+          Năm {state.nam} · {tuoi} tuổi
+          {state.daNghiHuu && <span className="nhan-nghi-huu">đã nghỉ hưu</span>}
+        </div>
         <button className="nut-nho" onClick={veManChon}>
           Ván mới
         </button>
@@ -59,13 +71,43 @@ export default function App() {
 
       <Hud state={state} />
 
-      <div className="thanh-tien-do">
+      <div className="thanh-tien-do co-moc">
         <div style={{ width: `${tienDo * 100}%` }} />
+        {!doDoiNguoi &&
+          CONFIG.mocTaiSan.map((moc) => (
+            <span
+              key={moc}
+              className={`vach-moc${state.mocTaiSanDaQua.includes(moc) ? ' da-qua' : ''}`}
+              style={{ left: `${(moc / CONFIG.mucTieuTaiSan) * 100}%` }}
+            />
+          ))}
+        {doDoiNguoi &&
+          ct.mungThoTuoi.map((tuoiTho) => (
+            <span
+              key={tuoiTho}
+              className={`vach-moc${tuoi >= tuoiTho ? ' da-qua' : ''}`}
+              style={{
+                left: `${((tuoiTho - ct.tuoiBatDau) / (ct.tuoiVienMan - ct.tuoiBatDau)) * 100}%`,
+              }}
+            />
+          ))}
       </div>
       <div className="tien-do-chu">
-        Mục tiêu: {(CONFIG.mucTieuTaiSan / 1_000_000_000).toString().replace('.', ',')} tỷ
-        {' · '}
-        đã đạt {(tienDo * 100).toFixed(1).replace('.', ',')}%
+        {doDoiNguoi ? (
+          <>
+            🏆 Đã đạt mục tiêu · tài sản{' '}
+            {(tyLeMucTieu * 100).toFixed(0).replace('.', ',')}% mức 10 tỷ
+            {' · '}
+            còn {namConLai} năm tới tuổi {ct.tuoiVienMan}
+          </>
+        ) : (
+          <>
+            Mục tiêu:{' '}
+            {(CONFIG.mucTieuTaiSan / 1_000_000_000).toString().replace('.', ',')} tỷ
+            {' · '}
+            đã đạt {(tyLeMucTieu * 100).toFixed(1).replace('.', ',')}%
+          </>
+        )}
       </div>
 
       <div className="noi-dung">
@@ -92,7 +134,7 @@ export default function App() {
         <TongKetModal state={state} dispatch={dispatch} />
       )}
       {state.phase === 'ketThuc' && (
-        <KetThucModal state={state} onChoiLai={veManChon} />
+        <KetThucModal state={state} dispatch={dispatch} onChoiLai={veManChon} />
       )}
     </>
   )

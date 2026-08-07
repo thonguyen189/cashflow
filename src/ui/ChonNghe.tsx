@@ -7,12 +7,16 @@ export default function ChonNghe({ onChon }: { onChon: (ngheId: string) => void 
     <div className="man-chon">
       <h1 className="tieu-de-lon">💰 Dòng Tiền</h1>
       <p className="mo-ta">
-        Mỗi lượt là một năm, không giới hạn số năm chơi. Vừa tích luỹ tài sản, vừa
-        giữ cho mình đủ hạnh phúc để đi tiếp. Tích luỹ đủ{' '}
+        Một hành trình trăm năm, mỗi lượt là một năm. Bạn bắt đầu ở tuổi{' '}
+        {CONFIG.cotTruyen.tuoiBatDau}, rồi lần lượt đi qua chuyện cưới xin, sinh
+        con, nghỉ hưu ở tuổi {CONFIG.cotTruyen.tuoiNghiHuu} và đi trọn tới{' '}
+        {CONFIG.cotTruyen.tuoiVienMan} tuổi — vừa tích luỹ tài sản, vừa giữ cho
+        mình đủ hạnh phúc để đi tiếp. Tích luỹ đủ{' '}
         <strong>
           {(CONFIG.mucTieuTaiSan / 1_000_000_000).toString().replace('.', ',')} tỷ
         </strong>{' '}
-        là thắng. Để hạnh phúc rơi xuống dưới {CONFIG.hanhPhucNguongThua} là thua.
+        là thắng; để hạnh phúc rơi xuống dưới {CONFIG.hanhPhucNguongThua} là thua;
+        sống trọn trăm năm là kết thúc viên mãn.
       </p>
 
       <div className="muc">🧑‍💼 Chọn nghề nghiệp</div>

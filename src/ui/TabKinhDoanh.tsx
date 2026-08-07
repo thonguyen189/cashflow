@@ -10,6 +10,28 @@ export default function TabKinhDoanh({
   state: GameState
   dispatch: (a: Action) => void
 }) {
+  /** Gộp các doanh nghiệp trùng cơ hội: hiển thị "Tên ×N" + tổng thu nhập nhóm. */
+  const nhomDoanhNghiep: {
+    coHoiId: string
+    ten: string
+    soLuong: number
+    tongThuNhap: number
+  }[] = []
+  for (const d of state.doanhNghiep) {
+    const daCo = nhomDoanhNghiep.find((n) => n.coHoiId === d.coHoiId)
+    if (daCo) {
+      daCo.soLuong += 1
+      daCo.tongThuNhap += d.thuNhapMoiNam
+    } else {
+      nhomDoanhNghiep.push({
+        coHoiId: d.coHoiId,
+        ten: d.ten,
+        soLuong: 1,
+        tongThuNhap: d.thuNhapMoiNam,
+      })
+    }
+  }
+
   return (
     <>
       <div className="muc">💼 Cơ hội năm nay</div>
@@ -128,15 +150,18 @@ export default function TabKinhDoanh({
           </p>
         </div>
       ) : (
-        state.doanhNghiep.map((d, i) => (
-          <div className="muc-mua" key={`${d.coHoiId}-${i}`}>
+        nhomDoanhNghiep.map((n) => (
+          <div className="muc-mua" key={n.coHoiId}>
             <span className="muc-mua-emoji">
-              {timCoHoi(d.coHoiId)?.emoji ?? '💼'}
+              {timCoHoi(n.coHoiId)?.emoji ?? '💼'}
             </span>
             <div className="muc-mua-than">
-              <div className="muc-mua-ten">{d.ten}</div>
+              <div className="muc-mua-ten">
+                {n.ten}
+                {n.soLuong > 1 && ` ×${n.soLuong}`}
+              </div>
               <div className="muc-mua-phu">
-                {dinhDangTien(d.thuNhapMoiNam)} mỗi năm
+                {dinhDangTien(n.tongThuNhap)} mỗi năm
               </div>
             </div>
           </div>

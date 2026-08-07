@@ -7,6 +7,7 @@ import {
   khoaHocConLai,
   phiBaoHiem,
   thanhToanMoiNamCuaKhoanVay,
+  themHanhPhuc,
   traNoMoiNam,
   uocNguyenConLai,
   vayToiDa,
@@ -46,6 +47,8 @@ function TheHanhDong({ state, dispatch }: Props) {
     if (!the) return null
     const gia = giaThucTe(state, the.gia)
     const duTien = state.tienMat >= gia
+    const thucNhan = themHanhPhuc(state.hanhPhuc, the.diem) - state.hanhPhuc
+    const biGiam = thucNhan < the.diem
     return (
       <div className="the-quyet-dinh">
         <div className="the-bieu-tuong">{the.emoji}</div>
@@ -54,9 +57,15 @@ function TheHanhDong({ state, dispatch }: Props) {
         <div className="the-diem">
           Nhận: <strong className="duong">+{the.diem}</strong> hạnh phúc
         </div>
+        {biGiam && (
+          <div className="the-diem">
+            Thực nhận <strong className="duong">+{thucNhan}</strong> vì đang rất mãn
+            nguyện
+          </div>
+        )}
         <div className="canh-bao-tu-choi">
           Từ chối cũng mất <strong>−{the.diem}</strong> hạnh phúc. Chênh lệch giữa hai
-          lựa chọn là <strong>{the.diem * 2}</strong> điểm.
+          lựa chọn là <strong>{thucNhan + the.diem}</strong> điểm.
         </div>
         <div className="hang-nut">
           <button
@@ -70,7 +79,11 @@ function TheHanhDong({ state, dispatch }: Props) {
             disabled={!duTien}
             onClick={() => dispatch({ type: 'quyetDinhThe', nhan: true })}
           >
-            {duTien ? `Nhận +${the.diem}` : 'Không đủ tiền'}
+            {duTien
+              ? biGiam
+                ? `Nhận · thực nhận +${thucNhan}`
+                : `Nhận +${the.diem}`
+              : 'Không đủ tiền'}
           </button>
         </div>
         <div className="the-diem" style={{ marginTop: 12, marginBottom: 0 }}>
@@ -106,6 +119,9 @@ function TheHanhDong({ state, dispatch }: Props) {
 }
 
 /* ---------- Ngân hàng ---------- */
+/** Kỳ hạn tối đa 10 năm — đưa các lựa chọn quen thuộc thay vì dãy 10 nút. */
+const CAC_KY_HAN = [1, 2, 3, 5, 7, 10]
+
 function KhuNganHang({ state, dispatch }: Props) {
   const [kyHan, setKyHan] = useState(3)
   const tran = vayToiDa(state, kyHan)
@@ -145,7 +161,7 @@ function KhuNganHang({ state, dispatch }: Props) {
 
       <div className="o-so-luong">
         <span className="hang-nhan">Kỳ hạn</span>
-        {Array.from({ length: CONFIG.kyHanVayToiDa }, (_, i) => i + 1).map((k) => (
+        {CAC_KY_HAN.map((k) => (
           <button
             key={k}
             className={`nut${kyHan === k ? ' nut-chinh' : ''}`}
@@ -222,37 +238,50 @@ export default function TabTrangChu({ state, dispatch }: Props) {
       </div>
 
       <div className="muc">🎓 Giáo dục — tăng lương vĩnh viễn</div>
-      {khoaHoc.length === 0 && (
+      {state.daNghiHuu ? (
         <div className="the">
           <p className="mo-ta" style={{ margin: 0 }}>
-            Bạn đã học hết mọi bậc.
+            Đã nghỉ hưu — an hưởng tuổi già, học thêm không còn tăng lương.
           </p>
         </div>
-      )}
-      {khoaHoc.map((k) => {
-        const gia = giaThucTe(state, k.gia)
-        return (
-          <div className="muc-mua" key={k.id}>
-            <span className="muc-mua-emoji">🎓</span>
-            <div className="muc-mua-than">
-              <div className="muc-mua-ten">{k.ten}</div>
-              <div className="muc-mua-phu">
-                Tăng lương {Math.round(k.tangLuongMin * 100)}–
-                {Math.round(k.tangLuongMax * 100)}%
-              </div>
+      ) : (
+        <>
+          {khoaHoc.length === 0 && (
+            <div className="the">
+              <p className="mo-ta" style={{ margin: 0 }}>
+                Bạn đã học hết mọi bậc.
+              </p>
             </div>
-            <button
-              className="nut muc-mua-nut"
-              disabled={state.tienMat < gia}
-              onClick={() => dispatch({ type: 'muaKhoaHoc', khoaHocId: k.id })}
-            >
-              {dinhDangTien(gia)}
-            </button>
-          </div>
-        )
-      })}
+          )}
+          {khoaHoc.map((k) => {
+            const gia = giaThucTe(state, k.gia)
+            return (
+              <div className="muc-mua" key={k.id}>
+                <span className="muc-mua-emoji">🎓</span>
+                <div className="muc-mua-than">
+                  <div className="muc-mua-ten">{k.ten}</div>
+                  <div className="muc-mua-phu">
+                    Tăng lương {Math.round(k.tangLuongMin * 100)}–
+                    {Math.round(k.tangLuongMax * 100)}%
+                  </div>
+                </div>
+                <button
+                  className="nut muc-mua-nut"
+                  disabled={state.tienMat < gia}
+                  onClick={() => dispatch({ type: 'muaKhoaHoc', khoaHocId: k.id })}
+                >
+                  {dinhDangTien(gia)}
+                </button>
+              </div>
+            )
+          })}
+        </>
+      )}
 
       <div className="muc">🌠 Ước nguyện — hạnh phúc mỗi năm</div>
+      <p className="mo-ta">
+        Giá giữ nguyên như thời trẻ, không leo theo lạm phát.
+      </p>
       {state.uocNguyenDaMua.map((id) => {
         const u = timUocNguyen(id)
         if (!u) return null
@@ -268,7 +297,7 @@ export default function TabTrangChu({ state, dispatch }: Props) {
         )
       })}
       {uocNguyen.map((u) => {
-        const gia = giaThucTe(state, u.gia)
+        const gia = u.gia
         const laKhatVong = u.id === state.khatVongId
         return (
           <div className="muc-mua" key={u.id}>

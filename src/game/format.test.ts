@@ -22,12 +22,29 @@ describe('định dạng tiền — không dùng từ viết tắt', () => {
     }
   })
 
+  it('ngưỡng đổi bậc: giá trị làm tròn lên tròn bậc thì nhảy bậc trên', () => {
+    expect(dinhDangTien(999_500)).toBe('1 triệu')
+    expect(dinhDangTien(999_600_000)).toBe('1 tỷ')
+    expect(dinhDangTien(999.6)).toBe('1 nghìn')
+  })
+
+  it('dưới ngưỡng đổi bậc thì giữ bậc dưới (phần số ≥ 100 làm tròn nguyên cho gọn)', () => {
+    expect(dinhDangTien(999_400)).toBe('999 nghìn')
+    expect(dinhDangTien(99_940)).toBe('99,9 nghìn')
+  })
+
+  it('số rất lớn của ván trăm năm có dấu chấm phân cách nghìn', () => {
+    expect(dinhDangTien(79_004 * TY)).toBe('79.004 tỷ')
+    expect(dinhDangTien(1_250 * TY)).toBe('1.250 tỷ')
+  })
+
   it('dạng đầy đủ dùng chữ "đồng"', () => {
     expect(dinhDangDayDu(1_234_567)).toMatch(/đồng$/)
   })
 
-  it('phần trăm giữ nguyên hành vi cũ', () => {
+  it('phần trăm dùng dấu trừ chuẩn (U+2212) như phần hiển thị tiền', () => {
     expect(dinhDangPhanTram(0.125)).toBe('+12,5%')
-    expect(dinhDangPhanTram(-0.05)).toBe('-5,0%')
+    expect(dinhDangPhanTram(-0.05)).toBe('−5,0%')
+    expect(dinhDangPhanTram(0)).toBe('0,0%')
   })
 })

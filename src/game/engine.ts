@@ -1,4 +1,4 @@
-import { CONFIG } from './config'
+import { CONFIG, TY } from './config'
 import {
   CO_HOI,
   KHOA_HOC,
@@ -76,9 +76,23 @@ export function traNoMoiNam(s: GameState): Tien {
   return s.khoanVay.reduce((t, v) => t + v.thanhToanMoiNam, 0)
 }
 
-/** Phí bảo hiểm y tế năm nay. */
+/**
+ * Phí bảo hiểm y tế năm nay. Neo vào mức lớn hơn giữa lương và một phần chi phí
+ * sinh hoạt (để lương hưu thấp không làm phí rẻ như cho), và leo theo tuổi già.
+ */
 export function phiBaoHiem(s: GameState): Tien {
-  return Math.round(s.luong * CONFIG.baoHiemTyLeLuong)
+  const ct = CONFIG.cotTruyen
+  const tuoi = ct.tuoiBatDau + s.nam - 1
+  const heSoTuoi =
+    1 + Math.max(0, tuoi - ct.tuoiNghiHuu) * ct.baoHiemTangPhiMoiNamSauHuu
+  const canCu = Math.max(s.luong, s.chiPhiHangNam * ct.baoHiemToiThieuTheoChiPhi)
+  return Math.round(canCu * CONFIG.baoHiemTyLeLuong * heSoTuoi)
+}
+
+/** Tỉ lệ viện phí người chơi tự gánh dù đang có bảo hiểm (đồng trả tuổi già). */
+export function tyLeDongTra(tuoi: number): number {
+  const ct = CONFIG.cotTruyen
+  return tuoi >= ct.baoHiemDongTraTuoi ? ct.baoHiemTyLeDongTra : 0
 }
 
 export const dangCoBaoHiem = (s: GameState): boolean => s.baoHiemDenNam >= s.nam
@@ -137,12 +151,60 @@ export function hanhPhucTuUocNguyen(s: GameState): number {
 export const daDatKhatVong = (s: GameState): boolean =>
   s.uocNguyenDaMua.includes(s.khatVongId)
 
+/* ---------- Cốt truyện trăm năm ---------- */
+
+/** Tuổi của nhân vật ở năm thứ `nam` (năm 1 = tuổi bắt đầu). */
+export const tuoiTaiNam = (nam: number): number =>
+  CONFIG.cotTruyen.tuoiBatDau + nam - 1
+
+export const tuoiHienTai = (s: GameState): number => tuoiTaiNam(s.nam)
+
+/** Số con còn đang nuôi (chưa tới tuổi tự lập) tính tại năm `nam`. */
+export function soConDangNuoi(conCai: readonly number[], nam: number): number {
+  return conCai.filter((namSinh) => nam - namSinh < CONFIG.cotTruyen.conTuoiTuLap)
+    .length
+}
+
+/** Hệ số chi phí cố định theo hoàn cảnh gia đình ở năm `nam`. */
+export function tinhHeSoChiPhi(
+  daKetHon: boolean,
+  conCai: readonly number[],
+  nam: number,
+): number {
+  const ct = CONFIG.cotTruyen
+  return (
+    (1 + (daKetHon ? ct.cuoiTangChiPhi : 0)) *
+    Math.pow(1 + ct.conTangChiPhi, soConDangNuoi(conCai, nam))
+  )
+}
+
 /* ============================================================
  *  Khởi tạo ván mới
  * ============================================================ */
 
-function rutThe(rng: Rng, soLuong: number): TheTieuDung[] {
-  const con = [...THE_TIEU_DUNG]
+interface BoiCanhRutThe {
+  daKetHon: boolean
+  conCai: readonly number[]
+  nam: number
+  /** id các thẻ đã rút năm trước — loại khỏi bộ rút để tránh lặp */
+  loaiTru: readonly string[]
+}
+
+function rutThe(rng: Rng, soLuong: number, boiCanh: BoiCanhRutThe): TheTieuDung[] {
+  const tuoi = tuoiTaiNam(boiCanh.nam)
+  // Thẻ con nhỏ chỉ hợp khi còn con dưới tuổi thiếu niên; con 18-20 tuổi mà
+  // rút "chiếc xe đạp đầu tiên cho con" thì hỏng mạch truyện.
+  const coConNho = boiCanh.conCai.some(
+    (namSinh) => boiCanh.nam - namSinh < CONFIG.cotTruyen.conTuoiToiDaTheConNho,
+  )
+  const con = THE_TIEU_DUNG.filter((t) => {
+    if (boiCanh.loaiTru.includes(t.id)) return false
+    if (t.tuoiToiDa !== undefined && tuoi > t.tuoiToiDa) return false
+    if (t.giaiDoan === 'giaDinh') return boiCanh.daKetHon
+    if (t.giaiDoan === 'conCai') return coConNho
+    if (t.giaiDoan === 'tuoiGia') return tuoi >= CONFIG.cotTruyen.tuoiNghiHuu
+    return true
+  })
   const kq: TheTieuDung[] = []
   for (let i = 0; i < soLuong && con.length > 0; i++) {
     const idx = Math.floor(rng.next() * con.length)
@@ -164,6 +226,12 @@ function rutCoHoi(rng: Rng, soLuong: number) {
 export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9)): GameState {
   const nghe = timNghe(ngheId) ?? NGHE[0]!
   const rng = taoRng(seed, 0)
+  const ct = CONFIG.cotTruyen
+
+  // Hẹn lịch cột mốc đời người ngay từ đầu ván — tất định theo seed.
+  const namCuoi = rng.nguyen(ct.cuoiTuoiSomNhat, ct.cuoiTuoiMuonNhat) - ct.tuoiBatDau + 1
+  const namCon1 = namCuoi + rng.nguyen(ct.conSauCuoiMin, ct.conSauCuoiMax)
+  const namCon2 = namCon1 + rng.nguyen(ct.con2SauCon1Min, ct.con2SauCon1Max)
 
   const giaTaiSan = {} as Record<AssetId, Tien>
   const soHuu = {} as Record<AssetId, number>
@@ -184,7 +252,12 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     lichSuGia[ts.id] = quaKhu
   }
 
-  const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax))
+  const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax), {
+    daKetHon: false,
+    conCai: [],
+    nam: 1,
+    loaiTru: [],
+  })
   const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam)
 
   return {
@@ -214,7 +287,14 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     khoanVay: [],
     doanhNghiep: [],
     canhBacDangCho: [],
-    soConDaSinh: 0,
+
+    cotTruyen: { namCuoi, namSinhCon: [namCon1, namCon2] },
+    daKetHon: false,
+    conCai: [],
+    daNghiHuu: false,
+    daDatMucTieu: false,
+    mocTaiSanDaQua: [],
+    theNamTruoc: theConLai.map((t) => t.id),
 
     theConLai,
     coHoiNamNay,
@@ -230,11 +310,53 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
  *  Chuyển năm — nơi tập trung toàn bộ toán kinh tế
  * ============================================================ */
 
+/** Phần trăm kiểu Việt Nam dùng trong lời kể sự kiện: 4,3 chứ không phải 4.3 */
+const soPhanTram = (v: number): string => (v * 100).toFixed(1).replace('.', ',')
+
+/** Chuyện đời thường của tuổi già — buồn vui đan xen, không dính tới tiền bạc. */
+const CHUYEN_TUOI_GIA = [
+  {
+    tieuDe: 'Người bạn cũ ra đi',
+    moTa: 'Một người bạn thân thời đi làm qua đời. Bạn ngồi lặng rất lâu sau đám tang.',
+    hanhPhuc: -8,
+  },
+  {
+    tieuDe: 'Cháu về chơi cả mùa hè',
+    moTa: 'Nhà bỗng rộn tiếng trẻ con. Bạn dạy cháu tưới cây và kể chuyện ngày xưa.',
+    hanhPhuc: 12,
+  },
+  {
+    tieuDe: 'Viết lại chuyện đời mình',
+    moTa: 'Bạn ngồi ghi lại hành trình mấy chục năm qua cho con cháu đọc.',
+    hanhPhuc: 8,
+  },
+  {
+    tieuDe: 'Đầu gối trở trời',
+    moTa: 'Xương khớp không còn nghe lời như trước, đi lại chậm hẳn đi.',
+    hanhPhuc: -5,
+  },
+  {
+    tieuDe: 'Họp lớp sau nửa thế kỷ',
+    moTa: 'Những mái đầu bạc gặp lại nhau, nhắc tên nhau vẫn đúng như thuở đôi mươi.',
+    hanhPhuc: 10,
+  },
+] as const
+
 function chuyenNam(s: GameState): GameState {
   const rng = taoRng(s.seed, s.rngCursor)
   const suKien: SuKien[] = []
   let tienMat = s.tienMat
   let hanhPhuc = s.hanhPhuc
+
+  /**
+   * Cộng hạnh phúc và trả về số điểm THỰC nhận sau khi áp trần mềm/trần cứng/sàn 0.
+   * Sự kiện phải kể đúng số điểm thật, không kể con số danh nghĩa.
+   */
+  const apHanhPhuc = (delta: number): number => {
+    const truoc = hanhPhuc
+    hanhPhuc = themHanhPhuc(hanhPhuc, delta)
+    return hanhPhuc - truoc
+  }
 
   /* --- 1. Lạm phát của năm --- */
   const lamPhat = rng.khoang(CONFIG.lamPhatMin, CONFIG.lamPhatMax)
@@ -262,9 +384,13 @@ function chuyenNam(s: GameState): GameState {
     }
   }
 
-  /* --- 3. Thu nhập thụ động từ doanh nghiệp --- */
+  /* --- 3. Thu nhập thụ động từ doanh nghiệp + đóng góp của bạn đời --- */
   const thuDong = thuNhapThuDong(s)
   tienMat += thuDong
+  const thuNhapBanDoi = s.daKetHon
+    ? Math.round(s.luong * CONFIG.cotTruyen.cuoiThuNhapBanDoi)
+    : 0
+  tienMat += thuNhapBanDoi
 
   /* --- 4. Trả nợ --- */
   let khoanVay = s.khoanVay
@@ -292,57 +418,227 @@ function chuyenNam(s: GameState): GameState {
     })
   }
 
-  /* --- 6. Sự kiện ngẫu nhiên --- */
-  const sk = CONFIG.suKien
+  /* --- 6. Cột mốc cuộc đời theo kịch bản --- */
+  const ct = CONFIG.cotTruyen
+  const tuoiNamNay = tuoiTaiNam(s.nam)
+  let daKetHon = s.daKetHon
+  let conCai = s.conCai
+  let daNghiHuu = s.daNghiHuu
+  let nghiHuuNamNay = false
 
-  // Ốm đau
-  if (rng.next() < sk.omDauXacSuat) {
-    if (dangCoBaoHiem(s)) {
+  // Lễ cưới
+  if (!daKetHon && s.nam >= s.cotTruyen.namCuoi) {
+    daKetHon = true
+    const chiPhiCuoi = Math.round(s.chiPhiHangNam * ct.cuoiChiPhiTheoChiPhiNam)
+    tienMat -= chiPhiCuoi
+    const hpCuoi = apHanhPhuc(ct.cuoiHanhPhuc)
+    suKien.push({
+      loai: 'ketHon',
+      tieuDe: `Lễ cưới ở tuổi ${tuoiNamNay}`,
+      moTa: `Bạn lập gia đình. Từ nay bạn đời góp thêm ${Math.round(
+        ct.cuoiThuNhapBanDoi * 100,
+      )}% lương của bạn mỗi năm, đổi lại chi phí gia đình tăng ${Math.round(
+        ct.cuoiTangChiPhi * 100,
+      )}%.`,
+      tienThayDoi: -chiPhiCuoi,
+      hanhPhucThayDoi: hpCuoi,
+    })
+  }
+
+  // Sinh con theo lịch đã hẹn
+  if (daKetHon) {
+    for (const namSinh of s.cotTruyen.namSinhCon) {
+      if (s.nam === namSinh) {
+        conCai = [...conCai, s.nam]
+        const hpSinhCon = apHanhPhuc(ct.sinhConHanhPhuc)
+        suKien.push({
+          loai: 'sinhCon',
+          tieuDe:
+            conCai.length === 1
+              ? 'Chào đón con đầu lòng'
+              : 'Chào đón con thứ hai',
+          moTa: `Niềm vui lớn của cả nhà. Chi phí cố định tăng ${Math.round(
+            ct.conTangChiPhi * 100,
+          )}% cho tới khi con tự lập ở tuổi ${ct.conTuoiTuLap}.`,
+          tienThayDoi: 0,
+          hanhPhucThayDoi: hpSinhCon,
+        })
+      }
+    }
+  }
+
+  // Các con lớn lên: vào đại học, rồi tự lập
+  for (const namSinh of s.conCai) {
+    const tuoiCon = s.nam - namSinh
+    if (tuoiCon === ct.conTuoiDaiHoc) {
+      const hocPhi = Math.round(s.chiPhiHangNam * ct.conDaiHocChiPhiTheoChiPhiNam)
+      tienMat -= hocPhi
+      const hpDaiHoc = apHanhPhuc(ct.conDaiHocHanhPhuc)
       suKien.push({
-        loai: 'omDau',
-        tieuDe: 'Nằm viện một đợt',
-        moTa: 'May là bảo hiểm y tế còn hiệu lực, toàn bộ viện phí được chi trả.',
-        tienThayDoi: 0,
-        hanhPhucThayDoi: 0,
+        loai: 'conVaoDaiHoc',
+        tieuDe: 'Con đỗ đại học',
+        moTa: 'Cả nhà tự hào. Bạn đóng trọn gói học phí bốn năm cho con.',
+        tienThayDoi: -hocPhi,
+        hanhPhucThayDoi: hpDaiHoc,
       })
-    } else {
-      const chiPhi = Math.round(s.luong * sk.omDauChiPhiTyLeLuong)
-      tienMat -= chiPhi
-      hanhPhuc = themHanhPhuc(hanhPhuc, -sk.omDauMatHanhPhuc)
+    }
+    if (tuoiCon === ct.conTuoiSinhChau) {
+      const hpOngBa = apHanhPhuc(ct.lenChucOngBaHanhPhuc)
       suKien.push({
-        loai: 'omDau',
-        tieuDe: 'Nằm viện một đợt',
-        moTa: 'Bạn không có bảo hiểm y tế nên phải tự trả toàn bộ viện phí.',
-        tienThayDoi: -chiPhi,
-        hanhPhucThayDoi: -sk.omDauMatHanhPhuc,
+        loai: 'lenChucOngBa',
+        tieuDe: 'Lên chức ông bà',
+        moTa: 'Con bạn có con đầu lòng. Trong nhà lại có tiếng trẻ con.',
+        tienThayDoi: 0,
+        hanhPhucThayDoi: hpOngBa,
+      })
+    }
+    if (tuoiCon === ct.conTuoiTuLap) {
+      const hpTuLap = apHanhPhuc(ct.conTuLapHanhPhuc)
+      suKien.push({
+        loai: 'conTuLap',
+        tieuDe: 'Con trưởng thành, tự lập',
+        moTa: 'Con ra ở riêng và tự nuôi sống mình — chi phí gia đình nhẹ hẳn đi.',
+        tienThayDoi: 0,
+        hanhPhucThayDoi: hpTuLap,
       })
     }
   }
 
-  // Sinh con
-  let heSoChiPhi = s.heSoChiPhi
-  let soConDaSinh = s.soConDaSinh
-  if (
-    s.nam >= sk.sinhConNamSomNhat &&
-    soConDaSinh < sk.sinhConToiDa &&
-    rng.next() < sk.sinhConXacSuat
-  ) {
-    soConDaSinh += 1
-    heSoChiPhi *= 1 + sk.sinhConTangChiPhi
-    hanhPhuc = themHanhPhuc(hanhPhuc, sk.sinhConHanhPhuc)
+  // Nghỉ hưu
+  if (!daNghiHuu && tuoiNamNay >= ct.tuoiNghiHuu) {
+    daNghiHuu = true
+    nghiHuuNamNay = true
     suKien.push({
-      loai: 'sinhCon',
-      tieuDe: 'Gia đình có thêm thành viên',
-      moTa: `Hạnh phúc tăng mạnh, nhưng chi phí cố định tăng ${Math.round(
-        sk.sinhConTangChiPhi * 100,
-      )}% vĩnh viễn.`,
+      loai: 'nghiHuu',
+      tieuDe: `Nghỉ hưu ở tuổi ${ct.tuoiNghiHuu}`,
+      moTa: `Từ năm sau, lương hưu bằng ${Math.round(
+        ct.tyLeLuongHuu * 100,
+      )}% lương cuối và chỉ tăng theo lạm phát. Thu nhập thụ động giờ là chỗ dựa chính.`,
       tienThayDoi: 0,
-      hanhPhucThayDoi: sk.sinhConHanhPhuc,
+      hanhPhucThayDoi: 0,
     })
   }
 
-  // Thưởng Tết
-  if (rng.next() < sk.thuongTetXacSuat) {
+  // Mừng thọ
+  if ((ct.mungThoTuoi as readonly number[]).includes(tuoiNamNay)) {
+    const hpMungTho = apHanhPhuc(ct.mungThoHanhPhuc)
+    suKien.push({
+      loai: 'mungTho',
+      tieuDe: `Mừng thọ ${tuoiNamNay} tuổi`,
+      moTa: 'Con cháu, bạn bè quây quần chúc thọ. Một cột mốc của đời người.',
+      tienThayDoi: 0,
+      hanhPhucThayDoi: hpMungTho,
+    })
+  }
+
+  /* --- 7. Sự kiện ngẫu nhiên --- */
+  const sk = CONFIG.suKien
+
+  // Ốm đau — tuổi càng cao sau nghỉ hưu càng dễ bệnh
+  const xacSuatOmDau = Math.min(
+    ct.omDauXacSuatToiDa,
+    sk.omDauXacSuat +
+      (daNghiHuu ? Math.max(0, tuoiNamNay - ct.tuoiNghiHuu) * ct.omDauTangMoiNamSauHuu : 0),
+  )
+  if (rng.next() < xacSuatOmDau) {
+    // Viện phí neo vào cả lương lẫn chi phí sinh hoạt: về hưu lương thấp
+    // nhưng chi phí vẫn cao, ốm đau phải còn sức nặng.
+    const vienPhi = Math.round(
+      Math.max(
+        s.luong * sk.omDauChiPhiTyLeLuong,
+        s.chiPhiHangNam * sk.omDauChiPhiTyLeChiPhi,
+      ),
+    )
+    const tieuDeOm = rng.chon(
+      tuoiNamNay >= ct.baoHiemDongTraTuoi
+        ? ([
+            'Một đợt điều trị dài ngày',
+            'Nhập viện vì huyết áp',
+            'Ca mổ ở tuổi xế chiều',
+          ] as const)
+        : (['Nằm viện một đợt', 'Một trận ốm nặng'] as const),
+    )
+    if (dangCoBaoHiem(s)) {
+      const tyLeTuTra = tyLeDongTra(tuoiNamNay)
+      const tuTra = Math.round(vienPhi * tyLeTuTra)
+      tienMat -= tuTra
+      suKien.push({
+        loai: 'omDau',
+        tieuDe: tieuDeOm,
+        moTa:
+          tuTra > 0
+            ? `Tuổi này bảo hiểm chỉ còn chi trả ${Math.round(
+                (1 - tyLeTuTra) * 100,
+              )}% viện phí, phần còn lại bạn tự gánh.`
+            : 'May là bảo hiểm y tế còn hiệu lực, toàn bộ viện phí được chi trả.',
+        tienThayDoi: -tuTra,
+        hanhPhucThayDoi: 0,
+      })
+    } else {
+      tienMat -= vienPhi
+      const hpOm = apHanhPhuc(-sk.omDauMatHanhPhuc)
+      suKien.push({
+        loai: 'omDau',
+        tieuDe: tieuDeOm,
+        moTa: 'Bạn không có bảo hiểm y tế nên phải tự trả toàn bộ viện phí.',
+        tienThayDoi: -vienPhi,
+        hanhPhucThayDoi: hpOm,
+      })
+    }
+  }
+
+  // Chuyện tuổi già — để ba thập kỷ cuối không trôi qua trong im lặng
+  if (
+    tuoiNamNay >= ct.tuoiGiaSuKienTuTuoi &&
+    rng.next() < ct.tuoiGiaSuKienXacSuat
+  ) {
+    const chuyen = rng.chon(CHUYEN_TUOI_GIA)
+    const hpTuoiGia = apHanhPhuc(chuyen.hanhPhuc)
+    suKien.push({
+      loai: 'tuoiGia',
+      tieuDe: chuyen.tieuDe,
+      moTa: chuyen.moTa,
+      tienThayDoi: 0,
+      hanhPhucThayDoi: hpTuoiGia,
+    })
+  }
+
+  // Thăng chức — chỉ khi còn đi làm
+  let thangChucTang = 0
+  if (!daNghiHuu && rng.next() < sk.thangChucXacSuat) {
+    thangChucTang = rng.khoang(sk.thangChucTangLuongMin, sk.thangChucTangLuongMax)
+    suKien.push({
+      loai: 'thangChuc',
+      tieuDe: 'Được thăng chức',
+      moTa: `Nỗ lực cả năm được ghi nhận. Lương năm tới tăng thêm ${soPhanTram(
+        thangChucTang,
+      )}% ngoài mức thường lệ.`,
+      tienThayDoi: 0,
+      hanhPhucThayDoi: 0,
+    })
+  }
+
+  // Sự cố đời sống
+  if (rng.next() < sk.suCoXacSuat) {
+    const chiPhiSuCo = Math.round(s.chiPhiHangNam * sk.suCoChiPhiTyLeChiPhi)
+    const moTaSuCo = rng.chon([
+      'Chiếc xe máy dở chứng giữa đường, phải thay phụ tùng.',
+      'Mái nhà thấm dột sau mùa mưa, phải gọi thợ sửa gấp.',
+      'Tủ lạnh và máy giặt rủ nhau hỏng cùng một tháng.',
+    ] as const)
+    tienMat -= chiPhiSuCo
+    const hpSuCo = apHanhPhuc(-sk.suCoMatHanhPhuc)
+    suKien.push({
+      loai: 'suCo',
+      tieuDe: 'Sự cố đời sống',
+      moTa: moTaSuCo,
+      tienThayDoi: -chiPhiSuCo,
+      hanhPhucThayDoi: hpSuCo,
+    })
+  }
+
+  // Thưởng Tết — chỉ khi còn đi làm
+  if (!daNghiHuu && rng.next() < sk.thuongTetXacSuat) {
     const thuong = Math.round(s.luong * sk.thuongTetTyLeLuong)
     tienMat += thuong
     suKien.push({
@@ -358,35 +654,105 @@ function chuyenNam(s: GameState): GameState {
   suKien.push({
     loai: 'lamPhat',
     tieuDe: 'Lạm phát',
-    moTa: `Mọi chi phí, học phí, bảo hiểm và giá món ước nguyện tăng ${(
-      lamPhat * 100
-    ).toFixed(1)}%.`,
+    moTa: `Mọi chi phí, học phí, bảo hiểm và giá cơ hội tăng ${soPhanTram(lamPhat)}%.`,
     tienThayDoi: 0,
     hanhPhucThayDoi: 0,
   })
 
-  /* --- 7. Lương tăng: bám lạm phát + phần tăng thực --- */
-  const tangThuc = rng.khoang(CONFIG.tangLuongThucMin, CONFIG.tangLuongThucMax)
-  const tangLuong = (CONFIG.luongBamLamPhat ? lamPhat : 0) + tangThuc
-  const luongMoi = Math.round(s.luong * (1 + tangLuong))
+  /* --- 8. Lương: đi làm thì bám lạm phát + tăng thực + thăng chức;
+   *        năm nghỉ hưu chuyển sang lương hưu; đã hưu thì chỉ bám lạm phát --- */
+  let luongMoi: Tien
+  if (nghiHuuNamNay) {
+    luongMoi = Math.round(s.luong * ct.tyLeLuongHuu)
+  } else if (daNghiHuu) {
+    luongMoi = Math.round(s.luong * (1 + lamPhat))
+  } else {
+    const tangThuc = rng.khoang(CONFIG.tangLuongThucMin, CONFIG.tangLuongThucMax)
+    luongMoi = Math.round(
+      s.luong * (1 + (CONFIG.luongBamLamPhat ? lamPhat : 0) + tangThuc + thangChucTang),
+    )
+  }
+  const tangLuong = s.luong > 0 ? luongMoi / s.luong - 1 : 0
   tienMat += luongMoi
 
-  /* --- 8. Hạnh phúc: phạt khát vọng và thưởng ước nguyện --- */
-  const phat = daDatKhatVong(s) ? 0 : CONFIG.phatKhatVongMoiNam
-  if (phat > 0) hanhPhuc = themHanhPhuc(hanhPhuc, -phat)
-  const thuongUocNguyen = hanhPhucTuUocNguyen(s)
-  if (thuongUocNguyen > 0) hanhPhuc = themHanhPhuc(hanhPhuc, thuongUocNguyen)
+  /* --- 9. Hạnh phúc: phạt khát vọng và thưởng ước nguyện --- */
+  // Ghi lại số điểm THỰC bị trừ / thực nhận, không phải con số danh nghĩa —
+  // để bảng tổng kết cộng lại đúng bằng mức hạnh phúc thay đổi trong năm.
+  const phatDanhNghia = daDatKhatVong(s) ? 0 : CONFIG.phatKhatVongMoiNam
+  const phat = phatDanhNghia > 0 ? -apHanhPhuc(-phatDanhNghia) : 0
+  const thuongDanhNghia = hanhPhucTuUocNguyen(s)
+  const thuongUocNguyen = thuongDanhNghia > 0 ? apHanhPhuc(thuongDanhNghia) : 0
 
-  /* --- 9. Áp lạm phát lên mặt bằng giá --- */
+  /* --- 10. Áp lạm phát + hoàn cảnh gia đình lên mặt bằng giá --- */
+  const namMoi = s.nam + 1
   const chiSoGia = s.chiSoGia * (1 + lamPhat)
+  const heSoChiPhi = tinhHeSoChiPhi(daKetHon, conCai, namMoi)
   const nghe = timNghe(s.ngheId)!
   const chiPhiHangNam = Math.round(nghe.chiPhi * chiSoGia * heSoChiPhi)
 
-  /* --- 10. Rút bài cho năm mới --- */
-  const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax))
+  /* --- 11. Thiếu tiền mặt thì buộc phải bán tài sản trang trải --- */
+  let soHuu = s.soHuu
+  if (tienMat < 0) {
+    soHuu = { ...s.soHuu }
+    let tienBanDuoc = 0
+    const thuTuBan: AssetId[] = ['traiPhieu', 'vang', 'coPhieu', 'crypto', 'batDongSan']
+    for (const id of thuTuBan) {
+      if (tienMat >= 0) break
+      const gia = giaMoi[id]
+      const canBan = Math.min(Math.ceil(-tienMat / gia), soHuu[id])
+      if (canBan <= 0) continue
+      soHuu[id] -= canBan
+      tienMat += canBan * gia
+      tienBanDuoc += canBan * gia
+    }
+    if (tienBanDuoc > 0) {
+      suKien.push({
+        loai: 'banTaiSan',
+        tieuDe: 'Bán tài sản trang trải',
+        moTa: 'Chi tiêu trong năm vượt số tiền mặt đang có, đành bán bớt tài sản để cân đối.',
+        tienThayDoi: tienBanDuoc,
+        hanhPhucThayDoi: 0,
+      })
+    }
+    if (tienMat < 0) {
+      const hpTung = apHanhPhuc(-10)
+      suKien.push({
+        loai: 'banTaiSan',
+        tieuDe: 'Túng thiếu',
+        moTa: 'Bán hết tài sản vẫn chưa đủ bù chi tiêu, phải giật gấu vá vai qua ngày.',
+        tienThayDoi: 0,
+        hanhPhucThayDoi: hpTung,
+      })
+    }
+  }
+
+  /* --- 12. Mốc tài sản trung gian --- */
+  const tongSauNam =
+    tienMat + TAI_SAN.reduce((t, ts) => t + soHuu[ts.id] * giaMoi[ts.id], 0)
+  let mocTaiSanDaQua = s.mocTaiSanDaQua
+  for (const moc of CONFIG.mocTaiSan) {
+    if (tongSauNam >= moc && !mocTaiSanDaQua.includes(moc)) {
+      mocTaiSanDaQua = [...mocTaiSanDaQua, moc]
+      const hpMoc = apHanhPhuc(CONFIG.mocTaiSanHanhPhuc)
+      suKien.push({
+        loai: 'mocTaiSan',
+        tieuDe: `Cột mốc tài sản ${(moc / TY).toString().replace('.', ',')} tỷ`,
+        moTa: 'Thành quả tích luỹ đáng tự hào trên hành trình tới mục tiêu.',
+        tienThayDoi: 0,
+        hanhPhucThayDoi: hpMoc,
+      })
+    }
+  }
+
+  /* --- 13. Rút bài cho năm mới, theo giai đoạn đời và không lặp năm trước --- */
+  const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax), {
+    daKetHon,
+    conCai,
+    nam: namMoi,
+    loaiTru: s.theNamTruoc,
+  })
   const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam)
 
-  const namMoi = s.nam + 1
   const sauChuyen: GameState = {
     ...s,
     rngCursor: rng.cursor,
@@ -398,12 +764,17 @@ function chuyenNam(s: GameState): GameState {
     chiPhiHangNam,
     chiSoGia,
     heSoChiPhi,
-    soConDaSinh,
     daTraChiPhiNamNay: false,
+    soHuu,
     giaTaiSan: giaMoi,
     lichSuGia,
     khoanVay,
     canhBacDangCho: [],
+    daKetHon,
+    conCai,
+    daNghiHuu,
+    mocTaiSanDaQua,
+    theNamTruoc: theConLai.map((t) => t.id),
     theConLai,
     coHoiNamNay,
   }
@@ -415,6 +786,7 @@ function chuyenNam(s: GameState): GameState {
     luong: luongMoi,
     tangLuong,
     thuNhapThuDong: thuDong,
+    thuNhapBanDoi,
     loiTucTaiSan,
     phatKhatVong: phat,
     hanhPhucTuUocNguyen: thuongUocNguyen,
@@ -484,6 +856,8 @@ export function reducer(s: GameState, a: Action): GameState {
 
     case 'muaKhoaHoc': {
       if (!choPhepHanhDongTuDo(s)) return s
+      // Đã nghỉ hưu thì học thêm không còn tăng được lương
+      if (s.daNghiHuu) return s
       const kh = timKhoaHoc(a.khoaHocId)
       if (!kh || s.khoaHocDaMua.includes(kh.id)) return s
       const gia = giaThucTe(s, kh.gia)
@@ -510,7 +884,9 @@ export function reducer(s: GameState, a: Action): GameState {
       if (!choPhepHanhDongTuDo(s)) return s
       const un = timUocNguyen(a.uocNguyenId)
       if (!un || s.uocNguyenDaMua.includes(un.id)) return s
-      const gia = giaThucTe(s, un.gia)
+      // Giá ước nguyện khoá tại thời trẻ, không leo theo lạm phát —
+      // để giấc mơ không chạy nhanh hơn khả năng tích luỹ của người chơi.
+      const gia = un.gia
       if (s.tienMat < gia) return s
       return {
         ...s,
@@ -615,11 +991,21 @@ export function reducer(s: GameState, a: Action): GameState {
 
       const sau = chuyenNam(s)
 
-      if (tongTaiSan(sau) >= CONFIG.mucTieuTaiSan) {
+      if (!sau.daDatMucTieu && tongTaiSan(sau) >= CONFIG.mucTieuTaiSan) {
         return {
           ...sau,
+          daDatMucTieu: true,
           trangThai: 'thang',
-          lyDoKetThuc: `Đạt mục tiêu tài sản sau ${s.nam} năm.`,
+          lyDoKetThuc: `Đạt mục tiêu tài sản sau ${s.nam} năm, ở tuổi ${tuoiTaiNam(s.nam)}.`,
+        }
+      }
+      if (tuoiTaiNam(sau.nam) > CONFIG.cotTruyen.tuoiVienMan) {
+        return {
+          ...sau,
+          trangThai: 'vienMan',
+          lyDoKetThuc: sau.daDatMucTieu
+            ? 'Bạn đã đi trọn hành trình một trăm năm — và mục tiêu tài sản đã chinh phục trên đường đi.'
+            : 'Bạn đã đi trọn hành trình một trăm năm cuộc đời.',
         }
       }
       return sau
@@ -627,8 +1013,14 @@ export function reducer(s: GameState, a: Action): GameState {
 
     case 'dongTongKet': {
       if (s.phase !== 'tongKet') return s
-      if (s.trangThai === 'thang') return { ...s, phase: 'ketThuc' }
+      if (s.trangThai !== 'dangChoi') return { ...s, phase: 'ketThuc' }
       return { ...s, phase: 'chiPhi', tongKet: null }
+    }
+
+    case 'choiTiepSauThang': {
+      // Đã thắng nhưng muốn sống tiếp trọn hành trình trăm năm
+      if (s.trangThai !== 'thang') return s
+      return { ...s, trangThai: 'dangChoi', phase: 'chiPhi', tongKet: null }
     }
 
     default:

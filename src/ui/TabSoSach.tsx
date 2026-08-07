@@ -1,3 +1,4 @@
+import { CONFIG } from '../game/config'
 import { TAI_SAN } from '../game/content'
 import {
   giaTriDauTu,
@@ -5,6 +6,7 @@ import {
   thuNhapThuDong,
   tongTaiSan,
   traNoMoiNam,
+  tuoiHienTai,
 } from '../game/engine'
 import { dinhDangTien, dinhDangPhanTram } from '../game/format'
 import type { GameState } from '../game/types'
@@ -16,7 +18,10 @@ import type { GameState } from '../game/types'
 export default function TabSoSach({ state }: { state: GameState }) {
   const thuDong = thuNhapThuDong(state)
   const traNo = traNoMoiNam(state)
-  const tongThu = state.luong + thuDong
+  const banDoi = state.daKetHon
+    ? Math.round(state.luong * CONFIG.cotTruyen.cuoiThuNhapBanDoi)
+    : 0
+  const tongThu = state.luong + thuDong + banDoi
   const tongChi = state.chiPhiHangNam + traNo
   const rong = tongThu - tongChi
 
@@ -25,14 +30,24 @@ export default function TabSoSach({ state }: { state: GameState }) {
     0,
   )
 
+  /** năm (trong game) chạm tuổi nghỉ hưu: tuổi 60 rơi vào năm 40 */
+  const namNghiHuu =
+    CONFIG.cotTruyen.tuoiNghiHuu - CONFIG.cotTruyen.tuoiBatDau + 1
+
   return (
     <>
       <div className="muc">💵 Dòng tiền một năm</div>
       <div className="the">
         <div className="hang">
-          <span className="hang-nhan">Lương</span>
+          <span className="hang-nhan">{state.daNghiHuu ? 'Lương hưu' : 'Lương'}</span>
           <span className="hang-gia-tri duong">{dinhDangTien(state.luong)}</span>
         </div>
+        {banDoi > 0 && (
+          <div className="hang">
+            <span className="hang-nhan">Bạn đời góp</span>
+            <span className="hang-gia-tri duong">{dinhDangTien(banDoi)}</span>
+          </div>
+        )}
         <div className="hang">
           <span className="hang-nhan">Thu nhập thụ động</span>
           <span className="hang-gia-tri duong">{dinhDangTien(thuDong)}</span>
@@ -91,6 +106,53 @@ export default function TabSoSach({ state }: { state: GameState }) {
         </div>
       </div>
 
+      <div className="muc">👪 Gia đình</div>
+      <div className="the">
+        <div className="hang">
+          <span className="hang-nhan">Tuổi hiện tại</span>
+          <span className="hang-gia-tri">{tuoiHienTai(state)} tuổi</span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">Hôn nhân</span>
+          <span className="hang-gia-tri">
+            {state.daKetHon ? `Kết hôn năm ${state.cotTruyen.namCuoi}` : 'Độc thân'}
+          </span>
+        </div>
+        {state.conCai.map((namSinh, i) => {
+          const tuoiCon = state.nam - namSinh
+          const trangThaiCon =
+            tuoiCon >= CONFIG.cotTruyen.conTuoiTuLap
+              ? 'đã tự lập'
+              : tuoiCon >= CONFIG.cotTruyen.conTuoiDaiHoc
+                ? 'đang học đại học'
+                : 'đang nuôi'
+          return (
+            <div className="hang" key={`con-${i}`}>
+              <span className="hang-nhan">
+                Con thứ {i + 1} — sinh năm {namSinh}
+              </span>
+              <span className="hang-gia-tri">{trangThaiCon}</span>
+            </div>
+          )
+        })}
+        <div className="hang">
+          <span className="hang-nhan">Nghỉ hưu</span>
+          <span className="hang-gia-tri">
+            {state.daNghiHuu
+              ? `Đã nghỉ hưu từ năm ${namNghiHuu}`
+              : state.nam >= namNghiHuu
+                ? 'Ngay cuối năm nay'
+                : `Còn ${namNghiHuu - state.nam} năm nữa`}
+          </span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">Hệ số chi phí gia đình</span>
+          <span className="hang-gia-tri">
+            ×{state.heSoChiPhi.toFixed(2).replace('.', ',')}
+          </span>
+        </div>
+      </div>
+
       <div className="muc">🛡️ Nghĩa vụ &amp; bảo vệ</div>
       <div className="the">
         <div className="hang">
@@ -106,10 +168,6 @@ export default function TabSoSach({ state }: { state: GameState }) {
               ? `Còn hiệu lực · ${dinhDangTien(phiBaoHiem(state))}/năm`
               : 'Chưa mua'}
           </span>
-        </div>
-        <div className="hang">
-          <span className="hang-nhan">Số con</span>
-          <span className="hang-gia-tri">{state.soConDaSinh}</span>
         </div>
         <div className="hang">
           <span className="hang-nhan">Chỉ số giá tích luỹ</span>

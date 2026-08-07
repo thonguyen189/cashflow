@@ -3,8 +3,44 @@
 Game mô phỏng tài chính cá nhân, chơi trên trình duyệt, một người chơi.
 Mỗi lượt là một năm: vừa tích luỹ tài sản, vừa giữ đủ hạnh phúc để đi tiếp.
 
-- **Thắng:** đạt mục tiêu tài sản (mặc định 10 tỷ) — không giới hạn số năm
+- **Thắng:** đạt mục tiêu tài sản (mặc định 10 tỷ) — không giới hạn số năm.
+  Thắng rồi vẫn có thể chọn **chơi tiếp** để sống trọn hành trình tới tuổi 100.
 - **Thua:** để hạnh phúc rơi xuống dưới 50 lúc kết thúc năm
+- **Viên mãn:** đi trọn hành trình tới tuổi 100 — ván khép lại bằng một kết thúc
+  riêng, nhìn lại cả cuộc đời
+
+## Cốt truyện trăm năm
+
+Nhân vật bắt đầu năm 1 ở tuổi 21. Các cột mốc đời người được hẹn lịch ngay khi
+tạo ván (tất định theo seed) và tự diễn ra khi tới năm đó:
+
+- **Cưới** (tuổi 26–32): tốn một năm chi phí sinh hoạt, cộng hạnh phúc; từ đó
+  bạn đời góp 25% lương của bạn mỗi năm, đổi lại chi phí gia đình tăng 20%.
+- **Hai con** lần lượt chào đời sau đám cưới: mỗi con đang nuôi cộng thêm 25%
+  chi phí cố định; con 18 tuổi thì đóng học phí **đại học** một lần; con 22 tuổi
+  thì **tự lập**, chi phí gia đình nhẹ hẳn đi.
+- **Lên chức ông bà** khi con tròn 30 tuổi.
+- **Nghỉ hưu** tuổi 60: lương còn 45% và từ đó chỉ tăng theo lạm phát; không còn
+  khoá học, thưởng Tết hay thăng chức; xác suất ốm đau tăng dần theo tuổi.
+- **Tuổi già có giá của nó:** phí bảo hiểm leo theo tuổi, và từ tuổi 70 bảo hiểm
+  chỉ còn chi trả 70% viện phí — phần còn lại người chơi tự gánh. Xen giữa là
+  những chuyện đời thường của tuổi già: bạn cũ ra đi, cháu về chơi, họp lớp.
+- **Mừng thọ** tuổi 70, 80, 90: con cháu quây quần, thưởng hạnh phúc.
+- Qua tuổi **100**: ván kết thúc viên mãn.
+
+Thẻ tiêu dùng cũng đổi theo giai đoạn đời: có thẻ chỉ xuất hiện khi đã lập
+gia đình, khi đang nuôi con nhỏ, hoặc khi đã sang tuổi già.
+
+Trên đường tới đích 10 tỷ có các **mốc tài sản trung gian** (1 tỷ · 2,5 tỷ ·
+5 tỷ) — chạm mỗi mốc lần đầu được ghi nhận thành sự kiện và thưởng hạnh phúc,
+để ván chơi dài luôn có cảm giác tiến bộ.
+
+Hai điểm tựa tài chính đáng chú ý:
+
+- **Ngân hàng:** lãi vay 8% mỗi năm, kỳ hạn tối đa 10 năm — vay để mua cơ hội
+  kinh doanh trở thành quyết định cân não thật sự.
+- **Ước nguyện:** giá được khoá ngay từ đầu ván, không leo theo lạm phát —
+  giấc mơ không chạy nhanh hơn khả năng tích luỹ của người chơi.
 
 ## Chạy
 
@@ -14,7 +50,7 @@ npm run dev        # mở http://localhost:5173
 ```
 
 ```bash
-npm test           # 53 test: logic engine + định dạng + mô phỏng cân bằng
+npm test           # logic engine + định dạng + mô phỏng cân bằng
 npm run build      # build ra thư mục dist/, mở bằng file:// cũng chạy
 ```
 

@@ -22,6 +22,9 @@ export interface Nghe {
   khatVongId: string
 }
 
+/** Thẻ chỉ xuất hiện ở giai đoạn đời tương ứng; không có = mọi giai đoạn. */
+export type GiaiDoanThe = 'giaDinh' | 'conCai' | 'tuoiGia'
+
 export interface TheTieuDung {
   id: string
   ten: string
@@ -30,6 +33,9 @@ export interface TheTieuDung {
   gia: Tien
   /** nhận thì +diem hạnh phúc, từ chối thì -diem */
   diem: number
+  giaiDoan?: GiaiDoanThe
+  /** thẻ chỉ còn hợp lý tới tuổi này (ví dụ chạy marathon, đổi điện thoại) */
+  tuoiToiDa?: number
 }
 
 export interface KhoaHoc {
@@ -103,6 +109,17 @@ export type SuKienLoai =
   | 'sinhCon'
   | 'thuongTet'
   | 'canhBacKetQua'
+  | 'ketHon'
+  | 'conVaoDaiHoc'
+  | 'conTuLap'
+  | 'lenChucOngBa'
+  | 'tuoiGia'
+  | 'nghiHuu'
+  | 'mungTho'
+  | 'thangChuc'
+  | 'suCo'
+  | 'banTaiSan'
+  | 'mocTaiSan'
 
 export interface SuKien {
   loai: SuKienLoai
@@ -128,6 +145,8 @@ export interface TongKetNam {
   luong: Tien
   tangLuong: number
   thuNhapThuDong: Tien
+  /** đóng góp của bạn đời trong năm (0 nếu chưa lập gia đình) */
+  thuNhapBanDoi: Tien
   loiTucTaiSan: { id: AssetId; ten: string; bienDong: number; loiTuc: Tien }[]
   phatKhatVong: number
   hanhPhucTuUocNguyen: number
@@ -167,7 +186,20 @@ export interface GameState {
   doanhNghiep: DoanhNghiep[]
   /** các ván cược đã đặt, sẽ mở kết quả ở cuối năm */
   canhBacDangCho: { coHoiId: string; gia: Tien }[]
-  soConDaSinh: number
+
+  /** ---------- Cốt truyện trăm năm ---------- */
+  /** lịch cột mốc đời người, hẹn sẵn khi tạo ván (tất định theo seed) */
+  cotTruyen: { namCuoi: number; namSinhCon: number[] }
+  daKetHon: boolean
+  /** năm sinh (theo năm trong game) của từng người con */
+  conCai: number[]
+  daNghiHuu: boolean
+  /** đã từng chạm mục tiêu tài sản — dùng cho chế độ chơi tiếp sau khi thắng */
+  daDatMucTieu: boolean
+  /** các mốc tài sản trung gian đã ghi nhận */
+  mocTaiSanDaQua: number[]
+  /** id các thẻ đã rút năm nay — năm sau không rút lại để tránh lặp */
+  theNamTruoc: string[]
 
   theConLai: TheTieuDung[]
   coHoiNamNay: CoHoi[]
@@ -175,7 +207,7 @@ export interface GameState {
   tongKet: TongKetNam | null
   lichSu: DongLichSu[]
 
-  trangThai: 'dangChoi' | 'thang' | 'thua'
+  trangThai: 'dangChoi' | 'thang' | 'thua' | 'vienMan'
   lyDoKetThuc?: string
 }
 
@@ -192,4 +224,6 @@ export type Action =
   | { type: 'quyetDinhCoHoi'; coHoiId: string; nhan: boolean }
   | { type: 'ketThucNam' }
   | { type: 'dongTongKet' }
+  /** thắng rồi vẫn tiếp tục sống trọn hành trình tới tuổi 100 */
+  | { type: 'choiTiepSauThang' }
   | { type: 'choiLai' }

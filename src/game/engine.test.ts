@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { CONFIG, TRIEU } from './config'
+import { CONFIG, TRIEU, TY } from './config'
 import { NGHE, THE_TIEU_DUNG, timNghe } from './content'
 import {
   giaThucTe,
   muaToiDa,
+  phiBaoHiem,
   reducer,
   taoGameMoi,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   tongTaiSan,
   traNoMoiNam,
+  tuoiTaiNam,
+  tyLeDongTra,
   vayToiDa,
 } from './engine'
 import type { GameState } from './types'
@@ -25,6 +28,19 @@ function duyetHetThe(s: GameState, nhan: boolean): GameState {
     cur = reducer(cur, { type: 'quyetDinhThe', nhan })
   }
   return cur
+}
+
+/**
+ * Đi trọn một năm để kiểm cốt truyện: cấp đủ tiền mặt, trả chi phí,
+ * từ chối hết thẻ, kéo hạnh phúc lên để không thua oan, rồi kết thúc năm.
+ * Trả về trạng thái đang ở phase 'tongKet' (chưa đóng tổng kết).
+ */
+function diTronMotNam(s: GameState, tienMat = 800 * TRIEU): GameState {
+  let cur: GameState = { ...s, tienMat }
+  cur = reducer(cur, { type: 'traChiPhi' })
+  cur = duyetHetThe(cur, false)
+  cur = { ...cur, hanhPhuc: 85 }
+  return reducer(cur, { type: 'ketThucNam' })
 }
 
 describe('khởi tạo', () => {
@@ -269,12 +285,38 @@ describe('điều kiện kết thúc', () => {
     expect(reducer(giau, { type: 'ketThucNam' }).trangThai).toBe('thang')
   })
 
-  it('không có giới hạn số năm — qua năm 100 vẫn chơi tiếp bình thường', () => {
+  it('thắng rồi vẫn chơi tiếp được tới viên mãn, không thắng lặp lại', () => {
     const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
-    const lauNam: GameState = { ...s0, nam: 100 }
-    const sau = reducer(lauNam, { type: 'ketThucNam' })
-    expect(sau.trangThai).toBe('dangChoi')
-    expect(sau.nam).toBe(101)
+    const giau: GameState = { ...s0, tienMat: CONFIG.mucTieuTaiSan * 2 }
+    const thang = reducer(giau, { type: 'ketThucNam' })
+    expect(thang.trangThai).toBe('thang')
+    expect(thang.daDatMucTieu).toBe(true)
+
+    const tiep = reducer(thang, { type: 'choiTiepSauThang' })
+    expect(tiep.trangThai).toBe('dangChoi')
+    expect(tiep.phase).toBe('chiPhi')
+
+    // Vẫn giàu hơn mục tiêu nhưng không kích hoạt thắng lần hai
+    const nam2 = diTronMotNam(tiep, tiep.tienMat)
+    expect(nam2.trangThai).toBe('dangChoi')
+
+    // Và tới hết năm 80 thì khép lại viên mãn, ghi nhận đã đạt mục tiêu
+    const cuoiDoi = diTronMotNam({ ...tiep, nam: 80 }, tiep.tienMat)
+    expect(cuoiDoi.trangThai).toBe('vienMan')
+    expect(cuoiDoi.lyDoKetThuc).toContain('chinh phục')
+  })
+
+  it('hết năm 80 — qua tuổi 100 — thì khép lại hành trình viên mãn', () => {
+    const s = diTronMotNam({ ...moiVan(), nam: 80 }, 500 * TRIEU)
+    expect(tuoiTaiNam(80)).toBe(CONFIG.cotTruyen.tuoiVienMan)
+    expect(s.trangThai).toBe('vienMan')
+    expect(s.lyDoKetThuc).toBeTruthy()
+  })
+
+  it('hết năm 79 chưa đạt mục tiêu thì vẫn đang chơi', () => {
+    const s = diTronMotNam({ ...moiVan(), nam: 79 }, 500 * TRIEU)
+    expect(s.trangThai).toBe('dangChoi')
+    expect(s.nam).toBe(80)
   })
 })
 
@@ -302,15 +344,38 @@ describe('mua sắm và học hành', () => {
     expect(reducer(s, { type: 'muaUocNguyen', uocNguyenId: 'xeMay' })).toBe(s)
   })
 
+  it('giá ước nguyện khoá tại đầu ván, không leo theo lạm phát', () => {
+    const s0 = reducer(moiVan('giaoVien'), { type: 'traChiPhi' })
+    const s: GameState = { ...s0, chiSoGia: 1.5, tienMat: 200 * TRIEU }
+    const sau = reducer(s, { type: 'muaUocNguyen', uocNguyenId: 'xeMay' })
+    expect(sau.uocNguyenDaMua).toContain('xeMay')
+    // Xe máy giá gốc 80 triệu — dù chỉ số giá đã 1,5 vẫn chỉ trừ đúng 80 triệu
+    expect(sau.tienMat).toBe(200 * TRIEU - 80 * TRIEU)
+  })
+
   it('mua món khát vọng thì hết bị phạt hạnh phúc và được thưởng mỗi năm', () => {
     const s0 = reducer(moiVan('giaoVien'), { type: 'traChiPhi' })
     let s: GameState = { ...s0, tienMat: 200 * TRIEU }
     s = reducer(s, { type: 'muaUocNguyen', uocNguyenId: 'xeMay' })
     expect(s.uocNguyenDaMua).toContain('xeMay')
     s = duyetHetThe(s, true)
+    // Neo dưới trần mềm để nhận trọn vẹn phần thưởng danh nghĩa
+    s = { ...s, hanhPhuc: 70 }
     s = reducer(s, { type: 'ketThucNam' })
     expect(s.tongKet!.phatKhatVong).toBe(0)
     expect(s.tongKet!.hanhPhucTuUocNguyen).toBe(5)
+  })
+
+  it('phần thưởng ước nguyện ghi số điểm THỰC nhận khi đã sát trần hạnh phúc', () => {
+    const s0 = reducer(moiVan('giaoVien'), { type: 'traChiPhi' })
+    let s: GameState = { ...s0, tienMat: 200 * TRIEU }
+    s = reducer(s, { type: 'muaUocNguyen', uocNguyenId: 'xeMay' })
+    s = duyetHetThe(s, false)
+    s = { ...s, hanhPhuc: CONFIG.hanhPhucTranCung }
+    s = reducer(s, { type: 'ketThucNam' })
+    // Danh nghĩa +5 nhưng đang ở sát trần nên phần thực nhận bị chiết khấu
+    expect(s.tongKet!.hanhPhucTuUocNguyen).toBeLessThan(5)
+    expect(s.tongKet!.hanhPhucTuUocNguyen).toBeGreaterThanOrEqual(0)
   })
 
   it('bảo hiểm chỉ có hiệu lực trong năm mua', () => {
@@ -359,6 +424,121 @@ describe('cơ hội kinh doanh', () => {
   })
 })
 
+describe('cốt truyện trăm năm', () => {
+  it('tuổi tính từ 21: năm 1 = 21 tuổi, năm 40 = 60 tuổi', () => {
+    expect(tuoiTaiNam(1)).toBe(CONFIG.cotTruyen.tuoiBatDau)
+    expect(tuoiTaiNam(40)).toBe(CONFIG.cotTruyen.tuoiNghiHuu)
+  })
+
+  it('cưới đúng năm đã hẹn, rồi sinh đúng hai con đúng năm trong cotTruyen', () => {
+    let s = moiVan()
+    const { namCuoi, namSinhCon } = s.cotTruyen
+    expect(namSinhCon).toHaveLength(2)
+    expect(namCuoi).toBeGreaterThanOrEqual(
+      CONFIG.cotTruyen.cuoiTuoiSomNhat - CONFIG.cotTruyen.tuoiBatDau + 1,
+    )
+
+    const suKienTheoNam = new Map<number, GameState['tongKet']>()
+    while (s.nam <= namSinhCon[1]! && s.trangThai === 'dangChoi') {
+      const namDang = s.nam
+      s = diTronMotNam(s)
+      suKienTheoNam.set(namDang, s.tongKet)
+
+      if (namDang === namCuoi) {
+        expect(s.tongKet!.suKien.some((k) => k.loai === 'ketHon')).toBe(true)
+        expect(s.daKetHon).toBe(true)
+        // Năm sau đã có gia đình → hệ số chi phí ít nhất 1,2
+        expect(s.heSoChiPhi).toBeGreaterThanOrEqual(1.2)
+      }
+      if (namDang === namCuoi + 1) {
+        // Bạn đời bắt đầu góp thu nhập từ năm sau đám cưới
+        expect(s.tongKet!.thuNhapBanDoi).toBeGreaterThan(0)
+      }
+      s = reducer(s, { type: 'dongTongKet' })
+    }
+    expect(s.trangThai).toBe('dangChoi')
+
+    const namCoSuKien = (loai: string) =>
+      [...suKienTheoNam]
+        .filter(([, tk]) => tk!.suKien.some((k) => k.loai === loai))
+        .map(([nam]) => nam)
+    expect(namCoSuKien('ketHon')).toEqual([namCuoi])
+    expect(namCoSuKien('sinhCon')).toEqual(namSinhCon)
+    expect(s.conCai).toEqual(namSinhCon)
+  })
+
+  it('nghỉ hưu ở năm 40 (tuổi 60): có sự kiện, lương hưu bằng 45% lương cũ', () => {
+    const goc = moiVan('giaoVien')
+    const luongTruoc = goc.luong
+    const s = diTronMotNam({ ...goc, nam: 40 })
+    expect(s.tongKet!.suKien.some((k) => k.loai === 'nghiHuu')).toBe(true)
+    expect(s.daNghiHuu).toBe(true)
+    const luongHuu = Math.round(luongTruoc * CONFIG.cotTruyen.tyLeLuongHuu)
+    expect(Math.abs(s.luong - luongHuu)).toBeLessThanOrEqual(1)
+  })
+
+  it('đã nghỉ hưu thì mua khoá học bị chặn', () => {
+    const s0 = reducer(moiVan('kySuPhanMem'), { type: 'traChiPhi' })
+    const huu: GameState = { ...s0, daNghiHuu: true, tienMat: 900 * TRIEU }
+    expect(reducer(huu, { type: 'muaKhoaHoc', khoaHocId: 'online' })).toBe(huu)
+  })
+})
+
+describe('bán tài sản khi tiền mặt âm', () => {
+  const ketThucVoiTienAm = (tienMat: number, traiPhieu: number): GameState => {
+    let s = duyetHetThe(reducer(moiVan('giaoVien'), { type: 'traChiPhi' }), false)
+    s = { ...s, tienMat, soHuu: { ...s.soHuu, traiPhieu }, hanhPhuc: 90 }
+    return reducer(s, { type: 'ketThucNam' })
+  }
+
+  it('đủ tài sản: tự bán trái phiếu bù âm, tiền mặt về không âm', () => {
+    const s = ketThucVoiTienAm(-800 * TRIEU, 1200)
+    expect(s.tongKet!.suKien.some((k) => k.loai === 'banTaiSan')).toBe(true)
+    expect(s.tienMat).toBeGreaterThanOrEqual(0)
+    expect(s.soHuu.traiPhieu).toBeLessThan(1200)
+  })
+
+  it('bán sạch vẫn không đủ: thêm sự kiện Túng thiếu, mất 10 hạnh phúc', () => {
+    const s = ketThucVoiTienAm(-5 * TY, 10)
+    const cacSuKienBan = s.tongKet!.suKien.filter((k) => k.loai === 'banTaiSan')
+    expect(cacSuKienBan.some((k) => k.tieuDe === 'Túng thiếu')).toBe(true)
+    expect(s.soHuu.traiPhieu).toBe(0)
+    expect(s.tienMat).toBeLessThan(0)
+  })
+})
+
+describe('thẻ tiêu dùng không lặp lại năm liền trước', () => {
+  it('giao của thẻ năm mới với thẻ năm trước là rỗng', () => {
+    const goc = moiVan()
+    const idsNamTruoc = goc.theNamTruoc
+    expect(idsNamTruoc.length).toBeGreaterThan(0)
+    const s = diTronMotNam(goc)
+    expect(s.theConLai.length).toBeGreaterThan(0)
+    expect(s.theConLai.filter((t) => idsNamTruoc.includes(t.id))).toHaveLength(0)
+    // theNamTruoc luôn bám theo bộ thẻ vừa rút
+    expect(s.theNamTruoc).toEqual(s.theConLai.map((t) => t.id))
+  })
+})
+
+describe('mốc tài sản trung gian', () => {
+  it('vượt 1 tỷ lần đầu có sự kiện mocTaiSan, năm sau không lặp lại', () => {
+    let s = duyetHetThe(reducer(moiVan('giaoVien'), { type: 'traChiPhi' }), false)
+    s = { ...s, tienMat: 1.2 * TY, hanhPhuc: 90 }
+    s = reducer(s, { type: 'ketThucNam' })
+    expect(s.tongKet!.suKien.filter((k) => k.loai === 'mocTaiSan')).toHaveLength(1)
+    expect(s.mocTaiSanDaQua).toContain(1 * TY)
+
+    // Năm thứ hai: vẫn trên 1 tỷ nhưng mốc đã ghi nhận rồi → không lặp
+    s = reducer(s, { type: 'dongTongKet' })
+    s = duyetHetThe(reducer(s, { type: 'traChiPhi' }), false)
+    s = { ...s, hanhPhuc: 90 }
+    s = reducer(s, { type: 'ketThucNam' })
+    expect(tongTaiSan(s)).toBeLessThan(2.5 * TY)
+    expect(s.tongKet!.suKien.filter((k) => k.loai === 'mocTaiSan')).toHaveLength(0)
+    expect(s.mocTaiSanDaQua).toEqual([1 * TY])
+  })
+})
+
 describe('tính tất định', () => {
   it('cùng seed và cùng chuỗi hành động cho ra trạng thái giống hệt', () => {
     const chay = () => {
@@ -372,5 +552,147 @@ describe('tính tất định', () => {
       return s
     }
     expect(chay()).toEqual(chay())
+  })
+})
+
+describe('hạnh phúc trong sự kiện — kể đúng số điểm THỰC nhận', () => {
+  it('sự kiện cưới ghi điểm đã áp trần, không phải điểm danh nghĩa', () => {
+    const s0 = moiVan()
+    // Đặt ngay trước năm cưới, hạnh phúc sát trần cứng
+    const truocCuoi: GameState = {
+      ...s0,
+      nam: s0.cotTruyen.namCuoi,
+      hanhPhuc: CONFIG.hanhPhucTranCung - 2,
+    }
+    const sau = diTronMotNam(truocCuoi, 5 * TY)
+    const cuoi = sau.tongKet!.suKien.find((sk) => sk.loai === 'ketHon')
+    expect(cuoi).toBeTruthy()
+    // Danh nghĩa +25, nhưng đã sát trần nên thực nhận phải nhỏ hơn hẳn
+    expect(cuoi!.hanhPhucThayDoi).toBeLessThan(CONFIG.cotTruyen.cuoiHanhPhuc)
+    expect(cuoi!.hanhPhucThayDoi).toBeGreaterThanOrEqual(0)
+  })
+
+  it('tổng điểm hạnh phúc của các sự kiện khớp mức thay đổi thật trong năm', () => {
+    const s0 = moiVan()
+    const truoc: GameState = {
+      ...s0,
+      nam: s0.cotTruyen.namCuoi,
+      hanhPhuc: 96,
+      uocNguyenDaMua: [s0.khatVongId],
+    }
+    let cur: GameState = { ...truoc, tienMat: 5 * TY }
+    cur = reducer(cur, { type: 'traChiPhi' })
+    cur = duyetHetThe(cur, false)
+    // Neo lại hạnh phúc sát trần mềm sau khi duyệt thẻ, để phép đối chiếu
+    // dưới đây chỉ còn phụ thuộc phần cộng/trừ của chuyển năm
+    cur = { ...cur, hanhPhuc: 96 }
+    const hanhPhucTruocKhiChuyenNam = cur.hanhPhuc
+    const sau = reducer(cur, { type: 'ketThucNam' })
+    const tk = sau.tongKet!
+    const tongTuSuKien = tk.suKien.reduce((t, sk) => t + sk.hanhPhucThayDoi, 0)
+    const tongKhac = tongTuSuKien + tk.hanhPhucTuUocNguyen - tk.phatKhatVong
+    expect(sau.hanhPhuc).toBe(hanhPhucTruocKhiChuyenNam + tongKhac)
+  })
+})
+
+describe('bảo hiểm và ốm đau tuổi già', () => {
+  it('phí bảo hiểm leo theo tuổi sau khi nghỉ hưu', () => {
+    const s0 = moiVan()
+    const treTuoi: GameState = { ...s0, nam: 10 }
+    const veGia: GameState = { ...s0, nam: 70 } // tuổi 90
+    expect(phiBaoHiem(veGia)).toBeGreaterThan(phiBaoHiem(treTuoi))
+  })
+
+  it('sau tuổi đồng trả, có bảo hiểm vẫn phải tự gánh một phần viện phí', () => {
+    expect(tyLeDongTra(CONFIG.cotTruyen.baoHiemDongTraTuoi - 1)).toBe(0)
+    expect(tyLeDongTra(CONFIG.cotTruyen.baoHiemDongTraTuoi)).toBe(
+      CONFIG.cotTruyen.baoHiemTyLeDongTra,
+    )
+  })
+
+  it('viện phí neo theo chi phí sinh hoạt nên về hưu vẫn còn sức nặng', () => {
+    const s0 = moiVan()
+    // Tuổi 95, lương hưu thấp nhưng chi phí sinh hoạt đã leo cao
+    let veGia: GameState = {
+      ...s0,
+      nam: 75,
+      daNghiHuu: true,
+      luong: 50 * TRIEU,
+      chiPhiHangNam: 900 * TRIEU,
+      baoHiemDenNam: -1,
+      hanhPhuc: 90,
+    }
+    // Chạy nhiều năm để chắc chắn gặp ít nhất một lần ốm đau
+    let vienPhiLonNhat = 0
+    for (let i = 0; i < 5 && veGia.trangThai === 'dangChoi'; i++) {
+      const sau = diTronMotNam(veGia, 5 * TY)
+      const om = sau.tongKet!.suKien.find((sk) => sk.loai === 'omDau')
+      if (om) vienPhiLonNhat = Math.max(vienPhiLonNhat, -om.tienThayDoi)
+      veGia = { ...reducer(sau, { type: 'dongTongKet' }), hanhPhuc: 90 }
+    }
+    // Nếu chỉ neo vào lương thì viện phí chỉ 17,5 triệu; neo theo chi phí thì lớn hơn nhiều
+    expect(vienPhiLonNhat).toBeGreaterThan(50 * TRIEU)
+  })
+})
+
+describe('thẻ hợp với tuổi và hoàn cảnh', () => {
+  it('thẻ có trần tuổi không xuất hiện khi đã quá tuổi đó', () => {
+    const coTranTuoi = THE_TIEU_DUNG.filter((t) => t.tuoiToiDa !== undefined)
+    expect(coTranTuoi.length).toBeGreaterThan(0)
+
+    const s0 = moiVan()
+    let cur: GameState = { ...s0, nam: 75, daNghiHuu: true, hanhPhuc: 100 }
+    for (let i = 0; i < 5; i++) {
+      const tuoi = tuoiTaiNam(cur.nam)
+      for (const the of cur.theConLai) {
+        if (the.tuoiToiDa !== undefined) expect(tuoi).toBeLessThanOrEqual(the.tuoiToiDa)
+      }
+      const sau = diTronMotNam(cur, 5 * TY)
+      cur = { ...reducer(sau, { type: 'dongTongKet' }), hanhPhuc: 100 }
+    }
+  })
+
+  it('thẻ con nhỏ chỉ xuất hiện khi thật sự còn con nhỏ', () => {
+    const s0 = moiVan()
+    // Con đã 18 và 20 tuổi — không còn là "con nhỏ"
+    const conLon: GameState = {
+      ...s0,
+      nam: 40,
+      daKetHon: true,
+      conCai: [22, 20],
+      hanhPhuc: 100,
+    }
+    const sau = diTronMotNam(conLon, 5 * TY)
+    const moi = reducer(sau, { type: 'dongTongKet' })
+    for (const the of moi.theConLai) expect(the.giaiDoan).not.toBe('conCai')
+  })
+})
+
+describe('chuyện tuổi già', () => {
+  it('con tròn tuổi sinh cháu thì lên chức ông bà', () => {
+    const s0 = moiVan()
+    const namSinhCon = 10
+    const namLenChuc = namSinhCon + CONFIG.cotTruyen.conTuoiSinhChau
+    const truoc: GameState = {
+      ...s0,
+      nam: namLenChuc,
+      daKetHon: true,
+      conCai: [namSinhCon],
+      hanhPhuc: 70,
+    }
+    const sau = diTronMotNam(truoc, 5 * TY)
+    expect(sau.tongKet!.suKien.some((sk) => sk.loai === 'lenChucOngBa')).toBe(true)
+  })
+
+  it('sau tuổi 70 có xuất hiện chuyện đời thường của tuổi già', () => {
+    const s0 = moiVan()
+    let cur: GameState = { ...s0, nam: 60, daNghiHuu: true, hanhPhuc: 100 }
+    let daGap = false
+    for (let i = 0; i < 15 && !daGap; i++) {
+      const sau = diTronMotNam(cur, 5 * TY)
+      if (sau.tongKet!.suKien.some((sk) => sk.loai === 'tuoiGia')) daGap = true
+      cur = { ...reducer(sau, { type: 'dongTongKet' }), hanhPhuc: 100 }
+    }
+    expect(daGap).toBe(true)
   })
 })
