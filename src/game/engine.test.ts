@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import { CONFIG, TRIEU, TY } from './config'
-import { NGHE, TAI_SAN, THE_TIEU_DUNG, timCoHoi, timNghe, timUocNguyen } from './content'
+import {
+  NGHE,
+  TAI_SAN,
+  THE_TIEU_DUNG,
+  UOC_NGUYEN,
+  timCoHoi,
+  timNghe,
+  timUocNguyen,
+} from './content'
 import {
   bienDoThuNhapThuDong,
   coHoiHopLe,
+  daDatKhatVong,
   dangCoBaoHiemXe,
   dongTienThuDong,
   giaThucTe,
+  giaUocNguyen,
+  hanhPhucTuUocNguyen,
   mocTaiSanCuaNghe,
   muaToiDa,
   mucTieuTuDo,
@@ -586,6 +597,177 @@ describe('bảo hiểm xe', () => {
     const mot = reducer(s, { type: 'muaBaoHiemXe', loai: 'taiNanNguoiTrenXe' })
     expect(mot).not.toBe(s)
     expect(reducer(mot, { type: 'muaBaoHiemXe', loai: 'taiNanNguoiTrenXe' })).toBe(mot)
+  })
+})
+
+describe('mua lại món ước nguyện đã mất', () => {
+  const O_TO = timUocNguyen('oTo')!
+  /** Dư dả tiền mặt để bán tài sản hay túng thiếu không làm nhiễu phép đo. */
+  const TIEN_DU = 20 * TY
+
+  /** Ván của bác sĩ — khát vọng đúng là ô tô — đã có sẵn xe và rủng rỉnh tiền. */
+  const vanCoOTo = (seed: number): GameState => ({
+    ...taoGameMoi('bacSi', seed),
+    tienMat: TIEN_DU,
+    uocNguyenDaMua: ['oTo'],
+  })
+
+  /**
+   * Quét seed cho tới khi gặp một ván có sự kiện mất trộm xe, trả về trạng thái
+   * ngay TRƯỚC năm xảy ra (đang ở giai đoạn trả chi phí) và trạng thái SAU năm đó.
+   *
+   * Xác suất mất trộm nằm trong CONFIG và có thể được hạ rất thấp mỗi lần cân
+   * bằng lại game, nên bài kiểm thử không đoán trước seed nào mà quét cả một
+   * khoảng rộng. Vẫn tất định, vì mọi ván đều suy ra từ seed.
+   *
+   * Hai nhánh có / không có bảo hiểm vật chất tiêu thụ cùng một số bước ngẫu
+   * nhiên cho tới lúc bốc mất trộm, nên cùng một `truoc` chạy lại với
+   * `baoHiemXe.vatChatXe` khác nhau vẫn gặp đúng cú mất trộm đó.
+   */
+  function timVanCoMatTromXe(
+    tuyBien: (s: GameState) => GameState = (s) => s,
+    soSeed = 3000,
+    soNamMoiSeed = 8,
+  ): { truoc: GameState; sau: GameState } {
+    let kq: { truoc: GameState; sau: GameState } | null = null
+    for (let seed = 1; seed <= soSeed && !kq; seed++) {
+      let cur = tuyBien(vanCoOTo(seed))
+      for (let i = 0; i < soNamMoiSeed && !kq && cur.trangThai === 'dangChoi'; i++) {
+        const sau = diTronMotNam(cur, TIEN_DU)
+        if (sau.tongKet!.suKien.some((k) => k.loai === 'matTromXe')) {
+          kq = { truoc: cur, sau }
+        } else {
+          cur = reducer(sau, { type: 'dongTongKet' })
+        }
+      }
+    }
+    expect(
+      kq,
+      `Quét ${soSeed} seed × ${soNamMoiSeed} năm mà không gặp lần mất trộm xe nào` +
+        ` (xác suất đang là ${CONFIG.baoHiemXe.matTromXacSuat}) — hãy nới rộng khoảng quét.`,
+    ).not.toBeNull()
+    return kq!
+  }
+
+  it('ván mới chưa mất món nào và giá mọi món đúng bằng giá đóng băng', () => {
+    const s = moiVan()
+    expect(s.uocNguyenDaMat).toEqual([])
+    for (const un of UOC_NGUYEN) expect(giaUocNguyen(s, un.id)).toBe(un.gia)
+  })
+
+  it('chưa từng mất gì thì giá ước nguyện đứng yên qua mấy chục năm lạm phát', () => {
+    let s = moiVan()
+    for (let i = 0; i < 20 && s.trangThai === 'dangChoi'; i++) {
+      s = reducer(diTronMotNam(s), { type: 'dongTongKet' })
+    }
+    expect(s.uocNguyenDaMat).toEqual([])
+    expect(s.chiSoGia).toBeGreaterThan(1.5)
+    for (const un of UOC_NGUYEN) {
+      expect(giaUocNguyen(s, un.id)).toBe(un.gia)
+      // Lạm phát là có thật — chỉ riêng giấc mơ được đóng băng giá
+      expect(giaThucTe(s, un.gia)).toBeGreaterThan(un.gia)
+    }
+  })
+
+  it('mất trộm khi KHÔNG có bảo hiểm vật chất thì mất xe và giá nhảy theo lạm phát', () => {
+    const { truoc, sau } = timVanCoMatTromXe()
+    expect(truoc.uocNguyenDaMua).toContain('oTo')
+    expect(truoc.uocNguyenDaMat).toEqual([])
+    expect(dangCoBaoHiemXe(truoc, 'vatChatXe')).toBe(false)
+
+    const matTrom = sau.tongKet!.suKien.find((k) => k.loai === 'matTromXe')!
+    expect(matTrom.hanhPhucThayDoi).toBeLessThan(0)
+    expect(sau.uocNguyenDaMua).not.toContain('oTo')
+    expect(sau.uocNguyenDaMat).toEqual(['oTo'])
+    expect(xeDangCo(sau)).toBeNull()
+
+    // Từ đây muốn có lại chiếc xe thì phải trả bằng tiền của hôm nay
+    expect(sau.chiSoGia).toBeGreaterThan(1)
+    expect(giaUocNguyen(sau, 'oTo')).toBe(giaThucTe(sau, O_TO.gia))
+    expect(giaUocNguyen(sau, 'oTo')).toBeGreaterThan(O_TO.gia)
+    // Món chưa từng mất vẫn giữ nguyên giá đóng băng
+    expect(giaUocNguyen(sau, 'canHo')).toBe(timUocNguyen('canHo')!.gia)
+  })
+
+  it('mất trộm khi CÓ bảo hiểm vật chất thì xe vẫn còn và giá không đổi', () => {
+    const { truoc } = timVanCoMatTromXe()
+    const coBaoHiem = diTronMotNam(
+      { ...truoc, baoHiemXe: { ...truoc.baoHiemXe, vatChatXe: truoc.nam } },
+      TIEN_DU,
+    )
+    const matTrom = coBaoHiem.tongKet!.suKien.find((k) => k.loai === 'matTromXe')
+    expect(matTrom).toBeTruthy()
+    // Bảo hiểm đền đúng giá trị, không mất hạnh phúc và không mất chiếc xe
+    expect(matTrom!.hanhPhucThayDoi).toBe(0)
+    expect(coBaoHiem.uocNguyenDaMua).toContain('oTo')
+    expect(coBaoHiem.uocNguyenDaMat).toEqual([])
+    expect(giaUocNguyen(coBaoHiem, 'oTo')).toBe(O_TO.gia)
+  })
+
+  it('mua lại xe đã mất phải trả giá hiện hành, chỉ đủ giá gốc là không mua nổi', () => {
+    const { sau } = timVanCoMatTromXe()
+    const s = reducer(sau, { type: 'dongTongKet' })
+    const giaHienHanh = giaUocNguyen(s, 'oTo')
+    expect(giaHienHanh).toBe(giaThucTe(s, O_TO.gia))
+    expect(giaHienHanh).toBeGreaterThan(O_TO.gia)
+
+    // Cầm đúng số tiền của thời trẻ thì không còn mua nổi chiếc xe của hôm nay
+    const chiDuGiaGoc: GameState = { ...s, tienMat: O_TO.gia }
+    expect(reducer(chiDuGiaGoc, { type: 'muaUocNguyen', uocNguyenId: 'oTo' })).toBe(
+      chiDuGiaGoc,
+    )
+
+    const duTien: GameState = { ...s, tienMat: giaHienHanh }
+    const muaLai = reducer(duTien, { type: 'muaUocNguyen', uocNguyenId: 'oTo' })
+    expect(muaLai.uocNguyenDaMua).toContain('oTo')
+    expect(muaLai.tienMat).toBe(0)
+    // Vẫn ghi nhận là món đã từng mất, nên lần sau cũng tính theo giá hiện hành
+    expect(muaLai.uocNguyenDaMat).toEqual(['oTo'])
+  })
+
+  it('mua lại xong thì hạnh phúc mỗi năm quay lại và hết bị phạt khát vọng', () => {
+    const { sau } = timVanCoMatTromXe()
+    const daMat = reducer(sau, { type: 'dongTongKet' })
+    expect(daMat.khatVongId).toBe('oTo')
+    expect(daDatKhatVong(daMat)).toBe(false)
+    expect(hanhPhucTuUocNguyen(daMat)).toBe(0)
+
+    // Năm sống trong cảnh mất xe: phạt khát vọng quay lại, hết hạnh phúc ước nguyện
+    const namMatXe = diTronMotNam(daMat, TIEN_DU)
+    expect(namMatXe.tongKet!.phatKhatVong).toBeGreaterThan(0)
+    expect(namMatXe.tongKet!.hanhPhucTuUocNguyen).toBe(0)
+
+    const muaLai = reducer(
+      { ...daMat, tienMat: TIEN_DU },
+      { type: 'muaUocNguyen', uocNguyenId: 'oTo' },
+    )
+    expect(daDatKhatVong(muaLai)).toBe(true)
+    expect(hanhPhucTuUocNguyen(muaLai)).toBe(O_TO.hanhPhucMoiNam)
+
+    // Mua sẵn bảo hiểm vật chất để một cú mất trộm nữa không xoá mất phép đo
+    const namCoXe = diTronMotNam(
+      { ...muaLai, baoHiemXe: { ...muaLai.baoHiemXe, vatChatXe: muaLai.nam } },
+      TIEN_DU,
+    )
+    expect(namCoXe.tongKet!.phatKhatVong).toBe(0)
+    expect(namCoXe.tongKet!.hanhPhucTuUocNguyen).toBeGreaterThan(0)
+    expect(namCoXe.tongKet!.hanhPhucTuUocNguyen).toBeLessThanOrEqual(
+      O_TO.hanhPhucMoiNam,
+    )
+  })
+
+  it('mất rồi mua lại rồi lại mất thì món đó chỉ được ghi một lần', () => {
+    // Dựng đúng cảnh "đã từng mất chiếc xe này rồi tậu lại": xe đang có trong tay
+    // mà tên nó đã nằm sẵn trong danh sách đã mất.
+    const { truoc, sau } = timVanCoMatTromXe((s) => ({
+      ...s,
+      uocNguyenDaMat: ['oTo'],
+    }))
+    expect(truoc.uocNguyenDaMat).toEqual(['oTo'])
+    expect(sau.tongKet!.suKien.some((k) => k.loai === 'matTromXe')).toBe(true)
+    expect(sau.uocNguyenDaMua).not.toContain('oTo')
+    expect(sau.uocNguyenDaMat).toEqual(['oTo'])
+    expect(sau.uocNguyenDaMat.filter((id) => id === 'oTo')).toHaveLength(1)
   })
 })
 

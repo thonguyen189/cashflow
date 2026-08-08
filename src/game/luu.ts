@@ -29,6 +29,7 @@ export function taiVan(): GameState | null {
     // các trường của bản v1.3 và v1.4: ván cũ thiếu chúng sẽ làm game vỡ ngay
     // khi chạy, nên thà bỏ ván cũ còn hơn nạp vào rồi lỗi giữa chừng
     if (!s.baoHiemXe || !s.khoanDangCho || !s.coHoiDaLam) return null
+    if (!s.uocNguyenDaMat) return null
     if (typeof s.daTuDo !== 'boolean') return null
     return s
   } catch {

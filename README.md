@@ -41,7 +41,8 @@ Hai điểm tựa tài chính đáng chú ý:
 - **Ngân hàng:** lãi vay 8% mỗi năm, kỳ hạn tối đa 10 năm — vay để mua cơ hội
   kinh doanh trở thành quyết định cân não thật sự.
 - **Ước nguyện:** giá được khoá ngay từ đầu ván, không leo theo lạm phát —
-  giấc mơ không chạy nhanh hơn khả năng tích luỹ của người chơi.
+  giấc mơ không chạy nhanh hơn khả năng tích luỹ của người chơi. Ngoại lệ duy
+  nhất: món đã **từng mất** thì mua lại phải trả theo giá hiện hành.
 
 ## Tự do tài chính — điều kiện thắng
 
@@ -95,6 +96,15 @@ loại bảo hiểm đúng như ngoài đời, đều có hiệu lực một nă
 
 Phí và mức đền bù đều tính trên giá trị xe của năm hiện tại, nên cả hai cùng leo
 theo lạm phát và tỉ lệ giữa chúng không đổi theo thời gian.
+
+Chiếc xe mất trộm mà muốn có lại thì phải mua bằng **giá của hôm nay**, không còn
+được hưởng giá đóng băng thời trẻ. Thiếu luật này thì bỏ bảo hiểm vật chất xe rồi
+tậu lại xe giá cũ luôn rẻ hơn đóng phí, và cả bài học về bảo hiểm bị lật ngược.
+
+Phí ba loại được đặt sao cho **loại bắt buộc thì lãi đậm** — bỏ nó là dại, game
+nói thẳng điều đó — còn **hai loại tự nguyện thì lỗ nhẹ về tiền**, đúng như mọi
+hợp đồng bảo hiểm ngoài đời: thứ bạn mua không phải lợi nhuận mà là chặn đuôi rủi
+ro. Bảng kỳ vọng chi tiết nằm ngay trong [src/game/config.ts](src/game/config.ts).
 
 ## Cơ hội gắn với nghề nghiệp
 

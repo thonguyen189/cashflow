@@ -165,6 +165,23 @@ export const CONFIG = {
    * cân não mà là bài học "bắt buộc thì phải mua". Quyết định thật nằm ở bảo hiểm
    * vật chất xe: phí đắt gấp bốn lần, đổi lại chặn được cú mất trộm vốn xoá luôn
    * món ước nguyện và khoản hạnh phúc nó mang lại mỗi năm.
+   *
+   * ---------- Cân đối phí và kỳ vọng đền bù ----------
+   * Bộ số đầu tiên đặt xác suất quá cao: cả ba loại đều đền gấp nhiều lần phí,
+   * nên mua bảo hiểm là hiển nhiên đúng và chẳng còn gì để cân nhắc. Bộ số dưới
+   * đây hạ tần suất xuống cho sát đời thật, và đặt kỳ vọng như sau (tính trên
+   * giá trị xe mỗi năm):
+   *
+   *   Trách nhiệm dân sự  phí 0,4%  · đền 0,05 × 0,30       = 1,5%   → lãi ~3,7 lần
+   *   Vật chất xe         phí 1,8%  · đền 0,06 × 0,14
+   *                                   + 0,008 × 1,00        = 1,64%  → lỗ nhẹ
+   *   Tai nạn người ngồi  phí 0,5%  · đền 0,05 × 0,4 × 0,15 = 0,3%   → lỗ nhẹ
+   *
+   * Loại bắt buộc CỐ Ý lãi đậm — bỏ nó là dại, và game nên nói thẳng điều đó.
+   * Hai loại tự nguyện thì lỗ nhẹ về tiền, đúng như mọi hợp đồng bảo hiểm ngoài
+   * đời: cái bạn mua không phải lợi nhuận mà là chặn đuôi rủi ro. Vật chất xe
+   * chặn cú mất trắng chiếc xe (nay phải mua lại theo giá hiện hành, xem
+   * `giaUocNguyen`), tai nạn người ngồi chặn 5 điểm hạnh phúc.
    */
   baoHiemXe: {
     tyLePhiTrachNhiemDanSu: 0.004,
@@ -172,9 +189,9 @@ export const CONFIG = {
     tyLePhiTaiNanNguoiTrenXe: 0.005,
 
     /** va chạm giao thông: bồi thường cho người bị nạn */
-    vaChamXacSuat: 0.09,
-    vaChamDenBuMin: 0.25,
-    vaChamDenBuMax: 0.7,
+    vaChamXacSuat: 0.05,
+    vaChamDenBuMin: 0.15,
+    vaChamDenBuMax: 0.45,
     vaChamMatHanhPhucCoBaoHiem: 2,
     vaChamMatHanhPhucKhongBaoHiem: 8,
     /** kèm khả năng có người ngồi trên xe bị thương */
@@ -183,12 +200,14 @@ export const CONFIG = {
     thuongTichMatHanhPhuc: 5,
 
     /** xe hỏng nặng phải sửa lớn */
-    xeHongXacSuat: 0.1,
-    xeHongChiPhiMin: 0.2,
-    xeHongChiPhiMax: 0.35,
+    xeHongXacSuat: 0.06,
+    xeHongChiPhiMin: 0.1,
+    xeHongChiPhiMax: 0.18,
 
-    /** mất trộm: không có bảo hiểm vật chất thì mất luôn món ước nguyện */
-    matTromXacSuat: 0.03,
+    /** mất trộm: không có bảo hiểm vật chất thì mất luôn món ước nguyện.
+     * Hiếm nhưng là cú đau nhất trong cả nhóm, nên nó gánh gần nửa kỳ vọng
+     * đền bù của bảo hiểm vật chất xe. */
+    matTromXacSuat: 0.008,
     matTromMatHanhPhuc: 12,
 
     /** bị phạt khi thiếu bảo hiểm trách nhiệm dân sự bắt buộc */

@@ -4,6 +4,7 @@ import {
   dangCoBaoHiemXe,
   dongTienThuDong,
   giaThucTe,
+  giaUocNguyen,
   khoaHocConLai,
   muaToiDa,
   mucTieuTuDo,
@@ -35,8 +36,13 @@ export interface ChienLuoc {
   /** ưu tiên đầu tư theo thứ tự này */
   uuTienTaiSan: readonly string[]
   muaBaoHiem: boolean
-  /** mua đủ ba loại bảo hiểm xe khi trong tay đã có xe */
-  muaBaoHiemXe: boolean
+  /**
+   * Những loại bảo hiểm xe bot chịu mua khi trong tay đã có xe. Để thành danh
+   * sách chứ không phải một công tắc chung, vì mỗi loại có kỳ vọng khác hẳn
+   * nhau: loại bắt buộc cố ý lãi đậm, hai loại tự nguyện cố ý lỗ nhẹ. Bật tắt
+   * cả cụm thì hai chiều triệt tiêu nhau và không đo được gì.
+   */
+  muaBaoHiemXe: readonly LoaiBaoHiemXe[]
   muaGiaoDuc: boolean
   muaUocNguyen: boolean
   nhanCoHoiKinhDoanh: boolean
@@ -52,7 +58,7 @@ export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
   // nhưng lợi tức bằng 0, không đưa người chơi tới gần tự do tài chính chút nào.
   uuTienTaiSan: ['batDongSan', 'coPhieu', 'traiPhieu'],
   muaBaoHiem: true,
-  muaBaoHiemXe: true,
+  muaBaoHiemXe: ['trachNhiemDanSu', 'vatChatXe', 'taiNanNguoiTrenXe'],
   muaGiaoDuc: true,
   muaUocNguyen: true,
   nhanCoHoiKinhDoanh: true,
@@ -121,9 +127,10 @@ export function moPhongMotVan(
 
     // 2. bảo hiểm xe — chỉ khi đã có xe trong tay, mua dần từng loại còn thiếu.
     // phiBaoHiemXe đã gồm lạm phát nên tuyệt đối không bọc thêm giaThucTe.
-    if (cl.muaBaoHiemXe && xeDangCo(s)) {
+    if (cl.muaBaoHiemXe.length > 0 && xeDangCo(s)) {
       let daMuaBaoHiemXe = false
       for (const loai of THU_TU_BAO_HIEM_XE) {
+        if (!cl.muaBaoHiemXe.includes(loai)) continue
         if (dangCoBaoHiemXe(s, loai)) continue
         const phi = phiBaoHiemXe(s, loai)
         if (s.tienMat <= phi * 3) continue
@@ -137,11 +144,12 @@ export function moPhongMotVan(
       if (daMuaBaoHiemXe) continue
     }
 
-    // 3. khát vọng, để cắt khoản phạt hạnh phúc hàng năm (giá khoá thời trẻ)
+    // 3. khát vọng, để cắt khoản phạt hạnh phúc hàng năm. Giá khoá thời trẻ,
+    //    trừ khi món đó đã từng mất — khi ấy phải mua lại theo giá hiện hành.
     if (cl.muaUocNguyen && !s.uocNguyenDaMua.includes(s.khatVongId)) {
       const un = timUocNguyen(s.khatVongId)
       if (un) {
-        const gia = un.gia
+        const gia = giaUocNguyen(s, un.id)
         if (s.tienMat > gia * 1.5) {
           const sau = reducer(s, { type: 'muaUocNguyen', uocNguyenId: un.id })
           if (sau !== s) {
