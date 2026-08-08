@@ -73,7 +73,10 @@ export interface TaiSan {
   bamLamPhat: boolean
 }
 
-export type CoHoiLoai = 'kinhDoanh' | 'canhBac'
+export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien'
+
+/** Ba loại bảo hiểm xe, đúng như ngoài đời. */
+export type LoaiBaoHiemXe = 'trachNhiemDanSu' | 'vatChatXe' | 'taiNanNguoiTrenXe'
 
 export interface CoHoi {
   id: string
@@ -82,11 +85,26 @@ export interface CoHoi {
   emoji: string
   loai: CoHoiLoai
   gia: Tien
-  /** kinhDoanh: thu nhập thụ động mỗi năm */
+  /** chỉ nghề này mới gặp; bỏ trống nghĩa là mọi nghề đều gặp */
+  ngheId?: string
+  /** chỉ xuất hiện từ năm này trở đi — thể hiện yêu cầu thâm niên */
+  namToiThieu?: number
+  /** cả ván chỉ tham gia được một lần */
+  chiMotLan?: boolean
+
+  /** kinhDoanh: thu nhập nền mỗi năm, trước khi áp biến động */
   thuNhapMoiNam?: Tien
+  /** kinhDoanh: biên độ dao động thu nhập mỗi năm, không xuống dưới −100% */
+  bienDongThuNhapMin?: number
+  bienDongThuNhapMax?: number
+
   /** canhBac: xác suất thắng và hệ số nhân khi thắng */
   xacSuatThang?: number
   heSoNhan?: number
+
+  /** toChucSuKien: biên lợi nhuận trên vốn, mở kết quả cuối năm rồi kết thúc */
+  loiNhuanMin?: number
+  loiNhuanMax?: number
 }
 
 export interface KhoanVay {
@@ -100,7 +118,10 @@ export interface KhoanVay {
 export interface DoanhNghiep {
   coHoiId: string
   ten: string
-  thuNhapMoiNam: Tien
+  /** thu nhập nền tại thời điểm góp vốn, đã tính lạm phát của năm đó */
+  thuNhapNen: Tien
+  /** chỉ số giá của năm góp vốn, để thu nhập bám theo lạm phát về sau */
+  chiSoGiaLucMua: number
 }
 
 export type SuKienLoai =
@@ -120,6 +141,11 @@ export type SuKienLoai =
   | 'suCo'
   | 'banTaiSan'
   | 'mocTaiSan'
+  | 'vaChamGiaoThong'
+  | 'xeHongNang'
+  | 'matTromXe'
+  | 'phatThieuBaoHiemXe'
+  | 'suKienKetQua'
 
 export interface SuKien {
   loai: SuKienLoai
@@ -147,7 +173,21 @@ export interface TongKetNam {
   thuNhapThuDong: Tien
   /** đóng góp của bạn đời trong năm (0 nếu chưa lập gia đình) */
   thuNhapBanDoi: Tien
-  loiTucTaiSan: { id: AssetId; ten: string; bienDong: number; loiTuc: Tien }[]
+  /** biến động của cả năm kênh; cờ dangNamGiu tách "danh mục của bạn" khỏi "tin thị trường" */
+  bienDongTaiSan: {
+    id: AssetId
+    ten: string
+    bienDong: number
+    loiTuc: Tien
+    dangNamGiu: boolean
+  }[]
+  /** thu nhập thực nhận từ từng doanh nghiệp trong năm */
+  thuNhapDoanhNghiep: {
+    coHoiId: string
+    ten: string
+    soTien: Tien
+    bienDong: number
+  }[]
   phatKhatVong: number
   hanhPhucTuUocNguyen: number
   suKien: SuKien[]
@@ -181,11 +221,15 @@ export interface GameState {
   uocNguyenDaMua: string[]
   /** năm cuối cùng bảo hiểm còn hiệu lực; -1 nghĩa là chưa từng mua */
   baoHiemDenNam: number
+  /** năm cuối cùng từng loại bảo hiểm xe còn hiệu lực; -1 nghĩa là chưa từng mua */
+  baoHiemXe: Record<LoaiBaoHiemXe, number>
 
   khoanVay: KhoanVay[]
   doanhNghiep: DoanhNghiep[]
-  /** các ván cược đã đặt, sẽ mở kết quả ở cuối năm */
-  canhBacDangCho: { coHoiId: string; gia: Tien }[]
+  /** id các cơ hội "chỉ một lần" đã tham gia, để không mời lại */
+  coHoiDaLam: string[]
+  /** các khoản chờ mở kết quả cuối năm — canh bạc và tổ chức sự kiện */
+  khoanDangCho: { coHoiId: string; gia: Tien; loai: CoHoiLoai }[]
 
   /** ---------- Cốt truyện trăm năm ---------- */
   /** lịch cột mốc đời người, hẹn sẵn khi tạo ván (tất định theo seed) */
@@ -217,6 +261,7 @@ export type Action =
   | { type: 'quyetDinhThe'; nhan: boolean }
   | { type: 'muaKhoaHoc'; khoaHocId: string }
   | { type: 'muaBaoHiem' }
+  | { type: 'muaBaoHiemXe'; loai: LoaiBaoHiemXe }
   | { type: 'muaUocNguyen'; uocNguyenId: string }
   | { type: 'dauTu'; assetId: AssetId; soDonVi: number }
   | { type: 'ban'; assetId: AssetId; soDonVi: number }

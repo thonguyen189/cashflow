@@ -1,7 +1,12 @@
-import { timCoHoi } from '../game/content'
-import { giaThucTe } from '../game/engine'
-import { dinhDangTien } from '../game/format'
+import { timCoHoi, timNghe } from '../game/content'
+import { bienDoThuNhapThuDong, giaThucTe, thuNhapThuDong } from '../game/engine'
+import { dinhDangPhanTram, dinhDangTien } from '../game/format'
 import type { Action, GameState } from '../game/types'
+
+/** "−20% … +24%" — biên độ dao động thu nhập của một cơ hội kinh doanh. */
+function daoDong(min: number | undefined, max: number | undefined): string {
+  return `${dinhDangPhanTram(min ?? 0, 0)} … ${dinhDangPhanTram(max ?? 0, 0)}`
+}
 
 export default function TabKinhDoanh({
   state,
@@ -10,27 +15,32 @@ export default function TabKinhDoanh({
   state: GameState
   dispatch: (a: Action) => void
 }) {
-  /** Gộp các doanh nghiệp trùng cơ hội: hiển thị "Tên ×N" + tổng thu nhập nhóm. */
+  /** Gộp các doanh nghiệp trùng cơ hội: hiển thị "Tên ×N" + tổng thu nhập nhóm.
+   * Thu nhập nền năm nay bám theo lạm phát kể từ năm góp vốn. */
   const nhomDoanhNghiep: {
     coHoiId: string
     ten: string
     soLuong: number
-    tongThuNhap: number
+    tongThuNhapNen: number
   }[] = []
   for (const d of state.doanhNghiep) {
+    const nenNamNay = Math.round(d.thuNhapNen * (state.chiSoGia / d.chiSoGiaLucMua))
     const daCo = nhomDoanhNghiep.find((n) => n.coHoiId === d.coHoiId)
     if (daCo) {
       daCo.soLuong += 1
-      daCo.tongThuNhap += d.thuNhapMoiNam
+      daCo.tongThuNhapNen += nenNamNay
     } else {
       nhomDoanhNghiep.push({
         coHoiId: d.coHoiId,
         ten: d.ten,
         soLuong: 1,
-        tongThuNhap: d.thuNhapMoiNam,
+        tongThuNhapNen: nenNamNay,
       })
     }
   }
+
+  const tongNen = thuNhapThuDong(state)
+  const bienDo = bienDoThuNhapThuDong(state)
 
   return (
     <>
@@ -46,18 +56,32 @@ export default function TabKinhDoanh({
       {state.coHoiNamNay.map((c) => {
         const gia = giaThucTe(state, c.gia)
         const duTien = state.tienMat >= gia
-        const laCanhBac = c.loai === 'canhBac'
+        const nghe = c.ngheId ? timNghe(c.ngheId) : undefined
+        const laSuKien = c.loai === 'toChucSuKien'
         return (
           <div className="the-quyet-dinh" key={c.id}>
             <div style={{ fontSize: 34, marginBottom: 6 }}>{c.emoji}</div>
-            <div className="the-ten">{c.ten}</div>
+            <div className="the-ten">
+              {c.ten}
+              {nghe && (
+                <span className="nhan-nho">
+                  {nghe.emoji} Riêng nghề {nghe.ten}
+                </span>
+              )}
+            </div>
             <p className="mo-ta">{c.moTa}</p>
+            {c.chiMotLan && (
+              <p className="mo-ta" style={{ marginTop: -6 }}>
+                🎯 Chỉ tham gia được một lần trong cả ván.
+              </p>
+            )}
 
             <div className="hang">
               <span className="hang-nhan">Vốn bỏ ra</span>
               <span className="hang-gia-tri am">{dinhDangTien(gia)}</span>
             </div>
-            {laCanhBac ? (
+
+            {c.loai === 'canhBac' && (
               <>
                 <div className="hang">
                   <span className="hang-nhan">Xác suất thắng</span>
@@ -79,19 +103,51 @@ export default function TabKinhDoanh({
                   — mở kết quả vào cuối năm.
                 </div>
               </>
-            ) : (
+            )}
+
+            {c.loai === 'kinhDoanh' && (
               <>
                 <div className="hang">
                   <span className="hang-nhan">Thu nhập mỗi năm</span>
-                  <span className="hang-gia-tri duong">
-                    {dinhDangTien(giaThucTe(state, c.thuNhapMoiNam ?? 0))}
+                  <span className="hang-gia-tri-dai duong">
+                    {dinhDangTien(giaThucTe(state, c.thuNhapMoiNam ?? 0))}{' '}
+                    <span className="chu-phu">
+                      · dao động{' '}
+                      {daoDong(c.bienDongThuNhapMin, c.bienDongThuNhapMax)}
+                    </span>
                   </span>
                 </div>
                 <div className="hang">
                   <span className="hang-nhan">Hoàn vốn sau</span>
                   <span className="hang-gia-tri">
-                    {((c.gia / (c.thuNhapMoiNam || 1)) || 0).toFixed(1).replace('.', ',')} năm
+                    {(c.gia / (c.thuNhapMoiNam || 1) || 0)
+                      .toFixed(1)
+                      .replace('.', ',')}{' '}
+                    năm
                   </span>
+                </div>
+                <p className="mo-ta" style={{ marginTop: 12, marginBottom: 0 }}>
+                  📈 Thu nhập bám theo lạm phát nên không teo dần theo thời gian; mỗi
+                  năm nhận nhiều hay ít là do biên độ dao động ở trên.
+                </p>
+              </>
+            )}
+
+            {laSuKien && (
+              <>
+                <div className="hang">
+                  <span className="hang-nhan">Lợi nhuận</span>
+                  <span className="hang-gia-tri-dai">
+                    {daoDong(c.loiNhuanMin, c.loiNhuanMax)}{' '}
+                    <span className="chu-phu">
+                      · nhận lại {dinhDangTien(gia * (1 + (c.loiNhuanMin ?? 0)))} …{' '}
+                      {dinhDangTien(gia * (1 + (c.loiNhuanMax ?? 0)))}
+                    </span>
+                  </span>
+                </div>
+                <div className="canh-bao-tu-choi" style={{ marginTop: 12 }}>
+                  🎪 Nhận lại vốn cộng lợi nhuận đúng <strong>một lần</strong> vào cuối
+                  năm rồi kết thúc — không có thu nhập các năm sau.
                 </div>
               </>
             )}
@@ -113,31 +169,35 @@ export default function TabKinhDoanh({
                   dispatch({ type: 'quyetDinhCoHoi', coHoiId: c.id, nhan: true })
                 }
               >
-                {duTien ? 'Tham gia' : 'Không đủ vốn'}
+                {!duTien ? 'Không đủ vốn' : laSuKien ? 'Nhận tổ chức' : 'Tham gia'}
               </button>
             </div>
           </div>
         )
       })}
 
-      {state.canhBacDangCho.length > 0 && (
+      {state.khoanDangCho.length > 0 && (
         <>
-          <div className="muc">🎲 Đang chờ kết quả</div>
-          {state.canhBacDangCho.map((c, i) => (
-            <div className="muc-mua" key={`${c.coHoiId}-${i}`}>
-              <span className="muc-mua-emoji">
-                {timCoHoi(c.coHoiId)?.emoji ?? '🎲'}
-              </span>
-              <div className="muc-mua-than">
-                <div className="muc-mua-ten">
-                  {timCoHoi(c.coHoiId)?.ten ?? c.coHoiId}
-                </div>
-                <div className="muc-mua-phu">
-                  Đã đặt {dinhDangTien(c.gia)} — mở vào cuối năm
+          <div className="muc">⏳ Đang chờ kết quả</div>
+          {state.khoanDangCho.map((k, i) => {
+            const c = timCoHoi(k.coHoiId)
+            const laCanhBac = k.loai === 'canhBac'
+            return (
+              <div className="muc-mua" key={`${k.coHoiId}-${i}`}>
+                <span className="muc-mua-emoji">
+                  {c?.emoji ?? (laCanhBac ? '🎲' : '🎪')}
+                </span>
+                <div className="muc-mua-than">
+                  <div className="muc-mua-ten">{c?.ten ?? k.coHoiId}</div>
+                  <div className="muc-mua-phu">
+                    {laCanhBac
+                      ? `Đã đặt ${dinhDangTien(k.gia)} — mở kết quả ăn thua vào cuối năm`
+                      : `Đã bỏ ra ${dinhDangTien(k.gia)} tiền vốn — thu lại vốn và lợi nhuận vào cuối năm`}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </>
       )}
 
@@ -150,22 +210,38 @@ export default function TabKinhDoanh({
           </p>
         </div>
       ) : (
-        nhomDoanhNghiep.map((n) => (
-          <div className="muc-mua" key={n.coHoiId}>
-            <span className="muc-mua-emoji">
-              {timCoHoi(n.coHoiId)?.emoji ?? '💼'}
-            </span>
-            <div className="muc-mua-than">
-              <div className="muc-mua-ten">
-                {n.ten}
-                {n.soLuong > 1 && ` ×${n.soLuong}`}
-              </div>
-              <div className="muc-mua-phu">
-                {dinhDangTien(n.tongThuNhap)} mỗi năm
-              </div>
+        <>
+          <div className="the">
+            <div className="hang">
+              <span className="hang-nhan">Thu nhập thụ động năm nay</span>
+              <span className="hang-gia-tri duong">{dinhDangTien(tongNen)}</span>
+            </div>
+            <div className="hang">
+              <span className="hang-nhan">Tuỳ năm, có thể nhận trong khoảng</span>
+              <span className="hang-gia-tri-dai">
+                {dinhDangTien(bienDo.thap)} … {dinhDangTien(bienDo.cao)}
+              </span>
             </div>
           </div>
-        ))
+          {nhomDoanhNghiep.map((n) => {
+            const c = timCoHoi(n.coHoiId)
+            return (
+              <div className="muc-mua" key={n.coHoiId}>
+                <span className="muc-mua-emoji">{c?.emoji ?? '💼'}</span>
+                <div className="muc-mua-than">
+                  <div className="muc-mua-ten">
+                    {n.ten}
+                    {n.soLuong > 1 && ` ×${n.soLuong}`}
+                  </div>
+                  <div className="muc-mua-phu">
+                    {dinhDangTien(n.tongThuNhapNen)} mỗi năm · dao động{' '}
+                    {daoDong(c?.bienDongThuNhapMin, c?.bienDongThuNhapMax)}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </>
       )}
     </>
   )

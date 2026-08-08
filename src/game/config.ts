@@ -130,6 +130,47 @@ export const CONFIG = {
   /** phí bảo hiểm mỗi năm = tỉ lệ này × lương hiện tại */
   baoHiemTyLeLuong: 0.02,
 
+  /** ---------- Bảo hiểm xe ----------
+   * Chỉ có hiệu lực khi người chơi đã mua ước nguyện xe máy hoặc ô tô. Mọi tỉ lệ
+   * dưới đây đều tính trên GIÁ TRỊ XE của năm nay (giá gốc × chỉ số giá), nên phí
+   * lẫn mức đền bù đều leo theo lạm phát.
+   *
+   * Trách nhiệm dân sự rẻ như cho, đúng như ngoài đời — nó không phải bài toán
+   * cân não mà là bài học "bắt buộc thì phải mua". Quyết định thật nằm ở bảo hiểm
+   * vật chất xe: phí đắt gấp bốn lần, đổi lại chặn được cú mất trộm vốn xoá luôn
+   * món ước nguyện và khoản hạnh phúc nó mang lại mỗi năm.
+   */
+  baoHiemXe: {
+    tyLePhiTrachNhiemDanSu: 0.004,
+    tyLePhiVatChatXe: 0.018,
+    tyLePhiTaiNanNguoiTrenXe: 0.005,
+
+    /** va chạm giao thông: bồi thường cho người bị nạn */
+    vaChamXacSuat: 0.09,
+    vaChamDenBuMin: 0.25,
+    vaChamDenBuMax: 0.7,
+    vaChamMatHanhPhucCoBaoHiem: 2,
+    vaChamMatHanhPhucKhongBaoHiem: 8,
+    /** kèm khả năng có người ngồi trên xe bị thương */
+    vaChamXacSuatCoThuongTich: 0.4,
+    thuongTichVienPhiTyLe: 0.15,
+    thuongTichMatHanhPhuc: 5,
+
+    /** xe hỏng nặng phải sửa lớn */
+    xeHongXacSuat: 0.1,
+    xeHongChiPhiMin: 0.2,
+    xeHongChiPhiMax: 0.35,
+
+    /** mất trộm: không có bảo hiểm vật chất thì mất luôn món ước nguyện */
+    matTromXacSuat: 0.03,
+    matTromMatHanhPhuc: 12,
+
+    /** bị phạt khi thiếu bảo hiểm trách nhiệm dân sự bắt buộc */
+    phatXacSuat: 0.2,
+    phatTyLe: 0.01,
+    phatMatHanhPhuc: 3,
+  },
+
   /** ---------- Khát vọng ---------- */
   /** hạnh phúc bị trừ mỗi năm khi chưa đạt được khát vọng của nghề */
   phatKhatVongMoiNam: 5,
@@ -162,8 +203,12 @@ export const CONFIG = {
     suCoMatHanhPhuc: 3,
   },
 
-  /** ---------- Cơ hội kinh doanh ---------- */
-  soCoHoiMoiNam: 1,
+  /** ---------- Cơ hội kinh doanh ----------
+   * Mỗi năm rút hai suất: một suất ưu tiên lấy từ bộ cơ hội riêng của nghề đang
+   * chơi, một suất lấy từ bộ chung. Hết cơ hội hợp lệ của nghề thì cả hai suất
+   * lấy từ bộ chung.
+   */
+  soCoHoiMoiNam: 2,
 
   /** ---------- Biểu đồ giá ----------
    * Số điểm giá "quá khứ" sinh sẵn khi tạo ván, để biểu đồ đầu tư
@@ -172,7 +217,7 @@ export const CONFIG = {
   soDiemGiaQuaKhu: 9,
 
   /** ---------- Lưu ván ---------- */
-  luuKey: 'dong-tien-luu-v1-2',
+  luuKey: 'dong-tien-luu-v1-3',
 } as const
 
 export type Config = typeof CONFIG

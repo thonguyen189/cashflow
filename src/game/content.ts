@@ -50,6 +50,13 @@ export const UOC_NGUYEN: MonUocNguyen[] = [
   { id: 'canHo', ten: 'Căn hộ riêng', emoji: '🏠', gia: 2.5 * TY, hanhPhucMoiNam: 15 },
 ]
 
+/**
+ * Những món ước nguyện được coi là phương tiện — mua rồi thì mới có xe để bảo hiểm,
+ * và mới gặp nhóm sự kiện giao thông. Xếp theo giá trị giảm dần: có cả hai thì mọi
+ * tính toán bám theo chiếc đắt nhất, một hồ sơ bảo hiểm duy nhất.
+ */
+export const XE_UOC_NGUYEN_IDS = ['oTo', 'xeMay'] as const
+
 /** ---------------- Giáo dục ---------------- */
 export const KHOA_HOC: KhoaHoc[] = [
   {
@@ -223,25 +230,45 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't39', ten: 'Ghế massage cho tấm lưng đã mỏi', emoji: '💆', gia: 30 * TRIEU, diem: 10, giaiDoan: 'tuoiGia' },
 ]
 
-/** ---------------- Cơ hội kinh doanh ---------------- */
+/** ---------------- Cơ hội ----------------
+ * Ba loại:
+ *  - kinhDoanh: góp vốn một lần, thu nhập mỗi năm về sau. Thu nhập KHÔNG cố định:
+ *    mỗi năm dao động trong biên độ riêng của ngành, và bám theo lạm phát kể từ
+ *    năm góp vốn nên vài chục năm sau vẫn còn giá trị thật.
+ *  - canhBac: mất trắng hoặc nhân nhiều lần, mở kết quả cuối năm. Kỳ vọng âm nhẹ.
+ *  - toChucSuKien: bỏ vốn ra, cuối năm nhận lại vốn cộng lợi nhuận đúng một lần
+ *    rồi kết thúc. Là công sức chứ không phải may rủi nên kỳ vọng dương khoảng
+ *    +20%, và năm tệ nhất cũng chỉ lỗ một phần vốn chứ không mất trắng.
+ *
+ * `ngheId` để trống nghĩa là mọi nghề đều gặp. Các cơ hội gắn nghề đều có
+ * `namToiThieu` vì chúng đòi thâm niên mới mở được.
+ *
+ * Mọi cơ hội kinh doanh đều nằm trong dải sinh lời 19–22% mỗi năm trên vốn, nên
+ * không kênh nào trội hẳn so với phần còn lại.
+ */
 export const CO_HOI: CoHoi[] = [
+  /* ---------- Chung: kinh doanh ---------- */
   {
     id: 'choThueXe',
     ten: 'Đội xe máy cho thuê',
-    moTa: 'Mua vài chiếc xe cho khách du lịch thuê. Thu nhập đều, ít rủi ro.',
+    moTa: 'Mua vài chiếc xe cho khách du lịch thuê. Thu nhập đều, phụ thuộc mùa du lịch.',
     emoji: '🛵',
     loai: 'kinhDoanh',
     gia: 200 * TRIEU,
     thuNhapMoiNam: 40 * TRIEU,
+    bienDongThuNhapMin: -0.15,
+    bienDongThuNhapMax: 0.18,
   },
   {
     id: 'quanCaPhe',
     ten: 'Mở quán cà phê nhỏ',
-    moTa: 'Một mặt bằng trong hẻm, tự vận hành. Lời khá nếu chịu khó.',
+    moTa: 'Một mặt bằng trong hẻm, tự vận hành. Ăn uống bấp bênh, năm được năm mất.',
     emoji: '☕',
     loai: 'kinhDoanh',
     gia: 400 * TRIEU,
     thuNhapMoiNam: 90 * TRIEU,
+    bienDongThuNhapMin: -0.35,
+    bienDongThuNhapMax: 0.4,
   },
   {
     id: 'gopVonCuaHang',
@@ -251,19 +278,58 @@ export const CO_HOI: CoHoi[] = [
     loai: 'kinhDoanh',
     gia: 800 * TRIEU,
     thuNhapMoiNam: 150 * TRIEU,
+    bienDongThuNhapMin: -0.25,
+    bienDongThuNhapMax: 0.28,
   },
   {
     id: 'xuongMay',
     ten: 'Góp vốn xưởng may gia công',
-    moTa: 'Vốn lớn, đơn hàng xuất khẩu ổn định. Dành cho giai đoạn đã có tích luỹ.',
+    moTa: 'Vốn lớn, sống nhờ đơn hàng xuất khẩu. Dành cho giai đoạn đã có tích luỹ.',
     emoji: '🧵',
     loai: 'kinhDoanh',
     gia: 1.5 * TY,
     thuNhapMoiNam: 300 * TRIEU,
+    bienDongThuNhapMin: -0.22,
+    bienDongThuNhapMax: 0.25,
   },
   {
+    id: 'xeTaiChoHang',
+    ten: 'Xe tải chở hàng cho thuê',
+    moTa: 'Một chiếc xe tải và một tài xế quen. Có hàng thì chạy, ế thì nằm bãi.',
+    emoji: '🚚',
+    loai: 'kinhDoanh',
+    gia: 600 * TRIEU,
+    thuNhapMoiNam: 126 * TRIEU,
+    bienDongThuNhapMin: -0.2,
+    bienDongThuNhapMax: 0.24,
+  },
+  {
+    id: 'nhaTroCongNhan',
+    ten: 'Dãy nhà trọ cho công nhân thuê',
+    moTa: 'Mười phòng cạnh khu công nghiệp. Người thuê ổn định, tiền về đều đặn nhất.',
+    emoji: '🏘️',
+    loai: 'kinhDoanh',
+    gia: 1 * TY,
+    thuNhapMoiNam: 195 * TRIEU,
+    bienDongThuNhapMin: -0.08,
+    bienDongThuNhapMax: 0.12,
+  },
+  {
+    id: 'vuonSauRieng',
+    ten: 'Vườn sầu riêng ở Tây Nguyên',
+    moTa: 'Mất mùa hay trúng giá cách nhau một trời. Năm được thì bằng cả chục năm dành dụm.',
+    emoji: '🌳',
+    loai: 'kinhDoanh',
+    gia: 700 * TRIEU,
+    thuNhapMoiNam: 154 * TRIEU,
+    bienDongThuNhapMin: -0.85,
+    bienDongThuNhapMax: 0.95,
+  },
+
+  /* ---------- Chung: canh bạc ---------- */
+  {
     id: 'boSuuTapNft',
-    ten: 'Bộ sưu tập NFT',
+    ten: 'Bộ sưu tập tranh số hoá',
     // Cân bằng v1.2: heSoNhan 5 → 3.6 để kỳ vọng = 0.25 × 3.6 = 0,9 (âm nhẹ).
     moTa: 'Nếu trúng thì nhân 3,6 lần vốn, còn không thì thành giấy vụn ngay trong năm nay.',
     emoji: '🖼️',
@@ -274,7 +340,7 @@ export const CO_HOI: CoHoi[] = [
   },
   {
     id: 'coinMoi',
-    ten: 'Đầu cơ coin mới lên sàn',
+    ten: 'Đầu cơ đồng tiền mã hoá mới lên sàn',
     // Cân bằng v1.2: heSoNhan 8 → 4.5 để kỳ vọng = 0.2 × 4.5 = 0,9 (âm nhẹ).
     moTa: 'Xác suất thắng thấp, nếu trúng thì nhân 4,5 lần vốn.',
     emoji: '🎲',
@@ -282,6 +348,256 @@ export const CO_HOI: CoHoi[] = [
     gia: 100 * TRIEU,
     xacSuatThang: 0.2,
     heSoNhan: 4.5,
+  },
+  {
+    id: 'quanAnNguoiQuen',
+    ten: 'Góp vốn quán ăn của người quen',
+    // Kỳ vọng = 0.45 × 2 = 0,9 (âm nhẹ), cùng mức với hai canh bạc còn lại.
+    moTa: 'Người quen mở quán, rủ góp vốn ăn chia. Trụ được thì nhân đôi, đóng cửa thì mất sạch.',
+    emoji: '🍜',
+    loai: 'canhBac',
+    gia: 250 * TRIEU,
+    xacSuatThang: 0.45,
+    heSoNhan: 2,
+  },
+
+  /* ---------- Chung: tổ chức sự kiện ---------- */
+  {
+    id: 'hoiChoTet',
+    ten: 'Tổ chức hội chợ Tết',
+    moTa: 'Thuê mặt bằng, gom gian hàng, bán vé. Một mùa Tết ăn nhau ở thời tiết và truyền thông.',
+    emoji: '🎪',
+    loai: 'toChucSuKien',
+    gia: 200 * TRIEU,
+    loiNhuanMin: -0.25,
+    loiNhuanMax: 0.7,
+    chiMotLan: true,
+  },
+  {
+    id: 'giaiChayThanhPho',
+    ten: 'Giải chạy phong trào thành phố',
+    moTa: 'Bán vé và gọi tài trợ. Vất vả mấy tháng nhưng gọn gàng, thu xong là xong.',
+    emoji: '🏃',
+    loai: 'toChucSuKien',
+    gia: 150 * TRIEU,
+    loiNhuanMin: -0.2,
+    loiNhuanMax: 0.55,
+    chiMotLan: true,
+  },
+  {
+    id: 'thauTiecCuoi',
+    ten: 'Nhận thầu tiệc cưới trọn gói',
+    moTa: 'Lo từ sảnh tới hoa và ban nhạc cho cả mùa cưới. Vốn nặng, lời cũng nặng.',
+    emoji: '💒',
+    loai: 'toChucSuKien',
+    gia: 500 * TRIEU,
+    loiNhuanMin: -0.2,
+    loiNhuanMax: 0.6,
+    chiMotLan: true,
+  },
+
+  /* ---------- Giáo viên ---------- */
+  {
+    id: 'lopDayThem',
+    ten: 'Lớp dạy thêm buổi tối',
+    moTa: 'Kê bàn ghế ngay tại nhà, dạy vài lớp sau giờ hành chính. Vốn nhẹ, bắt đầu được sớm.',
+    emoji: '📝',
+    loai: 'kinhDoanh',
+    ngheId: 'giaoVien',
+    namToiThieu: 2,
+    gia: 60 * TRIEU,
+    thuNhapMoiNam: 13 * TRIEU,
+    bienDongThuNhapMin: -0.2,
+    bienDongThuNhapMax: 0.25,
+  },
+  {
+    id: 'soanSachThamKhao',
+    ten: 'Biên soạn sách tham khảo',
+    moTa: 'Viết bộ sách ôn luyện rồi ăn tiền bản quyền theo số bản in mỗi năm.',
+    emoji: '📖',
+    loai: 'kinhDoanh',
+    ngheId: 'giaoVien',
+    namToiThieu: 4,
+    gia: 150 * TRIEU,
+    thuNhapMoiNam: 30 * TRIEU,
+    bienDongThuNhapMin: -0.3,
+    bienDongThuNhapMax: 0.35,
+  },
+  {
+    id: 'trungTamGiaSu',
+    ten: 'Trung tâm gia sư',
+    moTa: 'Thuê mặt bằng, gom đội ngũ giáo viên trẻ, bạn đứng quản lý và giữ uy tín.',
+    emoji: '🏫',
+    loai: 'kinhDoanh',
+    ngheId: 'giaoVien',
+    namToiThieu: 6,
+    gia: 400 * TRIEU,
+    thuNhapMoiNam: 84 * TRIEU,
+    bienDongThuNhapMin: -0.2,
+    bienDongThuNhapMax: 0.25,
+  },
+  {
+    id: 'mamNonTuThuc',
+    ten: 'Trường mầm non tư thục',
+    moTa: 'Cả một cơ ngơi mang tên bạn. Cần thâm niên, quan hệ và một khoản vốn lớn.',
+    emoji: '🧸',
+    loai: 'kinhDoanh',
+    ngheId: 'giaoVien',
+    namToiThieu: 12,
+    chiMotLan: true,
+    gia: 1.2 * TY,
+    thuNhapMoiNam: 228 * TRIEU,
+    bienDongThuNhapMin: -0.15,
+    bienDongThuNhapMax: 0.2,
+  },
+  {
+    id: 'traiHeHocSinh',
+    ten: 'Trại hè cho học sinh',
+    moTa: 'Một mùa hè trọn gói: xe cộ, chỗ ăn ở, hoạt động. Phụ huynh tin bạn nên dễ tuyển.',
+    emoji: '🎒',
+    loai: 'toChucSuKien',
+    ngheId: 'giaoVien',
+    namToiThieu: 3,
+    chiMotLan: true,
+    gia: 120 * TRIEU,
+    loiNhuanMin: -0.2,
+    loiNhuanMax: 0.6,
+  },
+
+  /* ---------- Bác sĩ ---------- */
+  {
+    id: 'trucPhongKhamTu',
+    ten: 'Nhận trực thêm ở phòng khám tư',
+    moTa: 'Vài buổi tối mỗi tuần ngoài giờ bệnh viện. Đổi sức khoẻ lấy thu nhập.',
+    emoji: '🩹',
+    loai: 'kinhDoanh',
+    ngheId: 'bacSi',
+    namToiThieu: 2,
+    gia: 90 * TRIEU,
+    thuNhapMoiNam: 20 * TRIEU,
+    bienDongThuNhapMin: -0.15,
+    bienDongThuNhapMax: 0.2,
+  },
+  {
+    id: 'nhaThuoc',
+    ten: 'Nhà thuốc trước cổng bệnh viện',
+    moTa: 'Vị trí đắc địa và một dược sĩ đứng quầy. Bạn góp vốn cùng chuyên môn.',
+    emoji: '💊',
+    loai: 'kinhDoanh',
+    ngheId: 'bacSi',
+    namToiThieu: 5,
+    gia: 450 * TRIEU,
+    thuNhapMoiNam: 94 * TRIEU,
+    bienDongThuNhapMin: -0.18,
+    bienDongThuNhapMax: 0.22,
+  },
+  {
+    id: 'phongXetNghiem',
+    ten: 'Góp vốn phòng xét nghiệm',
+    moTa: 'Máy móc đắt tiền, chạy hết công suất thì lời lớn. Cần vốn và mối quan hệ chuyên môn.',
+    emoji: '🔬',
+    loai: 'kinhDoanh',
+    ngheId: 'bacSi',
+    namToiThieu: 8,
+    gia: 900 * TRIEU,
+    thuNhapMoiNam: 171 * TRIEU,
+    bienDongThuNhapMin: -0.2,
+    bienDongThuNhapMax: 0.24,
+  },
+  {
+    id: 'phongKhamRieng',
+    ten: 'Phòng khám riêng',
+    moTa: 'Biển hiệu mang tên bạn. Đỉnh cao của một đời làm nghề, và cũng là khoản đầu tư lớn nhất.',
+    emoji: '🏥',
+    loai: 'kinhDoanh',
+    ngheId: 'bacSi',
+    namToiThieu: 10,
+    chiMotLan: true,
+    gia: 1.8 * TY,
+    thuNhapMoiNam: 342 * TRIEU,
+    bienDongThuNhapMin: -0.15,
+    bienDongThuNhapMax: 0.22,
+  },
+  {
+    id: 'hoiThaoChuyenDe',
+    ten: 'Hội thảo chuyên đề',
+    moTa: 'Mời chuyên gia, bán vé cho đồng nghiệp và gọi tài trợ từ hãng dược.',
+    emoji: '📣',
+    loai: 'toChucSuKien',
+    ngheId: 'bacSi',
+    namToiThieu: 3,
+    chiMotLan: true,
+    gia: 250 * TRIEU,
+    loiNhuanMin: -0.15,
+    loiNhuanMax: 0.65,
+  },
+
+  /* ---------- Kỹ sư phần mềm ---------- */
+  {
+    id: 'duAnNgoaiGio',
+    ten: 'Nhận dự án ngoài giờ',
+    moTa: 'Vài khách hàng nhỏ và những đêm thức khuya. Không cần vốn lớn để bắt đầu.',
+    emoji: '⌨️',
+    loai: 'kinhDoanh',
+    ngheId: 'kySuPhanMem',
+    namToiThieu: 2,
+    gia: 100 * TRIEU,
+    thuNhapMoiNam: 22 * TRIEU,
+    bienDongThuNhapMin: -0.3,
+    bienDongThuNhapMax: 0.35,
+  },
+  {
+    id: 'ungDungDiDong',
+    ten: 'Ứng dụng di động của riêng bạn',
+    moTa: 'Có năm bùng nổ lượt tải, có năm không ai nhắc tới. Bấp bênh nhất trong các cơ hội.',
+    emoji: '📱',
+    loai: 'kinhDoanh',
+    ngheId: 'kySuPhanMem',
+    namToiThieu: 4,
+    gia: 350 * TRIEU,
+    thuNhapMoiNam: 73 * TRIEU,
+    bienDongThuNhapMin: -0.7,
+    bienDongThuNhapMax: 0.9,
+  },
+  {
+    id: 'khoiNghiepCongNghe',
+    ten: 'Khởi nghiệp công nghệ',
+    // Kỳ vọng = 0.22 × 4 = 0,88 (âm nhẹ), cùng mức với các canh bạc khác.
+    moTa: 'Gọi được vốn vòng sau thì nhân 4 lần, còn không thì đóng cửa và mất trắng.',
+    emoji: '🚀',
+    loai: 'canhBac',
+    ngheId: 'kySuPhanMem',
+    namToiThieu: 6,
+    gia: 500 * TRIEU,
+    xacSuatThang: 0.22,
+    heSoNhan: 4,
+  },
+  {
+    id: 'congTyGiaCong',
+    ten: 'Công ty phần mềm gia công',
+    moTa: 'Ba chục kỹ sư và những hợp đồng dài hạn từ nước ngoài. Cả một sự nghiệp thứ hai.',
+    emoji: '🏢',
+    loai: 'kinhDoanh',
+    ngheId: 'kySuPhanMem',
+    namToiThieu: 12,
+    chiMotLan: true,
+    gia: 2 * TY,
+    thuNhapMoiNam: 380 * TRIEU,
+    bienDongThuNhapMin: -0.25,
+    bienDongThuNhapMax: 0.3,
+  },
+  {
+    id: 'hoiNghiCongNghe',
+    ten: 'Hội nghị công nghệ',
+    moTa: 'Thuê hội trường lớn, mời diễn giả quốc tế, bán vé sớm. Được tài trợ thì lời đậm.',
+    emoji: '💡',
+    loai: 'toChucSuKien',
+    ngheId: 'kySuPhanMem',
+    namToiThieu: 3,
+    chiMotLan: true,
+    gia: 400 * TRIEU,
+    loiNhuanMin: -0.25,
+    loiNhuanMax: 0.75,
   },
 ]
 

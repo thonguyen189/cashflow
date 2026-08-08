@@ -1,21 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { CONFIG, TRIEU, TY } from './config'
-import { NGHE, THE_TIEU_DUNG, timNghe } from './content'
+import { NGHE, TAI_SAN, THE_TIEU_DUNG, timCoHoi, timNghe, timUocNguyen } from './content'
 import {
+  bienDoThuNhapThuDong,
+  coHoiHopLe,
+  dangCoBaoHiemXe,
   giaThucTe,
   muaToiDa,
   phiBaoHiem,
+  phiBaoHiemXe,
   reducer,
   taoGameMoi,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
+  thuNhapThuDong,
   tongTaiSan,
   traNoMoiNam,
   tuoiTaiNam,
   tyLeDongTra,
   vayToiDa,
+  xeDangCo,
 } from './engine'
-import type { GameState } from './types'
+import type { CoHoi, GameState } from './types'
 
 const SEED = 12345
 const moiVan = (ngheId = 'giaoVien') => taoGameMoi(ngheId, SEED)
@@ -41,6 +47,20 @@ function diTronMotNam(s: GameState, tienMat = 800 * TRIEU): GameState {
   cur = duyetHetThe(cur, false)
   cur = { ...cur, hanhPhuc: 85 }
   return reducer(cur, { type: 'ketThucNam' })
+}
+
+/**
+ * Dựng sẵn một trạng thái tự do, dư tiền, và chỉ được mời đúng cơ hội cần kiểm —
+ * để bài kiểm thử không phụ thuộc vào việc bốc trúng cơ hội nào.
+ */
+function moiDungMotCoHoi(
+  coHoiId: string,
+  ngheId = 'kySuPhanMem',
+  tienMat = 5 * TY,
+): { s: GameState; coHoi: CoHoi } {
+  const coHoi = timCoHoi(coHoiId)!
+  const s0 = reducer(moiVan(ngheId), { type: 'traChiPhi' })
+  return { s: { ...s0, tienMat, coHoiNamNay: [coHoi] }, coHoi }
 }
 
 describe('khởi tạo', () => {
@@ -264,6 +284,57 @@ describe('chuyển năm', () => {
   })
 })
 
+describe('bảng tổng kết — danh mục của bạn tách khỏi tin thị trường', () => {
+  /** Đi trọn một năm với danh mục đặt sẵn, trả về bản tổng kết của năm đó. */
+  const tongKetVoiDanhMuc = (mua: { assetId: 'coPhieu' | 'vang'; soDonVi: number }[]) => {
+    let s = reducer(moiVan('kySuPhanMem'), { type: 'traChiPhi' })
+    s = { ...s, tienMat: 5 * TY }
+    for (const m of mua) s = reducer(s, { type: 'dauTu', ...m })
+    s = duyetHetThe(s, false)
+    s = { ...s, hanhPhuc: 90 }
+    return reducer(s, { type: 'ketThucNam' }).tongKet!
+  }
+
+  it('không sở hữu cổ phiếu thì cổ phiếu KHÔNG bị tính là đang nắm giữ', () => {
+    const tk = tongKetVoiDanhMuc([])
+    const coPhieu = tk.bienDongTaiSan.find((t) => t.id === 'coPhieu')
+    // Vẫn có mặt để kể tin thị trường, nhưng không được coi là danh mục của người chơi
+    expect(coPhieu).toBeTruthy()
+    expect(coPhieu!.dangNamGiu).toBe(false)
+    expect(coPhieu!.loiTuc).toBe(0)
+  })
+
+  it('không sở hữu gì cả thì không kênh nào được đánh dấu đang nắm giữ', () => {
+    const tk = tongKetVoiDanhMuc([])
+    expect(tk.bienDongTaiSan.filter((t) => t.dangNamGiu)).toHaveLength(0)
+  })
+
+  it('mua cổ phiếu rồi thì cổ phiếu mới được đánh dấu đang nắm giữ', () => {
+    const tk = tongKetVoiDanhMuc([{ assetId: 'coPhieu', soDonVi: 100 }])
+    const coPhieu = tk.bienDongTaiSan.find((t) => t.id === 'coPhieu')!
+    expect(coPhieu.dangNamGiu).toBe(true)
+  })
+
+  it('số kênh đánh dấu đang nắm giữ đúng bằng số kênh thật sự có trong tay', () => {
+    const tk = tongKetVoiDanhMuc([
+      { assetId: 'coPhieu', soDonVi: 100 },
+      { assetId: 'vang', soDonVi: 10 },
+    ])
+    const dangGiu = tk.bienDongTaiSan.filter((t) => t.dangNamGiu)
+    expect(dangGiu).toHaveLength(2)
+    expect(dangGiu.map((t) => t.id).sort()).toEqual(['coPhieu', 'vang'])
+  })
+
+  it('luôn liệt kê đủ cả năm kênh để mục tin thị trường không bị khuyết', () => {
+    for (const tk of [
+      tongKetVoiDanhMuc([]),
+      tongKetVoiDanhMuc([{ assetId: 'vang', soDonVi: 5 }]),
+    ]) {
+      expect(tk.bienDongTaiSan.map((t) => t.id)).toEqual(TAI_SAN.map((t) => t.id))
+    }
+  })
+})
+
 describe('điều kiện kết thúc', () => {
   it('thua khi hạnh phúc dưới ngưỡng lúc bấm kết thúc năm', () => {
     const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), false)
@@ -388,39 +459,328 @@ describe('mua sắm và học hành', () => {
   })
 })
 
-describe('cơ hội kinh doanh', () => {
-  it('góp vốn tạo ra thu nhập thụ động hàng năm', () => {
-    const s0 = reducer(moiVan('kySuPhanMem'), { type: 'traChiPhi' })
-    const s: GameState = {
-      ...s0,
-      tienMat: 5_000 * TRIEU,
-      coHoiNamNay: [
-        {
-          id: 'quanCaPhe',
-          ten: 'Mở quán cà phê nhỏ',
-          moTa: '',
-          emoji: '',
-          loai: 'kinhDoanh',
-          gia: 400 * TRIEU,
-          thuNhapMoiNam: 90 * TRIEU,
-        },
-      ],
+describe('bảo hiểm xe', () => {
+  /** Trạng thái tự do, rủng rỉnh tiền và đã có sẵn (các) chiếc xe cần kiểm. */
+  const coXe = (xeIds: string[], tienMat = 5 * TY): GameState => {
+    const s = reducer(moiVan('bacSi'), { type: 'traChiPhi' })
+    return { ...s, tienMat, uocNguyenDaMua: xeIds }
+  }
+
+  it('chưa mua ước nguyện xe nào thì không có xe và không mua được bảo hiểm xe', () => {
+    const s = coXe([])
+    expect(xeDangCo(s)).toBeNull()
+    for (const loai of ['trachNhiemDanSu', 'vatChatXe', 'taiNanNguoiTrenXe'] as const) {
+      expect(reducer(s, { type: 'muaBaoHiemXe', loai })).toBe(s)
     }
-    const sau = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: 'quanCaPhe', nhan: true })
-    expect(sau.doanhNghiep).toHaveLength(1)
-    expect(sau.tienMat).toBe(s.tienMat - 400 * TRIEU)
-    expect(sau.coHoiNamNay).toHaveLength(0)
   })
 
-  it('từ chối thì chỉ bỏ thẻ, không mất tiền', () => {
-    const s = reducer(moiVan(), { type: 'traChiPhi' })
-    const sau = reducer(s, {
-      type: 'quyetDinhCoHoi',
-      coHoiId: s.coHoiNamNay[0]!.id,
-      nhan: false,
-    })
-    expect(sau.tienMat).toBe(s.tienMat)
+  it('có cả xe máy lẫn ô tô thì hồ sơ bám theo chiếc giá trị cao nhất', () => {
+    const s = coXe(['xeMay', 'oTo'])
+    const xe = xeDangCo(s)!
+    expect(xe.uocNguyenId).toBe('oTo')
+    expect(xe.giaTri).toBe(giaThucTe(s, timUocNguyen('oTo')!.gia))
+    expect(xe.emoji.length).toBeGreaterThan(0)
+  })
+
+  it('phí ba loại đúng bằng tỉ lệ cấu hình nhân giá trị xe của năm nay', () => {
+    const s = coXe(['xeMay'])
+    const giaTri = xeDangCo(s)!.giaTri
+    expect(giaTri).toBe(80 * TRIEU) // năm 1, chỉ số giá còn bằng 1
+    const bh = CONFIG.baoHiemXe
+    expect(phiBaoHiemXe(s, 'trachNhiemDanSu')).toBe(
+      Math.round(giaTri * bh.tyLePhiTrachNhiemDanSu),
+    )
+    expect(phiBaoHiemXe(s, 'vatChatXe')).toBe(Math.round(giaTri * bh.tyLePhiVatChatXe))
+    expect(phiBaoHiemXe(s, 'taiNanNguoiTrenXe')).toBe(
+      Math.round(giaTri * bh.tyLePhiTaiNanNguoiTrenXe),
+    )
+    // Trách nhiệm dân sự là loại rẻ nhất, vật chất xe là loại đắt nhất
+    expect(phiBaoHiemXe(s, 'trachNhiemDanSu')).toBeLessThan(
+      phiBaoHiemXe(s, 'taiNanNguoiTrenXe'),
+    )
+    expect(phiBaoHiemXe(s, 'vatChatXe')).toBeGreaterThan(
+      phiBaoHiemXe(s, 'taiNanNguoiTrenXe'),
+    )
+  })
+
+  it('phí leo theo lạm phát qua các năm', () => {
+    const s = coXe(['oTo'])
+    const phiNam1 = phiBaoHiemXe(s, 'vatChatXe')
+    const veSau: GameState = { ...s, nam: 21, chiSoGia: 2.5 }
+    expect(phiBaoHiemXe(veSau, 'vatChatXe')).toBe(Math.round(phiNam1 * 2.5))
+  })
+
+  it('bảo hiểm xe chỉ có hiệu lực trong năm mua, giống bảo hiểm y tế', () => {
+    let s = coXe(['oTo'])
+    expect(dangCoBaoHiemXe(s, 'trachNhiemDanSu')).toBe(false)
+    s = reducer(s, { type: 'muaBaoHiemXe', loai: 'trachNhiemDanSu' })
+    expect(dangCoBaoHiemXe(s, 'trachNhiemDanSu')).toBe(true)
+    expect(s.baoHiemXe.trachNhiemDanSu).toBe(1)
+    // Mua một loại không kéo theo hai loại còn lại
+    expect(dangCoBaoHiemXe(s, 'vatChatXe')).toBe(false)
+    expect(dangCoBaoHiemXe(s, 'taiNanNguoiTrenXe')).toBe(false)
+
+    s = duyetHetThe(s, false)
+    s = { ...s, hanhPhuc: 90 }
+    s = reducer(s, { type: 'ketThucNam' })
+    expect(s.nam).toBe(2)
+    expect(s.baoHiemXe.trachNhiemDanSu).toBeLessThan(s.nam)
+    expect(dangCoBaoHiemXe(s, 'trachNhiemDanSu')).toBe(false)
+  })
+
+  it('mua thì trừ đúng phí, còn thiếu tiền thì không mua được', () => {
+    const s = coXe(['oTo'])
+    const phi = phiBaoHiemXe(s, 'vatChatXe')
+    expect(phi).toBeGreaterThan(0)
+    const sau = reducer(s, { type: 'muaBaoHiemXe', loai: 'vatChatXe' })
+    expect(sau.tienMat).toBe(s.tienMat - phi)
+
+    const ngheo: GameState = { ...s, tienMat: phi - 1 }
+    expect(reducer(ngheo, { type: 'muaBaoHiemXe', loai: 'vatChatXe' })).toBe(ngheo)
+  })
+
+  it('không mua hai lần cùng một loại trong cùng một năm', () => {
+    const s = coXe(['oTo'])
+    const mot = reducer(s, { type: 'muaBaoHiemXe', loai: 'taiNanNguoiTrenXe' })
+    expect(mot).not.toBe(s)
+    expect(reducer(mot, { type: 'muaBaoHiemXe', loai: 'taiNanNguoiTrenXe' })).toBe(mot)
+  })
+})
+
+describe('cơ hội kinh doanh', () => {
+  it('góp vốn tạo ra thu nhập thụ động hàng năm', () => {
+    const { s, coHoi } = moiDungMotCoHoi('quanCaPhe')
+    const sau = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: true })
+    expect(sau.doanhNghiep).toHaveLength(1)
+    expect(sau.tienMat).toBe(s.tienMat - giaThucTe(s, coHoi.gia))
     expect(sau.coHoiNamNay).toHaveLength(0)
+    // Doanh nghiệp ghi lại mức nền và mặt bằng giá lúc góp vốn để còn bám lạm phát
+    const dn = sau.doanhNghiep[0]!
+    expect(dn.coHoiId).toBe(coHoi.id)
+    expect(dn.thuNhapNen).toBe(giaThucTe(s, coHoi.thuNhapMoiNam!))
+    expect(dn.chiSoGiaLucMua).toBe(s.chiSoGia)
+    expect(thuNhapThuDong(sau)).toBe(dn.thuNhapNen)
+  })
+
+  it('từ chối thì chỉ bỏ đúng cơ hội đó, không mất tiền', () => {
+    const s = reducer(moiVan(), { type: 'traChiPhi' })
+    const bo = s.coHoiNamNay[0]!
+    const sau = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: bo.id, nhan: false })
+    expect(sau.tienMat).toBe(s.tienMat)
+    // Mỗi năm mời nhiều cơ hội, bỏ một cái thì những cái còn lại vẫn nằm đó
+    expect(sau.coHoiNamNay).toHaveLength(s.coHoiNamNay.length - 1)
+    expect(sau.coHoiNamNay.some((c) => c.id === bo.id)).toBe(false)
+  })
+})
+
+describe('cơ hội gắn với nghề nghiệp và thâm niên', () => {
+  /** Chạy nhiều năm liên tiếp, ghi lại bộ cơ hội được mời của từng năm. */
+  const coHoiQuaCacNam = (ngheId: string, soNam: number) => {
+    let cur = moiVan(ngheId)
+    const nhatKy: { nam: number; coHoi: CoHoi[] }[] = [
+      { nam: cur.nam, coHoi: cur.coHoiNamNay },
+    ]
+    for (let i = 0; i < soNam && cur.trangThai === 'dangChoi'; i++) {
+      cur = reducer(diTronMotNam(cur, 5 * TY), { type: 'dongTongKet' })
+      nhatKy.push({ nam: cur.nam, coHoi: cur.coHoiNamNay })
+    }
+    return nhatKy
+  }
+
+  it('cơ hội gắn nghề chỉ đến với đúng nghề đó', () => {
+    for (const nghe of NGHE) {
+      const nhatKy = coHoiQuaCacNam(nghe.id, 25)
+      for (const { coHoi } of nhatKy) {
+        for (const c of coHoi) {
+          if (c.ngheId !== undefined) expect(c.ngheId).toBe(nghe.id)
+        }
+      }
+      // Và nghề nào cũng phải thật sự được mời mạch cơ hội riêng của mình
+      expect(nhatKy.some(({ coHoi }) => coHoi.some((c) => c.ngheId === nghe.id))).toBe(
+        true,
+      )
+    }
+  })
+
+  it('cơ hội đòi thâm niên không xuất hiện trước năm tối thiểu', () => {
+    for (const nghe of NGHE) {
+      for (const { nam, coHoi } of coHoiQuaCacNam(nghe.id, 25)) {
+        for (const c of coHoi) {
+          if (c.namToiThieu !== undefined) {
+            expect(nam).toBeGreaterThanOrEqual(c.namToiThieu)
+          }
+        }
+      }
+    }
+  })
+
+  it('cơ hội chỉ một lần thì tham gia xong không bao giờ được mời lại', () => {
+    const coHoi = timCoHoi('traiHeHocSinh')!
+    expect(coHoi.chiMotLan).toBe(true)
+
+    const s0 = reducer(moiVan('giaoVien'), { type: 'traChiPhi' })
+    // Đặt ở năm 5 để vượt yêu cầu thâm niên của cơ hội này
+    let s: GameState = { ...s0, nam: 5, tienMat: 5 * TY, coHoiNamNay: [coHoi] }
+    expect(coHoiHopLe(coHoi, s)).toBe(true)
+
+    s = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: true })
+    expect(s.coHoiDaLam).toContain(coHoi.id)
+    expect(coHoiHopLe(coHoi, s)).toBe(false)
+
+    for (let i = 0; i < 20 && s.trangThai === 'dangChoi'; i++) {
+      s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
+      expect(s.coHoiNamNay.some((c) => c.id === coHoi.id)).toBe(false)
+      expect(s.coHoiDaLam).toContain(coHoi.id)
+    }
+  })
+
+  it('mỗi năm mời đúng số cơ hội cấu hình và không trùng id trong cùng một năm', () => {
+    for (const nghe of NGHE) {
+      for (const { coHoi } of coHoiQuaCacNam(nghe.id, 20)) {
+        expect(coHoi.length).toBe(CONFIG.soCoHoiMoiNam)
+        expect(new Set(coHoi.map((c) => c.id)).size).toBe(coHoi.length)
+      }
+    }
+  })
+})
+
+describe('thu nhập doanh nghiệp biến động từng năm', () => {
+  /** Góp vốn vào một cơ hội kinh doanh rồi trả về trạng thái ngay sau khi góp. */
+  const gopVon = (coHoiId: string, tienMat = 8 * TY): GameState => {
+    const { s, coHoi } = moiDungMotCoHoi(coHoiId, 'kySuPhanMem', tienMat)
+    return reducer(s, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: true })
+  }
+
+  /** Đóng năm ngay tại chỗ, không đụng tới tiền mặt đang có. */
+  const dongNam = (s: GameState): GameState => {
+    let cur = duyetHetThe(s, false)
+    cur = { ...cur, hanhPhuc: 90 }
+    return reducer(cur, { type: 'ketThucNam' })
+  }
+
+  it('thu nhập mỗi năm nằm trong biên độ riêng của ngành', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = gopVon(coHoi.id)
+    const nen = thuNhapThuDong(s)
+    expect(nen).toBeGreaterThan(0)
+
+    const tk = dongNam(s).tongKet!
+    expect(tk.thuNhapDoanhNghiep).toHaveLength(1)
+    const dong = tk.thuNhapDoanhNghiep[0]!
+    expect(dong.coHoiId).toBe(coHoi.id)
+    expect(dong.ten).toBe(coHoi.ten)
+    expect(dong.soTien).toBeGreaterThanOrEqual(
+      Math.floor(nen * (1 + coHoi.bienDongThuNhapMin!)),
+    )
+    expect(dong.soTien).toBeLessThanOrEqual(
+      Math.ceil(nen * (1 + coHoi.bienDongThuNhapMax!)),
+    )
+  })
+
+  it('tổng các dòng doanh nghiệp đúng bằng thu nhập thụ động của năm', () => {
+    let s = gopVon('quanCaPhe')
+    s = { ...s, coHoiNamNay: [timCoHoi('nhaTroCongNhan')!] }
+    s = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: 'nhaTroCongNhan', nhan: true })
+    expect(s.doanhNghiep).toHaveLength(2)
+
+    const tk = dongNam(s).tongKet!
+    expect(tk.thuNhapDoanhNghiep).toHaveLength(2)
+    const tong = tk.thuNhapDoanhNghiep.reduce((t, d) => t + d.soTien, 0)
+    expect(tong).toBe(tk.thuNhapThuDong)
+  })
+
+  it('số tiền thực nhận nằm trong biên độ do bienDoThuNhapThuDong công bố', () => {
+    const s = gopVon('vuonSauRieng')
+    const bienDo = bienDoThuNhapThuDong(s)
+    expect(bienDo.cao).toBeGreaterThan(bienDo.thap)
+    const tk = dongNam(s).tongKet!
+    expect(tk.thuNhapThuDong).toBeGreaterThanOrEqual(bienDo.thap - 1)
+    expect(tk.thuNhapThuDong).toBeLessThanOrEqual(bienDo.cao + 1)
+  })
+
+  it('KHÔNG cố định: chạy nhiều năm cho ra những con số khác nhau', () => {
+    let s = gopVon('quanCaPhe')
+    const soTien: number[] = []
+    const bienDong: number[] = []
+    for (let i = 0; i < 8 && s.trangThai === 'dangChoi'; i++) {
+      const sau = diTronMotNam(s, 5 * TY)
+      const dong = sau.tongKet!.thuNhapDoanhNghiep[0]!
+      soTien.push(dong.soTien)
+      bienDong.push(dong.bienDong)
+      s = reducer(sau, { type: 'dongTongKet' })
+    }
+    expect(soTien).toHaveLength(8)
+    expect(new Set(soTien).size).toBeGreaterThan(1)
+    // Biên độ dao động thật, chứ không phải chỉ nhích lên theo lạm phát
+    expect(Math.max(...bienDong) - Math.min(...bienDong)).toBeGreaterThan(0.1)
+  })
+
+  it('mức nền bám lạm phát nên vài chục năm sau vẫn còn giá trị thật', () => {
+    let s = gopVon('nhaTroCongNhan')
+    const nenLucGopVon = thuNhapThuDong(s)
+    for (let i = 0; i < 20 && s.trangThai === 'dangChoi'; i++) {
+      s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
+    }
+    expect(s.chiSoGia).toBeGreaterThan(1.5)
+    expect(thuNhapThuDong(s)).toBeGreaterThan(nenLucGopVon * 1.5)
+  })
+})
+
+describe('cơ hội tổ chức sự kiện', () => {
+  it('tham gia thì trừ tiền ngay và khoản nằm chờ mở kết quả cuối năm', () => {
+    const { s, coHoi } = moiDungMotCoHoi('hoiChoTet', 'giaoVien', 2 * TY)
+    expect(coHoi.loai).toBe('toChucSuKien')
+    const gia = giaThucTe(s, coHoi.gia)
+    const sau = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: true })
+    expect(sau.tienMat).toBe(s.tienMat - gia)
+    expect(sau.khoanDangCho).toEqual([
+      { coHoiId: coHoi.id, gia, loai: 'toChucSuKien' },
+    ])
+    // Bỏ vốn ra tổ chức một mùa sự kiện thì không sinh ra doanh nghiệp nào
+    expect(sau.doanhNghiep).toHaveLength(0)
+  })
+
+  it('cuối năm mở kết quả đúng một lần, tiền về trong biên lợi nhuận công bố', () => {
+    const { s: s0, coHoi } = moiDungMotCoHoi('thauTiecCuoi', 'giaoVien', 2 * TY)
+    const gia = giaThucTe(s0, coHoi.gia)
+    let s = reducer(s0, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: true })
+    s = duyetHetThe(s, false)
+    s = { ...s, hanhPhuc: 90 }
+    s = reducer(s, { type: 'ketThucNam' })
+
+    const ketQua = s.tongKet!.suKien.filter((k) => k.loai === 'suKienKetQua')
+    expect(ketQua).toHaveLength(1)
+    // Sự kiện kể mức lãi/lỗ ròng, nên tiền về = vốn + phần chênh
+    const tienVe = ketQua[0]!.tienThayDoi + gia
+    expect(tienVe).toBeGreaterThanOrEqual(
+      Math.floor(gia * (1 + coHoi.loiNhuanMin!)),
+    )
+    expect(tienVe).toBeLessThanOrEqual(Math.ceil(gia * (1 + coHoi.loiNhuanMax!)))
+    // Năm tệ nhất cũng chỉ lỗ một phần vốn chứ không mất trắng như canh bạc
+    expect(tienVe).toBeGreaterThan(0)
+    expect(s.khoanDangCho).toHaveLength(0)
+  })
+
+  it('không sinh ra doanh nghiệp và các năm sau không còn dòng tiền nào từ nó', () => {
+    const { s: s0, coHoi } = moiDungMotCoHoi('giaiChayThanhPho', 'giaoVien', 2 * TY)
+    let s = reducer(s0, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: true })
+    s = duyetHetThe(s, false)
+    s = { ...s, hanhPhuc: 90 }
+    s = reducer(s, { type: 'ketThucNam' })
+    expect(s.tongKet!.suKien.some((k) => k.loai === 'suKienKetQua')).toBe(true)
+    expect(s.doanhNghiep).toHaveLength(0)
+    expect(s.tongKet!.thuNhapDoanhNghiep).toHaveLength(0)
+    expect(s.tongKet!.thuNhapThuDong).toBe(0)
+
+    s = reducer(s, { type: 'dongTongKet' })
+    for (let i = 0; i < 5 && s.trangThai === 'dangChoi'; i++) {
+      const sau = diTronMotNam(s, 2 * TY)
+      expect(sau.doanhNghiep).toHaveLength(0)
+      expect(sau.tongKet!.thuNhapDoanhNghiep).toHaveLength(0)
+      expect(sau.tongKet!.thuNhapThuDong).toBe(0)
+      expect(sau.tongKet!.suKien.some((k) => k.loai === 'suKienKetQua')).toBe(false)
+      s = reducer(sau, { type: 'dongTongKet' })
+    }
   })
 })
 

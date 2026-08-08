@@ -19,6 +19,11 @@ const BIEU_TUONG_SU_KIEN: Record<SuKienLoai, string> = {
   suCo: '🔧',
   banTaiSan: '📉',
   mocTaiSan: '🚩',
+  vaChamGiaoThong: '💥',
+  xeHongNang: '🔧',
+  matTromXe: '🕵️',
+  phatThieuBaoHiemXe: '👮',
+  suKienKetQua: '🎪',
 }
 
 export default function TongKetModal({
@@ -31,6 +36,12 @@ export default function TongKetModal({
   const tk = state.tongKet
   if (!tk) return null
   const tienDo = Math.min(1, tk.tongTaiSan / CONFIG.mucTieuTaiSan)
+  /** chỉ những kênh người chơi đang thật sự nắm giữ mới là danh mục của họ */
+  const danhMucDangNamGiu = tk.bienDongTaiSan.filter((l) => l.dangNamGiu)
+  const tongThuNhapDoanhNghiep = tk.thuNhapDoanhNghiep.reduce(
+    (tong, d) => tong + d.soTien,
+    0,
+  )
 
   return (
     <div className="lop-phu">
@@ -81,11 +92,38 @@ export default function TongKetModal({
           )}
         </div>
 
-        {tk.loiTucTaiSan.length > 0 && (
+        {tk.thuNhapDoanhNghiep.length > 0 && (
+          <>
+            <div className="muc">🏪 Doanh nghiệp năm nay</div>
+            <div className="the">
+              {tk.thuNhapDoanhNghiep.map((d, i) => (
+                <div className="hang" key={`${d.coHoiId}-${i}`}>
+                  <span className="hang-nhan">{d.ten}</span>
+                  <span className="hang-gia-tri">
+                    <span className="duong">{dinhDangTien(d.soTien)}</span>{' '}
+                    <span className={d.bienDong >= 0 ? 'duong' : 'am'}>
+                      {dinhDangPhanTram(d.bienDong)}
+                    </span>
+                  </span>
+                </div>
+              ))}
+              <div className="hang">
+                <span className="hang-nhan">
+                  <strong>Tổng cộng</strong>
+                </span>
+                <span className="hang-gia-tri duong">
+                  {dinhDangTien(tongThuNhapDoanhNghiep)}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {danhMucDangNamGiu.length > 0 && (
           <>
             <div className="muc">📊 Danh mục đầu tư</div>
             <div className="the">
-              {tk.loiTucTaiSan.map((l) => (
+              {danhMucDangNamGiu.map((l) => (
                 <div className="hang" key={l.id}>
                   <span className="hang-nhan">{l.ten}</span>
                   <span className="hang-gia-tri">
@@ -101,6 +139,24 @@ export default function TongKetModal({
             </div>
           </>
         )}
+
+        <div className="muc">🌐 Thị trường năm nay</div>
+        <div className="the">
+          {tk.bienDongTaiSan.map((l) => (
+            <div className="hang" key={l.id}>
+              <span className="hang-nhan">{l.ten}</span>
+              <span
+                className={`hang-gia-tri ${l.bienDong >= 0 ? 'duong' : 'am'}`}
+              >
+                {dinhDangPhanTram(l.bienDong)}
+              </span>
+            </div>
+          ))}
+          <p className="mo-ta" style={{ margin: '10px 0 0' }}>
+            Đây chỉ là tin thị trường để bạn cân nhắc mua vào, không phải kết quả đầu
+            tư của bạn.
+          </p>
+        </div>
 
         <div className="muc">😊 Hạnh phúc</div>
         <div className="the">

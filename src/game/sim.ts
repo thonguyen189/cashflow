@@ -2,14 +2,18 @@ import { CONFIG } from './config'
 import { TAI_SAN, timUocNguyen } from './content'
 import {
   dangCoBaoHiem,
+  dangCoBaoHiemXe,
   giaThucTe,
   khoaHocConLai,
   muaToiDa,
   phiBaoHiem,
+  phiBaoHiemXe,
   reducer,
   taoGameMoi,
   tongTaiSan,
+  xeDangCo,
 } from './engine'
+import type { LoaiBaoHiemXe } from './types'
 
 export interface KetQuaSim {
   thang: boolean
@@ -27,10 +31,14 @@ export interface ChienLuoc {
   /** ưu tiên đầu tư theo thứ tự này */
   uuTienTaiSan: readonly string[]
   muaBaoHiem: boolean
+  /** mua đủ ba loại bảo hiểm xe khi trong tay đã có xe */
+  muaBaoHiemXe: boolean
   muaGiaoDuc: boolean
   muaUocNguyen: boolean
   nhanCoHoiKinhDoanh: boolean
   nhanCanhBac: boolean
+  /** nhận cơ hội tổ chức sự kiện — kỳ vọng dương, mở kết quả ngay cuối năm */
+  nhanToChucSuKien: boolean
 }
 
 export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
@@ -38,11 +46,24 @@ export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
   duPhongTheoChiPhi: 0.5,
   uuTienTaiSan: ['batDongSan', 'coPhieu', 'vang', 'traiPhieu'],
   muaBaoHiem: true,
+  muaBaoHiemXe: true,
   muaGiaoDuc: true,
   muaUocNguyen: true,
   nhanCoHoiKinhDoanh: true,
   nhanCanhBac: false,
+  nhanToChucSuKien: true,
 }
+
+/**
+ * Thứ tự mua bảo hiểm xe: trách nhiệm dân sự trước vì rẻ nhất và là loại bắt
+ * buộc, rồi tới vật chất xe — loại duy nhất chặn được cú mất trộm xoá luôn món
+ * ước nguyện — cuối cùng mới tới tai nạn người ngồi trên xe.
+ */
+const THU_TU_BAO_HIEM_XE: readonly LoaiBaoHiemXe[] = [
+  'trachNhiemDanSu',
+  'vatChatXe',
+  'taiNanNguoiTrenXe',
+]
 
 /**
  * Bot chơi một ván trọn vẹn theo chiến lược cho trước.
@@ -92,7 +113,25 @@ export function moPhongMotVan(
       }
     }
 
-    // 2. khát vọng, để cắt khoản phạt hạnh phúc hàng năm (giá khoá thời trẻ)
+    // 2. bảo hiểm xe — chỉ khi đã có xe trong tay, mua dần từng loại còn thiếu.
+    // phiBaoHiemXe đã gồm lạm phát nên tuyệt đối không bọc thêm giaThucTe.
+    if (cl.muaBaoHiemXe && xeDangCo(s)) {
+      let daMuaBaoHiemXe = false
+      for (const loai of THU_TU_BAO_HIEM_XE) {
+        if (dangCoBaoHiemXe(s, loai)) continue
+        const phi = phiBaoHiemXe(s, loai)
+        if (s.tienMat <= phi * 3) continue
+        const sau = reducer(s, { type: 'muaBaoHiemXe', loai })
+        if (sau !== s) {
+          s = sau
+          daMuaBaoHiemXe = true
+          break
+        }
+      }
+      if (daMuaBaoHiemXe) continue
+    }
+
+    // 3. khát vọng, để cắt khoản phạt hạnh phúc hàng năm (giá khoá thời trẻ)
     if (cl.muaUocNguyen && !s.uocNguyenDaMua.includes(s.khatVongId)) {
       const un = timUocNguyen(s.khatVongId)
       if (un) {
@@ -107,7 +146,7 @@ export function moPhongMotVan(
       }
     }
 
-    // 3. học lên, ưu tiên bậc đắt nhất còn mua nổi
+    // 4. học lên, ưu tiên bậc đắt nhất còn mua nổi
     if (cl.muaGiaoDuc) {
       const ungVien = [...khoaHocConLai(s)]
         .reverse()
@@ -121,19 +160,22 @@ export function moPhongMotVan(
       }
     }
 
-    // 4. cơ hội kinh doanh
+    // 5. cơ hội: xử lý từng cái một, vòng lặp sẽ quay lại lo cái tiếp theo
     const coHoi = s.coHoiNamNay[0]
     if (coHoi) {
       const gia = giaThucTe(s, coHoi.gia)
-      const laKinhDoanh = coHoi.loai === 'kinhDoanh'
-      const muon =
-        (laKinhDoanh ? cl.nhanCoHoiKinhDoanh : cl.nhanCanhBac) &&
-        s.tienMat > gia * 1.3
+      const chapNhanLoai =
+        coHoi.loai === 'kinhDoanh'
+          ? cl.nhanCoHoiKinhDoanh
+          : coHoi.loai === 'toChucSuKien'
+            ? cl.nhanToChucSuKien
+            : cl.nhanCanhBac
+      const muon = chapNhanLoai && s.tienMat > gia * 1.3
       s = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: muon })
       continue
     }
 
-    // 5. đem phần dư đi đầu tư
+    // 6. đem phần dư đi đầu tư
     const duPhong = s.chiPhiHangNam * cl.duPhongTheoChiPhi
     const coTheDung = s.tienMat - duPhong
     if (coTheDung > 0) {
@@ -155,7 +197,7 @@ export function moPhongMotVan(
       if (daMua) continue
     }
 
-    // 6. hết việc thì đóng năm
+    // 7. hết việc thì đóng năm
     s = reducer(s, { type: 'ketThucNam' })
   }
 

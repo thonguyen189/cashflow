@@ -1,22 +1,36 @@
 import { CONFIG } from '../game/config'
 import { TAI_SAN } from '../game/content'
 import {
+  bienDoThuNhapThuDong,
   giaTriDauTu,
   phiBaoHiem,
   thuNhapThuDong,
   tongTaiSan,
   traNoMoiNam,
   tuoiHienTai,
+  xeDangCo,
 } from '../game/engine'
 import { dinhDangTien, dinhDangPhanTram } from '../game/format'
-import type { GameState } from '../game/types'
+import type { GameState, LoaiBaoHiemXe } from '../game/types'
+
+/** Ba loại bảo hiểm xe, kèm tên đầy đủ để hiển thị — không viết tắt. */
+const BAO_HIEM_XE: { loai: LoaiBaoHiemXe; ten: string }[] = [
+  { loai: 'trachNhiemDanSu', ten: 'trách nhiệm dân sự (bắt buộc)' },
+  { loai: 'vatChatXe', ten: 'vật chất xe' },
+  { loai: 'taiNanNguoiTrenXe', ten: 'tai nạn người ngồi trên xe' },
+]
 
 /**
  * Bảng tài chính tổng hợp + lịch sử các năm.
  * Bản gốc thiếu hẳn phần này, người chơi phải tự nhớ mọi thứ.
  */
 export default function TabSoSach({ state }: { state: GameState }) {
+  // Thu nhập doanh nghiệp không còn cố định: `thuDong` là mức nền của năm nay,
+  // còn số thực nhận rơi đâu đó trong biên độ dưới đây.
   const thuDong = thuNhapThuDong(state)
+  const bienDo = bienDoThuNhapThuDong(state)
+  const coDoanhNghiep = state.doanhNghiep.length > 0
+  const xe = xeDangCo(state)
   const traNo = traNoMoiNam(state)
   const banDoi = state.daKetHon
     ? Math.round(state.luong * CONFIG.cotTruyen.cuoiThuNhapBanDoi)
@@ -49,9 +63,19 @@ export default function TabSoSach({ state }: { state: GameState }) {
           </div>
         )}
         <div className="hang">
-          <span className="hang-nhan">Thu nhập thụ động</span>
+          <span className="hang-nhan">
+            Thu nhập thụ động{coDoanhNghiep ? ' — mức nền' : ''}
+          </span>
           <span className="hang-gia-tri duong">{dinhDangTien(thuDong)}</span>
         </div>
+        {coDoanhNghiep && (
+          <div className="hang">
+            <span className="hang-nhan">Khoảng có thể nhận năm nay</span>
+            <span className="hang-gia-tri">
+              {dinhDangTien(bienDo.thap)} – {dinhDangTien(bienDo.cao)}
+            </span>
+          </div>
+        )}
         <div className="hang">
           <span className="hang-nhan">Chi phí sinh hoạt</span>
           <span className="hang-gia-tri am">−{dinhDangTien(state.chiPhiHangNam)}</span>
@@ -74,6 +98,8 @@ export default function TabSoSach({ state }: { state: GameState }) {
         <p className="mo-ta" style={{ margin: '10px 0 0' }}>
           Chưa tính lợi tức đầu tư và chi tiêu cho hạnh phúc — hai khoản đó thay đổi
           theo từng năm.
+          {coDoanhNghiep &&
+            ' Thu nhập từ doanh nghiệp cũng lên xuống mỗi năm theo tình hình làm ăn, nên dòng tiền ròng ở trên chỉ là mức nền.'}
         </p>
       </div>
 
@@ -169,6 +195,27 @@ export default function TabSoSach({ state }: { state: GameState }) {
               : 'Chưa mua'}
           </span>
         </div>
+        {xe && (
+          <div className="hang">
+            <span className="hang-nhan">Xe đang có</span>
+            <span className="hang-gia-tri">
+              {xe.emoji} {xe.ten} · {dinhDangTien(xe.giaTri)}
+            </span>
+          </div>
+        )}
+        {xe &&
+          BAO_HIEM_XE.map((b) => (
+            <div className="hang" key={b.loai}>
+              <span className="hang-nhan">Bảo hiểm {b.ten}</span>
+              <span
+                className={`hang-gia-tri ${
+                  state.baoHiemXe[b.loai] >= state.nam ? 'duong' : 'am'
+                }`}
+              >
+                {state.baoHiemXe[b.loai] >= state.nam ? 'Còn hiệu lực' : 'Chưa mua'}
+              </span>
+            </div>
+          ))}
         <div className="hang">
           <span className="hang-nhan">Chỉ số giá tích luỹ</span>
           <span className="hang-gia-tri">

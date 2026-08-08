@@ -42,6 +42,42 @@ Hai điểm tựa tài chính đáng chú ý:
 - **Ước nguyện:** giá được khoá ngay từ đầu ván, không leo theo lạm phát —
   giấc mơ không chạy nhanh hơn khả năng tích luỹ của người chơi.
 
+## Có xe là có rủi ro
+
+Mua ước nguyện **xe máy** hoặc **ô tô** thì mở ra cả một nhóm rủi ro mới, cùng ba
+loại bảo hiểm đúng như ngoài đời, đều có hiệu lực một năm:
+
+- 🧾 **Trách nhiệm dân sự** (bắt buộc, rẻ nhất) — bồi thường cho người bị nạn khi
+  bạn gây tai nạn. Không mua thì thỉnh thoảng bị phạt, và va chạm là tự móc túi đền.
+- 🛠️ **Vật chất xe** (đắt nhất, tự nguyện) — đền khi xe hỏng nặng hoặc mất trộm.
+  Mất trộm mà không có loại này thì **mất luôn chiếc xe**: món ước nguyện biến khỏi
+  danh sách, kéo theo khoản hạnh phúc nó cộng mỗi năm, và nếu đó là khát vọng của
+  nghề thì khoản phạt hàng năm quay trở lại.
+- 🧑‍🤝‍🧑 **Tai nạn người ngồi trên xe** — trả viện phí cho người bị thương trên xe.
+
+Phí và mức đền bù đều tính trên giá trị xe của năm hiện tại, nên cả hai cùng leo
+theo lạm phát và tỉ lệ giữa chúng không đổi theo thời gian.
+
+## Cơ hội gắn với nghề nghiệp
+
+Mỗi năm rút **hai** cơ hội: một suất ưu tiên từ bộ cơ hội riêng của nghề đang chơi,
+một suất từ bộ chung. Giáo viên mở lớp dạy thêm rồi trung tâm gia sư rồi trường mầm
+non; bác sĩ nhận trực thêm rồi mở nhà thuốc rồi phòng khám riêng; kỹ sư phần mềm
+nhận dự án ngoài giờ rồi làm ứng dụng riêng rồi lập công ty gia công. Các cơ hội lớn
+đòi thâm niên và chỉ tham gia được một lần trong cả ván.
+
+Có ba loại cơ hội:
+
+- **Kinh doanh** — góp vốn một lần, thu nhập mỗi năm về sau. Thu nhập **không cố
+  định**: mỗi năm dao động trong biên độ riêng của ngành (nhà trọ gần như đều đặn,
+  vườn sầu riêng thì mất mùa hoặc trúng giá), và bám theo lạm phát kể từ năm góp vốn
+  nên vài chục năm sau vẫn còn giá trị thật.
+- **Canh bạc** — mất trắng hoặc nhân nhiều lần, mở kết quả cuối năm. Kỳ vọng âm nhẹ.
+- **Tổ chức sự kiện** — bỏ vốn ra, cuối năm nhận lại vốn cộng lợi nhuận **đúng một
+  lần** rồi kết thúc. Là công sức chứ không phải may rủi nên kỳ vọng dương, và năm
+  tệ nhất cũng chỉ lỗ một phần vốn. Chỗ để tiền nhàn rỗi làm việc một năm mà không
+  phải khoá vốn vĩnh viễn.
+
 ## Chạy
 
 ```bash

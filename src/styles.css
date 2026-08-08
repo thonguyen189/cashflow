@@ -470,8 +470,9 @@ table.bang th:first-child {
 }
 
 /* ---------- v1.2: cốt truyện trăm năm (chỉ class mới) ---------- */
-/* Nhãn nhỏ "đã nghỉ hưu" cạnh tiêu đề năm */
-.nhan-nghi-huu {
+/* Nhãn nhỏ cạnh tiêu đề: "đã nghỉ hưu", "riêng nghề Bác sĩ"... */
+.nhan-nghi-huu,
+.nhan-nho {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 9px;
@@ -507,4 +508,22 @@ table.bang th:first-child {
 /* Tiêu đề kết thúc viên mãn tuổi 100 */
 .ket-thuc-vien-man {
   color: var(--vang);
+}
+
+/* ---------- v1.3: bảo hiểm xe, cơ hội theo nghề, thu nhập biến động ---------- */
+/* Giá trị dài kiểu "126 triệu · dao động −20% … +24%" cần được xuống dòng,
+   khác với .hang-gia-tri vốn khoá nowrap cho các con số ngắn. */
+.hang-gia-tri-dai {
+  font-weight: 700;
+  font-size: 15px;
+  text-align: right;
+  white-space: normal;
+  line-height: 1.35;
+}
+/* Vế phụ nhạt hơn đi kèm một con số chính, ví dụ biên độ dao động */
+.chu-phu {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--chu-mo);
 }

@@ -3,17 +3,20 @@ import { CONFIG } from '../game/config'
 import { timUocNguyen } from '../game/content'
 import {
   dangCoBaoHiem,
+  dangCoBaoHiemXe,
   giaThucTe,
   khoaHocConLai,
   phiBaoHiem,
+  phiBaoHiemXe,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   traNoMoiNam,
   uocNguyenConLai,
   vayToiDa,
+  xeDangCo,
 } from '../game/engine'
 import { dinhDangTien } from '../game/format'
-import type { Action, GameState } from '../game/types'
+import type { Action, GameState, LoaiBaoHiemXe } from '../game/types'
 
 interface Props {
   state: GameState
@@ -99,8 +102,8 @@ function TheHanhDong({ state, dispatch }: Props) {
       <div className="the-bieu-tuong">🗓️</div>
       <div className="the-ten">Trước khi kết thúc năm</div>
       <p className="mo-ta">
-        Xem lại danh mục đầu tư, cân nhắc học thêm, mua bảo hiểm hoặc chốt một cơ hội
-        kinh doanh. Sang năm mới là mọi giá đều tăng.
+        Xem lại danh mục đầu tư, cân nhắc học thêm, mua bảo hiểm y tế và bảo hiểm xe,
+        hoặc chốt một cơ hội kinh doanh. Sang năm mới là mọi giá đều tăng.
       </p>
       {sapThua && (
         <div className="canh-bao-tu-choi">
@@ -204,6 +207,88 @@ function KhuNganHang({ state, dispatch }: Props) {
   )
 }
 
+/* ---------- Bảo hiểm xe ----------
+ * Chỉ hiện khi đã sở hữu một chiếc xe (ước nguyện xe máy hoặc ô tô). Ba loại
+ * giống hệt ngoài đời, hiệu lực một năm, mua lại hàng năm như bảo hiểm y tế.
+ */
+const CAC_BAO_HIEM_XE: {
+  loai: LoaiBaoHiemXe
+  ten: string
+  emoji: string
+  moTa: string
+}[] = [
+  {
+    loai: 'trachNhiemDanSu',
+    ten: 'Trách nhiệm dân sự (bắt buộc)',
+    emoji: '🧾',
+    moTa: 'Bồi thường cho người bị nạn khi bạn gây tai nạn.',
+  },
+  {
+    loai: 'vatChatXe',
+    ten: 'Vật chất xe',
+    emoji: '🛠️',
+    moTa:
+      'Đền khi xe hỏng nặng hoặc bị mất trộm. Mất trộm mà không có loại này thì mất luôn chiếc xe và phần hạnh phúc nó mang lại mỗi năm.',
+  },
+  {
+    loai: 'taiNanNguoiTrenXe',
+    ten: 'Tai nạn người ngồi trên xe',
+    emoji: '🧑‍🤝‍🧑',
+    moTa: 'Trả viện phí cho người bị thương trên xe.',
+  },
+]
+
+function KhuBaoHiemXe({ state, dispatch }: Props) {
+  const xe = xeDangCo(state)
+  // Chưa có xe thì ẩn hoàn toàn cả mục — không có gì để bảo hiểm.
+  if (!xe) return null
+  const thieuBatBuoc = !dangCoBaoHiemXe(state, 'trachNhiemDanSu')
+
+  return (
+    <>
+      <div className="muc">
+        🚗 Bảo hiểm xe — {xe.ten} · giá trị năm nay {dinhDangTien(xe.giaTri)}
+      </div>
+      <div className="the">
+        <p className="mo-ta" style={{ marginBottom: thieuBatBuoc ? 12 : 0 }}>
+          {xe.emoji} Phí và mức đền bù đều tính trên giá trị chiếc xe của năm nay nên
+          leo theo lạm phát. Mỗi loại có hiệu lực một năm, sang năm phải mua lại.
+        </p>
+        {thieuBatBuoc && (
+          <div className="canh-bao-tu-choi" style={{ marginBottom: 0 }}>
+            ⚠️ Bạn chưa có bảo hiểm trách nhiệm dân sự — đây là loại{' '}
+            <strong>bắt buộc</strong>. Thiếu nó, bạn có thể bị phạt và phải tự bỏ tiền
+            bồi thường cho người bị nạn nếu gây tai nạn.
+          </div>
+        )}
+      </div>
+
+      {CAC_BAO_HIEM_XE.map((b) => {
+        // phiBaoHiemXe đã gồm lạm phát — không bọc thêm giaThucTe.
+        const phi = phiBaoHiemXe(state, b.loai)
+        const dangCo = dangCoBaoHiemXe(state, b.loai)
+        const batBuoc = b.loai === 'trachNhiemDanSu'
+        return (
+          <div className="muc-mua" key={b.loai}>
+            <span className="muc-mua-emoji">{b.emoji}</span>
+            <div className="muc-mua-than">
+              <div className="muc-mua-ten">{b.ten}</div>
+              <div className="muc-mua-phu">{b.moTa}</div>
+            </div>
+            <button
+              className={`nut muc-mua-nut${!dangCo && batBuoc ? ' nut-chinh' : ''}`}
+              disabled={dangCo || state.tienMat < phi}
+              onClick={() => dispatch({ type: 'muaBaoHiemXe', loai: b.loai })}
+            >
+              {dangCo ? 'Đã có' : dinhDangTien(phi)}
+            </button>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 /* ---------- Tab ---------- */
 export default function TabTrangChu({ state, dispatch }: Props) {
   const coBaoHiem = dangCoBaoHiem(state)
@@ -236,6 +321,8 @@ export default function TabTrangChu({ state, dispatch }: Props) {
           </button>
         </div>
       </div>
+
+      <KhuBaoHiemXe state={state} dispatch={dispatch} />
 
       <div className="muc">🎓 Giáo dục — tăng lương vĩnh viễn</div>
       {state.daNghiHuu ? (

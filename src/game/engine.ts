@@ -6,6 +6,7 @@ import {
   TAI_SAN,
   THE_TIEU_DUNG,
   UOC_NGUYEN,
+  XE_UOC_NGUYEN_IDS,
   timCoHoi,
   timKhoaHoc,
   timNghe,
@@ -15,7 +16,10 @@ import {
 import type {
   Action,
   AssetId,
+  CoHoi,
+  DoanhNghiep,
   GameState,
+  LoaiBaoHiemXe,
   SuKien,
   TheTieuDung,
   Tien,
@@ -66,9 +70,31 @@ export function tongTaiSan(s: GameState): Tien {
   return s.tienMat + giaTriDauTu(s)
 }
 
-/** Thu nhập thụ động hàng năm từ các doanh nghiệp đã góp vốn. */
+/**
+ * Mức thu nhập NỀN của một doanh nghiệp trong năm nay.
+ * Thu nhập bám theo lạm phát kể từ năm góp vốn, nếu không thì sau vài chục năm
+ * một doanh nghiệp từng đáng giá sẽ teo lại thành tiền lẻ.
+ */
+export function thuNhapNenNamNay(s: GameState, d: DoanhNghiep): Tien {
+  return Math.round(d.thuNhapNen * (s.chiSoGia / d.chiSoGiaLucMua))
+}
+
+/** Tổng thu nhập thụ động nền năm nay, chưa áp biến động của từng ngành. */
 export function thuNhapThuDong(s: GameState): Tien {
-  return s.doanhNghiep.reduce((t, d) => t + d.thuNhapMoiNam, 0)
+  return s.doanhNghiep.reduce((t, d) => t + thuNhapNenNamNay(s, d), 0)
+}
+
+/** Khoảng thu nhập thụ động có thể nhận năm nay, sau khi áp biên độ biến động. */
+export function bienDoThuNhapThuDong(s: GameState): { thap: Tien; cao: Tien } {
+  let thap = 0
+  let cao = 0
+  for (const d of s.doanhNghiep) {
+    const nen = thuNhapNenNamNay(s, d)
+    const coHoi = timCoHoi(d.coHoiId)
+    thap += Math.max(0, Math.round(nen * (1 + (coHoi?.bienDongThuNhapMin ?? 0))))
+    cao += Math.round(nen * (1 + (coHoi?.bienDongThuNhapMax ?? 0)))
+  }
+  return { thap, cao }
 }
 
 /** Tổng số tiền phải trả nợ mỗi năm. */
@@ -96,6 +122,48 @@ export function tyLeDongTra(tuoi: number): number {
 }
 
 export const dangCoBaoHiem = (s: GameState): boolean => s.baoHiemDenNam >= s.nam
+
+/* ---------- Bảo hiểm xe ---------- */
+
+const TY_LE_PHI_BAO_HIEM_XE: Record<LoaiBaoHiemXe, number> = {
+  trachNhiemDanSu: CONFIG.baoHiemXe.tyLePhiTrachNhiemDanSu,
+  vatChatXe: CONFIG.baoHiemXe.tyLePhiVatChatXe,
+  taiNanNguoiTrenXe: CONFIG.baoHiemXe.tyLePhiTaiNanNguoiTrenXe,
+}
+
+/**
+ * Chiếc xe giá trị nhất đang sở hữu, hoặc null nếu chưa có xe nào.
+ * Có cả xe máy lẫn ô tô thì mọi tính toán bám theo chiếc đắt nhất — một hồ sơ
+ * bảo hiểm duy nhất, không nhân đôi giao diện lẫn rủi ro.
+ */
+export function xeDangCo(
+  s: GameState,
+): { uocNguyenId: string; ten: string; emoji: string; giaTri: Tien } | null {
+  for (const id of XE_UOC_NGUYEN_IDS) {
+    if (!s.uocNguyenDaMua.includes(id)) continue
+    const un = timUocNguyen(id)
+    if (!un) continue
+    return {
+      uocNguyenId: id,
+      ten: un.ten,
+      emoji: un.emoji,
+      // Giá ước nguyện khoá tại thời trẻ, nhưng giá trị xe để tính phí và mức
+      // đền bù thì phải theo mặt bằng giá hiện hành.
+      giaTri: giaThucTe(s, un.gia),
+    }
+  }
+  return null
+}
+
+/** Phí một loại bảo hiểm xe cho năm nay. Đã gồm lạm phát, không nhân thêm lần nữa. */
+export function phiBaoHiemXe(s: GameState, loai: LoaiBaoHiemXe): Tien {
+  const xe = xeDangCo(s)
+  if (!xe) return 0
+  return Math.round(xe.giaTri * TY_LE_PHI_BAO_HIEM_XE[loai])
+}
+
+export const dangCoBaoHiemXe = (s: GameState, loai: LoaiBaoHiemXe): boolean =>
+  s.baoHiemXe[loai] >= s.nam
 
 /** Giá thực tế của một khoản chi sau khi tính lạm phát tích luỹ. */
 export const giaThucTe = (s: GameState, giaGoc: Tien): Tien =>
@@ -213,13 +281,42 @@ function rutThe(rng: Rng, soLuong: number, boiCanh: BoiCanhRutThe): TheTieuDung[
   return kq
 }
 
-function rutCoHoi(rng: Rng, soLuong: number) {
-  const con = [...CO_HOI]
-  const kq = []
-  for (let i = 0; i < soLuong && con.length > 0; i++) {
-    const idx = Math.floor(rng.next() * con.length)
-    kq.push(con.splice(idx, 1)[0]!)
+interface BoiCanhCoHoi {
+  ngheId: string
+  nam: number
+  coHoiDaLam: readonly string[]
+}
+
+function hopLe(c: CoHoi, bc: BoiCanhCoHoi): boolean {
+  if (c.ngheId !== undefined && c.ngheId !== bc.ngheId) return false
+  if (c.namToiThieu !== undefined && bc.nam < c.namToiThieu) return false
+  if (c.chiMotLan && bc.coHoiDaLam.includes(c.id)) return false
+  return true
+}
+
+/** Cơ hội có hợp lệ với nghề, thâm niên và lịch sử tham gia của ván này không. */
+export const coHoiHopLe = (c: CoHoi, s: GameState): boolean =>
+  hopLe(c, { ngheId: s.ngheId, nam: s.nam, coHoiDaLam: s.coHoiDaLam })
+
+/**
+ * Rút cơ hội của năm. Suất đầu tiên ưu tiên lấy từ bộ cơ hội riêng của nghề đang
+ * chơi, để mỗi nghề có một mạch sự nghiệp riêng thay vì ai cũng gặp cùng một
+ * danh sách; các suất còn lại lấy từ bộ chung. Bên nào cạn thì bên kia lấp chỗ.
+ */
+function rutCoHoi(rng: Rng, soLuong: number, bc: BoiCanhCoHoi): CoHoi[] {
+  const duocPhep = CO_HOI.filter((c) => hopLe(c, bc))
+  const rieng = duocPhep.filter((c) => c.ngheId !== undefined)
+  const chung = duocPhep.filter((c) => c.ngheId === undefined)
+  const kq: CoHoi[] = []
+
+  const rutTu = (bo: CoHoi[]) => {
+    const idx = Math.floor(rng.next() * bo.length)
+    kq.push(bo.splice(idx, 1)[0]!)
   }
+
+  if (soLuong > 0 && rieng.length > 0) rutTu(rieng)
+  while (kq.length < soLuong && chung.length > 0) rutTu(chung)
+  while (kq.length < soLuong && rieng.length > 0) rutTu(rieng)
   return kq
 }
 
@@ -258,7 +355,11 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     nam: 1,
     loaiTru: [],
   })
-  const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam)
+  const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam, {
+    ngheId: nghe.id,
+    nam: 1,
+    coHoiDaLam: [],
+  })
 
   return {
     seed,
@@ -283,10 +384,12 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     khoaHocDaMua: [],
     uocNguyenDaMua: [],
     baoHiemDenNam: -1,
+    baoHiemXe: { trachNhiemDanSu: -1, vatChatXe: -1, taiNanNguoiTrenXe: -1 },
 
     khoanVay: [],
     doanhNghiep: [],
-    canhBacDangCho: [],
+    coHoiDaLam: [],
+    khoanDangCho: [],
 
     cotTruyen: { namCuoi, namSinhCon: [namCon1, namCon2] },
     daKetHon: false,
@@ -364,7 +467,7 @@ function chuyenNam(s: GameState): GameState {
   /* --- 2. Lợi tức tài sản, tính trên giá TRƯỚC khi biến động --- */
   const giaMoi = { ...s.giaTaiSan }
   const lichSuGia = { ...s.lichSuGia }
-  const loiTucTaiSan: TongKetNam['loiTucTaiSan'] = []
+  const bienDongTaiSan: TongKetNam['bienDongTaiSan'] = []
 
   for (const ts of TAI_SAN) {
     const giaCu = s.giaTaiSan[ts.id]
@@ -379,13 +482,36 @@ function chuyenNam(s: GameState): GameState {
     giaMoi[ts.id] = Math.max(1, Math.round(giaCu * (1 + bienDong)))
     lichSuGia[ts.id] = [...(s.lichSuGia[ts.id] ?? []), giaMoi[ts.id]].slice(-15)
 
-    if (soLuong > 0 || ts.id === 'coPhieu') {
-      loiTucTaiSan.push({ id: ts.id, ten: ts.ten, bienDong, loiTuc })
-    }
+    // Ghi lại CẢ NĂM kênh kèm cờ đang nắm giữ. Bảng tổng kết dựa vào cờ này để
+    // tách "danh mục của bạn" khỏi "tin thị trường" — trước đây cổ phiếu bị nhét
+    // thẳng vào danh mục kể cả khi người chơi không sở hữu cổ phiếu nào.
+    bienDongTaiSan.push({
+      id: ts.id,
+      ten: ts.ten,
+      bienDong,
+      loiTuc,
+      dangNamGiu: soLuong > 0,
+    })
   }
 
-  /* --- 3. Thu nhập thụ động từ doanh nghiệp + đóng góp của bạn đời --- */
-  const thuDong = thuNhapThuDong(s)
+  /* --- 3. Thu nhập thụ động từ doanh nghiệp + đóng góp của bạn đời ---
+   * Thu nhập mỗi doanh nghiệp = mức nền (đã bám lạm phát từ năm góp vốn)
+   * nhân với biến động của năm, lấy trong biên độ riêng của ngành. Năm tệ nhất
+   * là không thu được đồng nào chứ doanh nghiệp không gây lỗ.
+   */
+  const thuNhapDoanhNghiep: TongKetNam['thuNhapDoanhNghiep'] = []
+  let thuDong = 0
+  for (const d of s.doanhNghiep) {
+    const coHoi = timCoHoi(d.coHoiId)
+    const nen = thuNhapNenNamNay(s, d)
+    const bienDong = rng.khoang(
+      coHoi?.bienDongThuNhapMin ?? 0,
+      coHoi?.bienDongThuNhapMax ?? 0,
+    )
+    const soTien = Math.max(0, Math.round(nen * (1 + bienDong)))
+    thuDong += soTien
+    thuNhapDoanhNghiep.push({ coHoiId: d.coHoiId, ten: d.ten, soTien, bienDong })
+  }
   tienMat += thuDong
   const thuNhapBanDoi = s.daKetHon
     ? Math.round(s.luong * CONFIG.cotTruyen.cuoiThuNhapBanDoi)
@@ -400,10 +526,30 @@ function chuyenNam(s: GameState): GameState {
   tienMat -= phaiTra
   khoanVay = khoanVay.filter((v) => v.namConLai > 0)
 
-  /* --- 5. Kết quả các ván cược --- */
-  for (const cuoc of s.canhBacDangCho) {
+  /* --- 5. Mở kết quả các khoản đang chờ: canh bạc và tổ chức sự kiện --- */
+  for (const cuoc of s.khoanDangCho) {
     const coHoi = timCoHoi(cuoc.coHoiId)
     if (!coHoi) continue
+
+    // Tổ chức sự kiện là công sức chứ không phải may rủi: luôn thu lại vốn
+    // cộng trừ một biên lợi nhuận, không bao giờ mất trắng.
+    if (cuoc.loai === 'toChucSuKien') {
+      const tyLe = rng.khoang(coHoi.loiNhuanMin ?? 0, coHoi.loiNhuanMax ?? 0)
+      const tienVe = Math.round(cuoc.gia * (1 + tyLe))
+      tienMat += tienVe
+      suKien.push({
+        loai: 'suKienKetQua',
+        tieuDe: tyLe >= 0 ? `${coHoi.ten} có lãi` : `${coHoi.ten} lỗ vốn`,
+        moTa:
+          tyLe >= 0
+            ? `Mọi thứ diễn ra trót lọt, lãi ${soPhanTram(tyLe)}% trên vốn bỏ ra. Khoản này kết thúc tại đây, không có thu nhập các năm sau.`
+            : `Không đông khách như tính toán, lỗ ${soPhanTram(-tyLe)}% vốn bỏ ra. Khoản này kết thúc tại đây.`,
+        tienThayDoi: tienVe - cuoc.gia,
+        hanhPhucThayDoi: 0,
+      })
+      continue
+    }
+
     const thang = rng.next() < (coHoi.xacSuatThang ?? 0)
     const tienVe = thang ? Math.round(cuoc.gia * (coHoi.heSoNhan ?? 0)) : 0
     tienMat += tienVe
@@ -587,6 +733,116 @@ function chuyenNam(s: GameState): GameState {
     }
   }
 
+  /* Nhóm sự kiện giao thông — chỉ xảy ra khi đang có xe.
+   * Đây là đối trọng của ba loại bảo hiểm xe: mua thì mất phí đều đặn, không mua
+   * thì thỉnh thoảng lãnh trọn một cú. Riêng mất trộm mà thiếu bảo hiểm vật chất
+   * thì mất luôn món ước nguyện cùng khoản hạnh phúc nó mang lại mỗi năm.
+   */
+  const bhx = CONFIG.baoHiemXe
+  let uocNguyenDaMua = s.uocNguyenDaMua
+  const xe = xeDangCo(s)
+  if (xe) {
+    const coTrachNhiem = dangCoBaoHiemXe(s, 'trachNhiemDanSu')
+    const coVatChat = dangCoBaoHiemXe(s, 'vatChatXe')
+    const coTaiNan = dangCoBaoHiemXe(s, 'taiNanNguoiTrenXe')
+
+    // Va chạm giao thông: bồi thường cho người bị nạn, có thể kèm thương tích
+    if (rng.next() < bhx.vaChamXacSuat) {
+      const denBu = Math.round(
+        xe.giaTri * rng.khoang(bhx.vaChamDenBuMin, bhx.vaChamDenBuMax),
+      )
+      let tuTra = coTrachNhiem ? 0 : denBu
+      let matHanhPhuc = coTrachNhiem
+        ? bhx.vaChamMatHanhPhucCoBaoHiem
+        : bhx.vaChamMatHanhPhucKhongBaoHiem
+      const loiKe: string[] = [
+        coTrachNhiem
+          ? 'May là bảo hiểm trách nhiệm dân sự đứng ra bồi thường trọn phần cho người bị nạn.'
+          : 'Không có bảo hiểm trách nhiệm dân sự nên bạn phải tự bồi thường cho người bị nạn.',
+      ]
+
+      if (rng.next() < bhx.vaChamXacSuatCoThuongTich) {
+        const vienPhi = Math.round(xe.giaTri * bhx.thuongTichVienPhiTyLe)
+        if (coTaiNan) {
+          loiKe.push(
+            'Người ngồi cùng xe bị thương, bảo hiểm tai nạn người ngồi trên xe lo trọn viện phí.',
+          )
+        } else {
+          tuTra += vienPhi
+          matHanhPhuc += bhx.thuongTichMatHanhPhuc
+          loiKe.push(
+            'Người ngồi cùng xe bị thương và bạn tự gánh toàn bộ viện phí cho họ.',
+          )
+        }
+      }
+
+      tienMat -= tuTra
+      const hpVaCham = apHanhPhuc(-matHanhPhuc)
+      suKien.push({
+        loai: 'vaChamGiaoThong',
+        tieuDe: 'Va chạm giao thông',
+        moTa: `Một cú va chạm ngoài ý muốn trên đường. ${loiKe.join(' ')}`,
+        tienThayDoi: -tuTra,
+        hanhPhucThayDoi: hpVaCham,
+      })
+    }
+
+    // Xe hỏng nặng phải sửa lớn
+    if (rng.next() < bhx.xeHongXacSuat) {
+      const chiPhiSua = Math.round(
+        xe.giaTri * rng.khoang(bhx.xeHongChiPhiMin, bhx.xeHongChiPhiMax),
+      )
+      const tuTra = coVatChat ? 0 : chiPhiSua
+      tienMat -= tuTra
+      suKien.push({
+        loai: 'xeHongNang',
+        tieuDe: `${xe.ten} hỏng nặng`,
+        moTa: coVatChat
+          ? 'Xe nằm xưởng cả tuần. May là bảo hiểm vật chất xe thanh toán trọn tiền sửa.'
+          : 'Xe nằm xưởng cả tuần và bạn tự trả trọn tiền sửa.',
+        tienThayDoi: -tuTra,
+        hanhPhucThayDoi: 0,
+      })
+    }
+
+    // Mất trộm xe
+    if (rng.next() < bhx.matTromXacSuat) {
+      if (coVatChat) {
+        suKien.push({
+          loai: 'matTromXe',
+          tieuDe: `${xe.ten} bị mất trộm`,
+          moTa: 'Sáng ra chỗ để xe trống trơn. Bảo hiểm vật chất xe đền đúng giá trị, bạn tậu lại chiếc khác ngay trong năm.',
+          tienThayDoi: 0,
+          hanhPhucThayDoi: 0,
+        })
+      } else {
+        uocNguyenDaMua = uocNguyenDaMua.filter((id) => id !== xe.uocNguyenId)
+        const hpMatXe = apHanhPhuc(-bhx.matTromMatHanhPhuc)
+        suKien.push({
+          loai: 'matTromXe',
+          tieuDe: `${xe.ten} bị mất trộm`,
+          moTa: 'Sáng ra chỗ để xe trống trơn. Không có bảo hiểm vật chất xe nên mất trắng, và mất luôn khoản hạnh phúc chiếc xe mang lại mỗi năm.',
+          tienThayDoi: 0,
+          hanhPhucThayDoi: hpMatXe,
+        })
+      }
+    }
+
+    // Bị phạt vì thiếu bảo hiểm bắt buộc
+    if (!coTrachNhiem && rng.next() < bhx.phatXacSuat) {
+      const tienPhat = Math.round(xe.giaTri * bhx.phatTyLe)
+      tienMat -= tienPhat
+      const hpPhat = apHanhPhuc(-bhx.phatMatHanhPhuc)
+      suKien.push({
+        loai: 'phatThieuBaoHiemXe',
+        tieuDe: 'Bị phạt vì thiếu bảo hiểm bắt buộc',
+        moTa: 'Cảnh sát giao thông kiểm tra giấy tờ. Bảo hiểm trách nhiệm dân sự là loại bắt buộc, thiếu là bị phạt.',
+        tienThayDoi: -tienPhat,
+        hanhPhucThayDoi: hpPhat,
+      })
+    }
+  }
+
   // Chuyện tuổi già — để ba thập kỷ cuối không trôi qua trong im lặng
   if (
     tuoiNamNay >= ct.tuoiGiaSuKienTuTuoi &&
@@ -621,10 +877,11 @@ function chuyenNam(s: GameState): GameState {
   // Sự cố đời sống
   if (rng.next() < sk.suCoXacSuat) {
     const chiPhiSuCo = Math.round(s.chiPhiHangNam * sk.suCoChiPhiTyLeChiPhi)
+    // Chuyện hỏng xe đã có nhóm sự kiện giao thông lo, ở đây chỉ giữ việc nhà.
     const moTaSuCo = rng.chon([
-      'Chiếc xe máy dở chứng giữa đường, phải thay phụ tùng.',
       'Mái nhà thấm dột sau mùa mưa, phải gọi thợ sửa gấp.',
       'Tủ lạnh và máy giặt rủ nhau hỏng cùng một tháng.',
+      'Đường ống nước ngầm rò rỉ, phải đục tường tìm chỗ vỡ.',
     ] as const)
     tienMat -= chiPhiSuCo
     const hpSuCo = apHanhPhuc(-sk.suCoMatHanhPhuc)
@@ -678,9 +935,17 @@ function chuyenNam(s: GameState): GameState {
   /* --- 9. Hạnh phúc: phạt khát vọng và thưởng ước nguyện --- */
   // Ghi lại số điểm THỰC bị trừ / thực nhận, không phải con số danh nghĩa —
   // để bảng tổng kết cộng lại đúng bằng mức hạnh phúc thay đổi trong năm.
-  const phatDanhNghia = daDatKhatVong(s) ? 0 : CONFIG.phatKhatVongMoiNam
+  // Dùng danh sách ước nguyện SAU nhóm sự kiện giao thông: xe vừa mất trộm thì
+  // năm nay không còn được cộng hạnh phúc, và nếu đó là khát vọng của nghề thì
+  // khoản phạt hàng năm quay lại ngay.
+  const phatDanhNghia = uocNguyenDaMua.includes(s.khatVongId)
+    ? 0
+    : CONFIG.phatKhatVongMoiNam
   const phat = phatDanhNghia > 0 ? -apHanhPhuc(-phatDanhNghia) : 0
-  const thuongDanhNghia = hanhPhucTuUocNguyen(s)
+  const thuongDanhNghia = uocNguyenDaMua.reduce(
+    (t, id) => t + (timUocNguyen(id)?.hanhPhucMoiNam ?? 0),
+    0,
+  )
   const thuongUocNguyen = thuongDanhNghia > 0 ? apHanhPhuc(thuongDanhNghia) : 0
 
   /* --- 10. Áp lạm phát + hoàn cảnh gia đình lên mặt bằng giá --- */
@@ -751,7 +1016,11 @@ function chuyenNam(s: GameState): GameState {
     nam: namMoi,
     loaiTru: s.theNamTruoc,
   })
-  const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam)
+  const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam, {
+    ngheId: s.ngheId,
+    nam: namMoi,
+    coHoiDaLam: s.coHoiDaLam,
+  })
 
   const sauChuyen: GameState = {
     ...s,
@@ -768,8 +1037,9 @@ function chuyenNam(s: GameState): GameState {
     soHuu,
     giaTaiSan: giaMoi,
     lichSuGia,
+    uocNguyenDaMua,
     khoanVay,
-    canhBacDangCho: [],
+    khoanDangCho: [],
     daKetHon,
     conCai,
     daNghiHuu,
@@ -787,7 +1057,8 @@ function chuyenNam(s: GameState): GameState {
     tangLuong,
     thuNhapThuDong: thuDong,
     thuNhapBanDoi,
-    loiTucTaiSan,
+    bienDongTaiSan,
+    thuNhapDoanhNghiep,
     phatKhatVong: phat,
     hanhPhucTuUocNguyen: thuongUocNguyen,
     suKien,
@@ -880,6 +1151,19 @@ export function reducer(s: GameState, a: Action): GameState {
       return { ...s, tienMat: s.tienMat - phi, baoHiemDenNam: s.nam }
     }
 
+    case 'muaBaoHiemXe': {
+      if (!choPhepHanhDongTuDo(s)) return s
+      // Không có xe thì không có gì để bảo hiểm
+      if (!xeDangCo(s) || dangCoBaoHiemXe(s, a.loai)) return s
+      const phi = phiBaoHiemXe(s, a.loai)
+      if (phi <= 0 || s.tienMat < phi) return s
+      return {
+        ...s,
+        tienMat: s.tienMat - phi,
+        baoHiemXe: { ...s.baoHiemXe, [a.loai]: s.nam },
+      }
+    }
+
     case 'muaUocNguyen': {
       if (!choPhepHanhDongTuDo(s)) return s
       const un = timUocNguyen(a.uocNguyenId)
@@ -952,26 +1236,38 @@ export function reducer(s: GameState, a: Action): GameState {
       const gia = giaThucTe(s, coHoi.gia)
       if (s.tienMat < gia) return s
 
+      const coHoiDaLam = coHoi.chiMotLan
+        ? [...s.coHoiDaLam, coHoi.id]
+        : s.coHoiDaLam
+
       if (coHoi.loai === 'kinhDoanh') {
         return {
           ...s,
           tienMat: s.tienMat - gia,
           coHoiNamNay: conLai,
+          coHoiDaLam,
           doanhNghiep: [
             ...s.doanhNghiep,
             {
               coHoiId: coHoi.id,
               ten: coHoi.ten,
-              thuNhapMoiNam: giaThucTe(s, coHoi.thuNhapMoiNam ?? 0),
+              thuNhapNen: giaThucTe(s, coHoi.thuNhapMoiNam ?? 0),
+              chiSoGiaLucMua: s.chiSoGia,
             },
           ],
         }
       }
+
+      // Canh bạc và tổ chức sự kiện đều chờ mở kết quả vào cuối năm
       return {
         ...s,
         tienMat: s.tienMat - gia,
         coHoiNamNay: conLai,
-        canhBacDangCho: [...s.canhBacDangCho, { coHoiId: coHoi.id, gia }],
+        coHoiDaLam,
+        khoanDangCho: [
+          ...s.khoanDangCho,
+          { coHoiId: coHoi.id, gia, loai: coHoi.loai },
+        ],
       }
     }
 
