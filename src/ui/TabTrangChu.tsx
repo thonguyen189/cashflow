@@ -5,6 +5,7 @@ import {
   dangCoBaoHiem,
   dangCoBaoHiemXe,
   giaThucTe,
+  giaUocNguyen,
   khoaHocConLai,
   phiBaoHiem,
   phiBaoHiemXe,
@@ -384,7 +385,9 @@ export default function TabTrangChu({ state, dispatch }: Props) {
         )
       })}
       {uocNguyen.map((u) => {
-        const gia = u.gia
+        // Món đã từng mất thì tính theo giá hôm nay, không còn giá khoá thời trẻ —
+        // phải dùng chung hàm với engine, nếu không nút sẽ hiện giá cũ rồi bấm không ăn.
+        const gia = giaUocNguyen(state, u.id)
         const laKhatVong = u.id === state.khatVongId
         return (
           <div className="muc-mua" key={u.id}>

@@ -219,6 +219,12 @@ export interface GameState {
 
   khoaHocDaMua: string[]
   uocNguyenDaMua: string[]
+  /**
+   * id các món ước nguyện đã từng MẤT (xe bị trộm khi không có bảo hiểm vật chất).
+   * Giá đóng băng thời trẻ chỉ áp cho lần mua đầu tiên; muốn có lại món đã mất thì
+   * phải trả bằng tiền của hôm nay.
+   */
+  uocNguyenDaMat: string[]
   /** năm cuối cùng bảo hiểm còn hiệu lực; -1 nghĩa là chưa từng mua */
   baoHiemDenNam: number
   /** năm cuối cùng từng loại bảo hiểm xe còn hiệu lực; -1 nghĩa là chưa từng mua */
@@ -238,9 +244,12 @@ export interface GameState {
   /** năm sinh (theo năm trong game) của từng người con */
   conCai: number[]
   daNghiHuu: boolean
-  /** đã từng chạm mục tiêu tài sản — dùng cho chế độ chơi tiếp sau khi thắng */
-  daDatMucTieu: boolean
-  /** các mốc tài sản trung gian đã ghi nhận */
+  /** đã từng đạt tự do tài chính — dùng cho chế độ chơi tiếp sau khi thắng */
+  daTuDo: boolean
+  /**
+   * Chỉ số (0, 1, 2…) của các cột mốc tài sản đã ghi nhận. Lưu chỉ số chứ
+   * không lưu số tiền, vì giá trị mỗi mốc leo theo chỉ số giá từng năm.
+   */
   mocTaiSanDaQua: number[]
   /** id các thẻ đã rút năm nay — năm sau không rút lại để tránh lặp */
   theNamTruoc: string[]

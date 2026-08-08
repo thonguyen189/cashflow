@@ -1,5 +1,6 @@
 import { CONFIG } from '../game/config'
 import { NGHE, timUocNguyen } from '../game/content'
+import { mocTaiSanCuaNghe, nghiaVuNamDau } from '../game/engine'
 import { dinhDangTien } from '../game/format'
 
 export default function ChonNghe({ onChon }: { onChon: (ngheId: string) => void }) {
@@ -10,13 +11,17 @@ export default function ChonNghe({ onChon }: { onChon: (ngheId: string) => void 
         Một hành trình trăm năm, mỗi lượt là một năm. Bạn bắt đầu ở tuổi{' '}
         {CONFIG.cotTruyen.tuoiBatDau}, rồi lần lượt đi qua chuyện cưới xin, sinh
         con, nghỉ hưu ở tuổi {CONFIG.cotTruyen.tuoiNghiHuu} và đi trọn tới{' '}
-        {CONFIG.cotTruyen.tuoiVienMan} tuổi — vừa tích luỹ tài sản, vừa giữ cho
-        mình đủ hạnh phúc để đi tiếp. Tích luỹ đủ{' '}
-        <strong>
-          {(CONFIG.mucTieuTaiSan / 1_000_000_000).toString().replace('.', ',')} tỷ
-        </strong>{' '}
-        là thắng; để hạnh phúc rơi xuống dưới {CONFIG.hanhPhucNguongThua} là thua;
-        sống trọn trăm năm là kết thúc viên mãn.
+        {CONFIG.cotTruyen.tuoiVienMan} tuổi — vừa gây dựng dòng tiền, vừa giữ cho
+        mình đủ hạnh phúc để đi tiếp. Xây được{' '}
+        <strong>dòng tiền thụ động đủ nuôi cả năm</strong> là thắng; để hạnh phúc
+        rơi xuống dưới {CONFIG.hanhPhucNguongThua} là thua; sống trọn trăm năm là
+        kết thúc viên mãn.
+      </p>
+      <p className="mo-ta">
+        🕊️ Mỗi nghề một cái đích riêng: sống càng đắt đỏ thì càng phải gây dựng
+        nhiều. Vàng và tiền mã hoá không đẻ ra đồng nào mỗi năm nên không mua nổi
+        tự do — chỉ doanh nghiệp, bất động sản cho thuê, cổ tức và lãi trái phiếu
+        mới tính.
       </p>
 
       <div className="muc">🧑‍💼 Chọn nghề nghiệp</div>
@@ -24,6 +29,8 @@ export default function ChonNghe({ onChon }: { onChon: (ngheId: string) => void 
         const thangDu = n.luong - n.chiPhi
         const tyLe = Math.round((thangDu / n.luong) * 100)
         const khatVong = timUocNguyen(n.khatVongId)
+        const canDongTien = nghiaVuNamDau(n)
+        const mocCaoNhat = mocTaiSanCuaNghe(n.id).at(-1) ?? 0
         return (
           <button key={n.id} className="the-nghe" onClick={() => onChon(n.id)}>
             <div className="the-nghe-dau">
@@ -48,6 +55,16 @@ export default function ChonNghe({ onChon }: { onChon: (ngheId: string) => void 
               </span>
             </div>
             <div className="hang">
+              <span className="hang-nhan">🕊️ Tự do tài chính khi dòng tiền đạt</span>
+              <span className="hang-gia-tri duong">
+                {dinhDangTien(canDongTien)}/năm
+              </span>
+            </div>
+            <div className="hang">
+              <span className="hang-nhan">🚩 Cột mốc tài sản cao nhất</span>
+              <span className="hang-gia-tri">{dinhDangTien(mocCaoNhat)}</span>
+            </div>
+            <div className="hang">
               <span className="hang-nhan">Khát vọng</span>
               <span className="hang-gia-tri">
                 {khatVong?.emoji} {khatVong?.ten}
@@ -58,7 +75,8 @@ export default function ChonNghe({ onChon }: { onChon: (ngheId: string) => void 
       })}
       <p className="mo-ta" style={{ marginTop: 16 }}>
         Chưa mua được món khát vọng thì mỗi năm bị trừ {CONFIG.phatKhatVongMoiNam} điểm
-        hạnh phúc.
+        hạnh phúc. Con số tự do ở trên là mức của năm đầu tiên — cưới xin, sinh con
+        và lạm phát sẽ đẩy nó lên, nên cái đích còn biết chạy.
       </p>
     </div>
   )

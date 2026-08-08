@@ -136,10 +136,11 @@ body {
   cursor: pointer;
 }
 
+/* Bốn ô: tự do tài chính (điều kiện thắng), đầu tư, tiền mặt, hạnh phúc */
 .hud {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
   padding: 0 16px 4px;
 }
 .hud-o {
@@ -150,7 +151,7 @@ body {
   text-align: center;
 }
 .hud-so {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
   line-height: 1.25;
 }

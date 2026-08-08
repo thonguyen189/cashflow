@@ -1,4 +1,4 @@
-import { CONFIG, TY } from './config'
+import { CONFIG } from './config'
 import {
   CO_HOI,
   KHOA_HOC,
@@ -13,6 +13,7 @@ import {
   timTaiSan,
   timUocNguyen,
 } from './content'
+import { dinhDangTien } from './format'
 import type {
   Action,
   AssetId,
@@ -20,7 +21,9 @@ import type {
   DoanhNghiep,
   GameState,
   LoaiBaoHiemXe,
+  Nghe,
   SuKien,
+  TaiSan,
   TheTieuDung,
   Tien,
   TongKetNam,
@@ -123,6 +126,91 @@ export function tyLeDongTra(tuoi: number): number {
 
 export const dangCoBaoHiem = (s: GameState): boolean => s.baoHiemDenNam >= s.nam
 
+/* ---------- Tự do tài chính ----------
+ * Đây là điều kiện thắng của game, thay cho con số tài sản cứng của các bản
+ * trước. Vì cả hai vế đều tính theo mặt bằng giá của năm hiện tại, mục tiêu
+ * tự chống lạm phát và tự khác nhau theo nghề mà không cần bảng tra nào.
+ */
+
+/** Lợi tức kỳ vọng mỗi năm của một kênh đầu tư — trung bình của biên độ. */
+export const loiTucKyVong = (ts: TaiSan): number => (ts.loiTucMin + ts.loiTucMax) / 2
+
+/**
+ * Dòng tiền thụ động một năm: thu nhập nền của các doanh nghiệp cộng lợi tức
+ * kỳ vọng của danh mục đầu tư.
+ *
+ * Dùng mức KỲ VỌNG chứ không phải số thực nhận của năm đó, để con số đứng yên
+ * cho người chơi lên kế hoạch — thắng hay chưa không được phép nhảy qua lại
+ * theo may rủi cổ tức. Hệ quả cố ý: vàng và tiền mã hoá lợi tức bằng 0 nên
+ * không mua nổi tự do, dù chúng vẫn là kênh làm giàu và trú ẩn tốt.
+ */
+export function dongTienThuDong(s: GameState): Tien {
+  const tuDanhMuc = TAI_SAN.reduce(
+    (tong, ts) => tong + s.soHuu[ts.id] * s.giaTaiSan[ts.id] * loiTucKyVong(ts),
+    0,
+  )
+  return Math.round(thuNhapThuDong(s) + tuDanhMuc)
+}
+
+/**
+ * Nghĩa vụ tài chính một năm: sinh hoạt + bảo hiểm y tế + trả nợ.
+ *
+ * Phí bảo hiểm tính cả trong năm chưa mua — tự do tài chính mà bỏ bảo hiểm y
+ * tế thì là tự do giả, và nếu miễn khoản này thì "nhịn bảo hiểm" sẽ thành mẹo
+ * thắng sớm. Trả nợ cũng vào vế này, nếu không thì vay kịch trần mua doanh
+ * nghiệp là con đường tắt tới chiến thắng.
+ */
+export function nghiaVuHangNam(s: GameState): Tien {
+  return s.chiPhiHangNam + phiBaoHiem(s) + traNoMoiNam(s)
+}
+
+/** Mức dòng tiền thụ động cần đạt để được coi là tự do tài chính. */
+export function mucTieuTuDo(s: GameState): Tien {
+  return Math.round(nghiaVuHangNam(s) * CONFIG.tuDoTaiChinh.heSoAnToan)
+}
+
+/** Đã tự do tài chính hay chưa, xét tại thời điểm hiện tại. */
+export const daTuDoTaiChinh = (s: GameState): boolean =>
+  dongTienThuDong(s) >= mucTieuTuDo(s)
+
+/** Tỉ lệ hoàn thành hành trình tự do tài chính, chặn trên ở 1. */
+export function tienDoTuDo(s: GameState): number {
+  const can = mucTieuTuDo(s)
+  return can <= 0 ? 1 : Math.min(1, dongTienThuDong(s) / can)
+}
+
+/**
+ * Nghĩa vụ của năm đầu tiên, tính thẳng từ định nghĩa nghề.
+ * Màn chọn nghề cần con số này trước khi có ván nào tồn tại.
+ */
+export function nghiaVuNamDau(nghe: Nghe): Tien {
+  const canCu = Math.max(
+    nghe.luong,
+    nghe.chiPhi * CONFIG.cotTruyen.baoHiemToiThieuTheoChiPhi,
+  )
+  return nghe.chiPhi + Math.round(canCu * CONFIG.baoHiemTyLeLuong)
+}
+
+/* ---------- Cột mốc tài sản ---------- */
+
+/**
+ * Bốn cột mốc tài sản của một nghề tại mặt bằng giá `chiSoGia`.
+ * Mốc cao nhất là 25 lần chi phí sinh hoạt gốc — mặt kia của quy tắc rút 4% —
+ * nên nghề sống đắt đỏ phải leo cột cao hơn hẳn nghề sống gọn.
+ */
+export function mocTaiSanCuaNghe(ngheId: string, chiSoGia = 1): Tien[] {
+  const nghe = timNghe(ngheId)
+  if (!nghe) return []
+  const cm = CONFIG.mocTaiSan
+  const caoNhat = nghe.chiPhi * cm.mocCaoNhatTheoChiPhi * chiSoGia
+  return cm.tyLeCacMoc.map((tyLe) =>
+    Math.max(
+      cm.lamTronToi,
+      Math.round((caoNhat * tyLe) / cm.lamTronToi) * cm.lamTronToi,
+    ),
+  )
+}
+
 /* ---------- Bảo hiểm xe ---------- */
 
 const TY_LE_PHI_BAO_HIEM_XE: Record<LoaiBaoHiemXe, number> = {
@@ -218,6 +306,21 @@ export function hanhPhucTuUocNguyen(s: GameState): number {
 
 export const daDatKhatVong = (s: GameState): boolean =>
   s.uocNguyenDaMua.includes(s.khatVongId)
+
+/**
+ * Giá phải trả cho một món ước nguyện năm nay.
+ *
+ * Giá đóng băng thời trẻ chỉ áp cho lần mua ĐẦU TIÊN — đó là giấc mơ, và giấc mơ
+ * không nên chạy nhanh hơn khả năng tích luỹ. Nhưng chiếc xe đã bị trộm mà muốn
+ * có lại thì phải mua bằng tiền của hôm nay; nếu không, bỏ bảo hiểm vật chất xe
+ * rồi mua lại xe với giá thời trẻ sẽ luôn rẻ hơn đóng phí, và cả bài học về bảo
+ * hiểm bị lật ngược.
+ */
+export function giaUocNguyen(s: GameState, uocNguyenId: string): Tien {
+  const un = timUocNguyen(uocNguyenId)
+  if (!un) return 0
+  return s.uocNguyenDaMat.includes(uocNguyenId) ? giaThucTe(s, un.gia) : un.gia
+}
 
 /* ---------- Cốt truyện trăm năm ---------- */
 
@@ -383,6 +486,7 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
 
     khoaHocDaMua: [],
     uocNguyenDaMua: [],
+    uocNguyenDaMat: [],
     baoHiemDenNam: -1,
     baoHiemXe: { trachNhiemDanSu: -1, vatChatXe: -1, taiNanNguoiTrenXe: -1 },
 
@@ -395,7 +499,7 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     daKetHon: false,
     conCai: [],
     daNghiHuu: false,
-    daDatMucTieu: false,
+    daTuDo: false,
     mocTaiSanDaQua: [],
     theNamTruoc: theConLai.map((t) => t.id),
 
@@ -740,6 +844,7 @@ function chuyenNam(s: GameState): GameState {
    */
   const bhx = CONFIG.baoHiemXe
   let uocNguyenDaMua = s.uocNguyenDaMua
+  let uocNguyenDaMat = s.uocNguyenDaMat
   const xe = xeDangCo(s)
   if (xe) {
     const coTrachNhiem = dangCoBaoHiemXe(s, 'trachNhiemDanSu')
@@ -817,11 +922,14 @@ function chuyenNam(s: GameState): GameState {
         })
       } else {
         uocNguyenDaMua = uocNguyenDaMua.filter((id) => id !== xe.uocNguyenId)
+        if (!uocNguyenDaMat.includes(xe.uocNguyenId)) {
+          uocNguyenDaMat = [...uocNguyenDaMat, xe.uocNguyenId]
+        }
         const hpMatXe = apHanhPhuc(-bhx.matTromMatHanhPhuc)
         suKien.push({
           loai: 'matTromXe',
           tieuDe: `${xe.ten} bị mất trộm`,
-          moTa: 'Sáng ra chỗ để xe trống trơn. Không có bảo hiểm vật chất xe nên mất trắng, và mất luôn khoản hạnh phúc chiếc xe mang lại mỗi năm.',
+          moTa: 'Sáng ra chỗ để xe trống trơn. Không có bảo hiểm vật chất xe nên mất trắng, và mất luôn khoản hạnh phúc chiếc xe mang lại mỗi năm. Muốn có lại thì phải mua bằng giá của hôm nay.',
           tienThayDoi: 0,
           hanhPhucThayDoi: hpMatXe,
         })
@@ -991,22 +1099,29 @@ function chuyenNam(s: GameState): GameState {
     }
   }
 
-  /* --- 12. Mốc tài sản trung gian --- */
+  /* --- 12. Cột mốc tài sản ---
+   * Ghi nhận theo CHỈ SỐ mốc chứ không theo số tiền: giá trị mỗi mốc leo theo
+   * chỉ số giá từng năm, nên lưu số tiền sẽ khiến mốc cũ được trao lại.
+   */
   const tongSauNam =
     tienMat + TAI_SAN.reduce((t, ts) => t + soHuu[ts.id] * giaMoi[ts.id], 0)
+  const mocNamNay = mocTaiSanCuaNghe(s.ngheId, chiSoGia)
   let mocTaiSanDaQua = s.mocTaiSanDaQua
-  for (const moc of CONFIG.mocTaiSan) {
-    if (tongSauNam >= moc && !mocTaiSanDaQua.includes(moc)) {
-      mocTaiSanDaQua = [...mocTaiSanDaQua, moc]
-      const hpMoc = apHanhPhuc(CONFIG.mocTaiSanHanhPhuc)
-      suKien.push({
-        loai: 'mocTaiSan',
-        tieuDe: `Cột mốc tài sản ${(moc / TY).toString().replace('.', ',')} tỷ`,
-        moTa: 'Thành quả tích luỹ đáng tự hào trên hành trình tới mục tiêu.',
-        tienThayDoi: 0,
-        hanhPhucThayDoi: hpMoc,
-      })
-    }
+  for (let i = 0; i < mocNamNay.length; i++) {
+    const moc = mocNamNay[i]!
+    if (tongSauNam < moc || mocTaiSanDaQua.includes(i)) continue
+    mocTaiSanDaQua = [...mocTaiSanDaQua, i]
+    const hpMoc = apHanhPhuc(CONFIG.mocTaiSan.hanhPhuc)
+    const mocCuoi = i === mocNamNay.length - 1
+    suKien.push({
+      loai: 'mocTaiSan',
+      tieuDe: `Cột mốc tài sản ${dinhDangTien(moc)}`,
+      moTa: mocCuoi
+        ? 'Cột mốc cao nhất của nghề này — hai mươi lăm năm chi phí sinh hoạt nằm gọn trong tay.'
+        : 'Thành quả tích luỹ đáng tự hào trên hành trình tự do tài chính.',
+      tienThayDoi: 0,
+      hanhPhucThayDoi: hpMoc,
+    })
   }
 
   /* --- 13. Rút bài cho năm mới, theo giai đoạn đời và không lặp năm trước --- */
@@ -1038,6 +1153,7 @@ function chuyenNam(s: GameState): GameState {
     giaTaiSan: giaMoi,
     lichSuGia,
     uocNguyenDaMua,
+    uocNguyenDaMat,
     khoanVay,
     khoanDangCho: [],
     daKetHon,
@@ -1168,9 +1284,9 @@ export function reducer(s: GameState, a: Action): GameState {
       if (!choPhepHanhDongTuDo(s)) return s
       const un = timUocNguyen(a.uocNguyenId)
       if (!un || s.uocNguyenDaMua.includes(un.id)) return s
-      // Giá ước nguyện khoá tại thời trẻ, không leo theo lạm phát —
-      // để giấc mơ không chạy nhanh hơn khả năng tích luỹ của người chơi.
-      const gia = un.gia
+      // Giá khoá tại thời trẻ cho lần mua đầu tiên; món đã từng mất thì tính
+      // theo giá hiện hành (xem giaUocNguyen).
+      const gia = giaUocNguyen(s, un.id)
       if (s.tienMat < gia) return s
       return {
         ...s,
@@ -1287,20 +1403,23 @@ export function reducer(s: GameState, a: Action): GameState {
 
       const sau = chuyenNam(s)
 
-      if (!sau.daDatMucTieu && tongTaiSan(sau) >= CONFIG.mucTieuTaiSan) {
+      if (!sau.daTuDo && daTuDoTaiChinh(sau)) {
         return {
           ...sau,
-          daDatMucTieu: true,
+          daTuDo: true,
           trangThai: 'thang',
-          lyDoKetThuc: `Đạt mục tiêu tài sản sau ${s.nam} năm, ở tuổi ${tuoiTaiNam(s.nam)}.`,
+          lyDoKetThuc:
+            `Dòng tiền thụ động ${dinhDangTien(dongTienThuDong(sau))} mỗi năm đã phủ` +
+            ` trọn nghĩa vụ ${dinhDangTien(nghiaVuHangNam(sau))} — tự do tài chính sau` +
+            ` ${s.nam} năm, ở tuổi ${tuoiTaiNam(s.nam)}.`,
         }
       }
       if (tuoiTaiNam(sau.nam) > CONFIG.cotTruyen.tuoiVienMan) {
         return {
           ...sau,
           trangThai: 'vienMan',
-          lyDoKetThuc: sau.daDatMucTieu
-            ? 'Bạn đã đi trọn hành trình một trăm năm — và mục tiêu tài sản đã chinh phục trên đường đi.'
+          lyDoKetThuc: sau.daTuDo
+            ? 'Bạn đã đi trọn hành trình một trăm năm — và tự do tài chính đã chinh phục trên đường đi.'
             : 'Bạn đã đi trọn hành trình một trăm năm cuộc đời.',
         }
       }

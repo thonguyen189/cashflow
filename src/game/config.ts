@@ -11,17 +11,43 @@ export const TY = 1_000_000_000
 
 export const CONFIG = {
   /** ---------- Điều kiện thắng / thua ----------
-   * Thắng khi đạt mục tiêu tài sản, thua khi hạnh phúc rơi dưới ngưỡng.
-   * Sống trọn hành trình tới tuổi 100 là kết thúc "viên mãn" riêng.
+   * Thắng khi ĐẠT TỰ DO TÀI CHÍNH: dòng tiền thụ động phủ được trọn nghĩa vụ
+   * hàng năm. Thua khi hạnh phúc rơi dưới ngưỡng. Sống trọn hành trình tới
+   * tuổi 100 là kết thúc "viên mãn" riêng.
+   *
+   * Vì chi phí sinh hoạt của mỗi nghề mỗi khác và leo theo lạm phát lẫn cột
+   * mốc gia đình, mục tiêu tự khắc riêng theo nghề và tự chống lạm phát —
+   * không cần một con số cứng nào cả.
    */
-  mucTieuTaiSan: 10 * TY,
+  tuDoTaiChinh: {
+    /**
+     * Dòng tiền thụ động phải đạt tỉ lệ này so với nghĩa vụ hàng năm.
+     *
+     * Vì dòng tiền được tính theo mức KỲ VỌNG mà thực nhận thì dao động mạnh
+     * (quán cà phê có năm âm 35%, cổ tức có năm bằng 0), đòi đúng 100% kỳ vọng
+     * nghĩa là cứ hai năm lại hụt một năm. Đệm 50% vừa đủ để năm xấu nhất của
+     * một doanh nghiệp vẫn không làm bạn phải đi làm lại.
+     *
+     * Hệ số này điều chỉnh NHỊP ĐỘ ván chơi, không phải tỉ lệ thắng: mô phỏng
+     * cho thấy nâng từ 1,0 lên 2,0 kéo ván dài thêm khoảng năm năm mà tỉ lệ
+     * thắng đứng yên, vì thua chỉ đến từ hạnh phúc.
+     */
+    heSoAnToan: 1.5,
+  },
 
-  /** ---------- Mốc tài sản trung gian ----------
-   * Chạm mỗi mốc lần đầu được ghi nhận + thưởng hạnh phúc, để ván chơi
-   * dài có cảm giác tiến bộ thay vì chỉ nhìn đích 10 tỷ xa vời.
+  /** ---------- Cột mốc tài sản ----------
+   * Không còn là điều kiện thắng, chỉ là huy hiệu ghi nhận đường đi. Mốc cao
+   * nhất = `mocCaoNhatTheoChiPhi` × chi phí sinh hoạt gốc của nghề — mặt kia
+   * của quy tắc rút 4% — nên nghề sống đắt đỏ phải leo cột cao hơn. Toàn bộ
+   * nhân với chỉ số giá để lạm phát không bào mòn ý nghĩa của cột mốc.
    */
-  mocTaiSan: [1 * TY, 2.5 * TY, 5 * TY],
-  mocTaiSanHanhPhuc: 5,
+  mocTaiSan: {
+    mocCaoNhatTheoChiPhi: 25,
+    tyLeCacMoc: [0.1, 0.25, 0.5, 1],
+    /** làm tròn mốc tới bội số này cho dễ đọc */
+    lamTronToi: 100 * TRIEU,
+    hanhPhuc: 5,
+  },
 
   /** ---------- Cốt truyện trăm năm ----------
    * Năm 1 = tuổi 21. Các cột mốc đời người được hẹn lịch ngay khi tạo ván
@@ -217,7 +243,7 @@ export const CONFIG = {
   soDiemGiaQuaKhu: 9,
 
   /** ---------- Lưu ván ---------- */
-  luuKey: 'dong-tien-luu-v1-3',
+  luuKey: 'dong-tien-luu-v1-4',
 } as const
 
 export type Config = typeof CONFIG

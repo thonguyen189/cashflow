@@ -1,11 +1,12 @@
-import { CONFIG } from './config'
 import { TAI_SAN, timUocNguyen } from './content'
 import {
   dangCoBaoHiem,
   dangCoBaoHiemXe,
+  dongTienThuDong,
   giaThucTe,
   khoaHocConLai,
   muaToiDa,
+  mucTieuTuDo,
   phiBaoHiem,
   phiBaoHiemXe,
   reducer,
@@ -19,6 +20,9 @@ export interface KetQuaSim {
   thang: boolean
   soNam: number
   tongTaiSan: number
+  /** dòng tiền thụ động và nghĩa vụ ở thời điểm ván khép lại */
+  dongTienThuDong: number
+  nghiaVu: number
   hanhPhucCuoi: number
   lyDo: string
 }
@@ -44,7 +48,9 @@ export interface ChienLuoc {
 export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
   nguongMoiDiem: 1_500_000,
   duPhongTheoChiPhi: 0.5,
-  uuTienTaiSan: ['batDongSan', 'coPhieu', 'vang', 'traiPhieu'],
+  // Điều kiện thắng là dòng tiền, nên bot cân bằng bỏ hẳn vàng — tăng giá tốt
+  // nhưng lợi tức bằng 0, không đưa người chơi tới gần tự do tài chính chút nào.
+  uuTienTaiSan: ['batDongSan', 'coPhieu', 'traiPhieu'],
   muaBaoHiem: true,
   muaBaoHiemXe: true,
   muaGiaoDuc: true,
@@ -205,6 +211,8 @@ export function moPhongMotVan(
     thang: s.trangThai === 'thang',
     soNam: s.lichSu.length,
     tongTaiSan: tongTaiSan(s),
+    dongTienThuDong: dongTienThuDong(s),
+    nghiaVu: mucTieuTuDo(s),
     hanhPhucCuoi: s.hanhPhuc,
     lyDo: s.lyDoKetThuc ?? 'hết lượt mô phỏng',
   }
@@ -216,6 +224,7 @@ export function moPhongNhieuVan(ngheId: string, soVan: number, cl?: ChienLuoc) {
     kq.push(moPhongMotVan(ngheId, 1000 + i * 7919, cl))
   }
   const thang = kq.filter((k) => k.thang)
+  const thua = kq.filter((k) => !k.thang)
   return {
     soVan,
     tyLeThang: thang.length / soVan,
@@ -224,11 +233,14 @@ export function moPhongNhieuVan(ngheId: string, soVan: number, cl?: ChienLuoc) {
       : NaN,
     soNamNhanhNhat: thang.length ? Math.min(...thang.map((k) => k.soNam)) : NaN,
     soNamChamNhat: thang.length ? Math.max(...thang.map((k) => k.soNam)) : NaN,
-    taiSanTrungBinhKhiThua: kq.filter((k) => !k.thang).length
-      ? kq.filter((k) => !k.thang).reduce((t, k) => t + k.tongTaiSan, 0) /
-        kq.filter((k) => !k.thang).length
+    taiSanTrungBinhKhiThua: thua.length
+      ? thua.reduce((t, k) => t + k.tongTaiSan, 0) / thua.length
       : NaN,
-    mucTieu: CONFIG.mucTieuTaiSan,
+    /** ván thua đi được bao xa trên chặng tự do tài chính — dùng để dò độ khó */
+    tienDoTuDoTrungBinhKhiThua: thua.length
+      ? thua.reduce((t, k) => t + (k.nghiaVu > 0 ? k.dongTienThuDong / k.nghiaVu : 1), 0) /
+        thua.length
+      : NaN,
     ketQua: kq,
   }
 }

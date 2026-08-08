@@ -3,8 +3,9 @@
 Game mô phỏng tài chính cá nhân, chơi trên trình duyệt, một người chơi.
 Mỗi lượt là một năm: vừa tích luỹ tài sản, vừa giữ đủ hạnh phúc để đi tiếp.
 
-- **Thắng:** đạt mục tiêu tài sản (mặc định 10 tỷ) — không giới hạn số năm.
-  Thắng rồi vẫn có thể chọn **chơi tiếp** để sống trọn hành trình tới tuổi 100.
+- **Thắng:** đạt **tự do tài chính** — dòng tiền thụ động phủ được trọn nghĩa vụ
+  hàng năm — không giới hạn số năm. Thắng rồi vẫn có thể chọn **chơi tiếp** để
+  sống trọn hành trình tới tuổi 100.
 - **Thua:** để hạnh phúc rơi xuống dưới 50 lúc kết thúc năm
 - **Viên mãn:** đi trọn hành trình tới tuổi 100 — ván khép lại bằng một kết thúc
   riêng, nhìn lại cả cuộc đời
@@ -31,9 +32,9 @@ tạo ván (tất định theo seed) và tự diễn ra khi tới năm đó:
 Thẻ tiêu dùng cũng đổi theo giai đoạn đời: có thẻ chỉ xuất hiện khi đã lập
 gia đình, khi đang nuôi con nhỏ, hoặc khi đã sang tuổi già.
 
-Trên đường tới đích 10 tỷ có các **mốc tài sản trung gian** (1 tỷ · 2,5 tỷ ·
-5 tỷ) — chạm mỗi mốc lần đầu được ghi nhận thành sự kiện và thưởng hạnh phúc,
-để ván chơi dài luôn có cảm giác tiến bộ.
+Trên đường đi có bốn **cột mốc tài sản** — huy hiệu ghi nhận, không phải điều
+kiện thắng. Chạm mỗi mốc lần đầu được ghi thành sự kiện và thưởng hạnh phúc, để
+ván chơi dài luôn có cảm giác tiến bộ.
 
 Hai điểm tựa tài chính đáng chú ý:
 
@@ -41,6 +42,43 @@ Hai điểm tựa tài chính đáng chú ý:
   kinh doanh trở thành quyết định cân não thật sự.
 - **Ước nguyện:** giá được khoá ngay từ đầu ván, không leo theo lạm phát —
   giấc mơ không chạy nhanh hơn khả năng tích luỹ của người chơi.
+
+## Tự do tài chính — điều kiện thắng
+
+Ván kết thúc thắng lợi khi **dòng tiền thụ động** phủ được **mức cần đạt**:
+
+```
+dòng tiền thụ động  ≥  (chi phí sinh hoạt + bảo hiểm y tế + trả nợ) × 1,5
+```
+
+**Vế trái** gồm thu nhập nền của các doanh nghiệp đã góp vốn, cộng lợi tức kỳ vọng
+của danh mục đầu tư: trái phiếu 6%, cổ phiếu 3%, bất động sản 5,5% — còn 🥇 vàng và
+⚡ tiền mã hoá **bằng 0**. Hai kênh đó vẫn làm giàu và trú ẩn tốt, nhưng không mua
+nổi tự do: bộ test cân bằng có hẳn một ván bot ôm vàng suốt trăm năm, gom được
+hơn bốn mươi nghìn tỷ mà không bao giờ thắng.
+
+Lợi tức lấy theo mức **kỳ vọng** chứ không phải số thực nhận, để việc thắng hay
+chưa không nhảy qua lại theo may rủi cổ tức từng năm. Đổi lại phải có **đệm an
+toàn 1,5 lần**: thu nhập doanh nghiệp có năm âm tới 35%, nếu đòi đúng 100% mức kỳ
+vọng thì cứ hai năm lại hụt một năm.
+
+Ba hệ quả đáng chú ý của cách đặt đích này:
+
+- **Mỗi nghề một cái đích riêng** mà không cần bảng tra nào — giáo viên sống gọn
+  nên cần ít, kỹ sư phần mềm sống đắt đỏ nên cần gấp bốn lần.
+- **Tự chống lạm phát** — cả hai vế đều tính theo mặt bằng giá của năm hiện tại.
+- **Cái đích biết chạy** — cưới cộng 20% chi phí, mỗi con cộng 25%. Vừa chạm tự do
+  rồi sinh con là tuột lại, phải gây dựng tiếp.
+
+Cột mốc tài sản đi kèm được suy ra từ cùng một con số: mốc cao nhất bằng **25 lần
+chi phí sinh hoạt** của nghề (mặt kia của quy tắc rút 4%), ba mốc dưới ở 10%, 25%
+và 50% của mốc đó, tất cả đều nhân với chỉ số giá.
+
+| Nghề | Mốc 1 | Mốc 2 | Mốc 3 | Mốc cao nhất |
+|---|---|---|---|---|
+| 📚 Giáo viên | 300 triệu | 700 triệu | 1,4 tỷ | 2,7 tỷ |
+| 🩺 Bác sĩ | 600 triệu | 1,5 tỷ | 3 tỷ | 6 tỷ |
+| 💻 Kỹ sư phần mềm | 1,1 tỷ | 2,7 tỷ | 5,4 tỷ | 10,9 tỷ |
 
 ## Có xe là có rủi ro
 
@@ -92,8 +130,13 @@ npm run build      # build ra thư mục dist/, mở bằng file:// cũng chạy
 
 ## Chỉnh độ khó
 
-Toàn bộ số liệu cân bằng nằm trong **[src/game/config.ts](src/game/config.ts)** — mục tiêu
-tài sản, ngưỡng hạnh phúc, biên độ lạm phát, lãi vay, xác suất sự kiện.
+Toàn bộ số liệu cân bằng nằm trong **[src/game/config.ts](src/game/config.ts)** — hệ số
+an toàn của tự do tài chính, cột mốc tài sản, ngưỡng hạnh phúc, biên độ lạm phát,
+lãi vay, xác suất sự kiện.
+
+Nút vặn chính là `tuDoTaiChinh.heSoAnToan`. Nó điều chỉnh **nhịp độ** chứ không phải
+tỉ lệ thắng: mô phỏng cho thấy nâng từ 1,0 lên 2,0 kéo ván dài thêm khoảng năm năm
+mà tỉ lệ thắng đứng yên, vì thua chỉ đến từ hạnh phúc.
 
 Nội dung game (nghề nghiệp, thẻ tiêu dùng, khoá học, tài sản, cơ hội kinh doanh)
 nằm trong **[src/game/content.ts](src/game/content.ts)**.

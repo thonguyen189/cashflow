@@ -9,14 +9,18 @@ import { CONFIG } from '../src/game/config'
 import { NGHE, TAI_SAN, timCoHoi, timNghe, timUocNguyen } from '../src/game/content'
 import {
   dangCoBaoHiem,
+  dongTienThuDong,
   giaThucTe,
   giaTriDauTu,
   khoaHocConLai,
+  mocTaiSanCuaNghe,
   muaToiDa,
+  mucTieuTuDo,
   phiBaoHiem,
   reducer,
   taoGameMoi,
   thuNhapThuDong,
+  tienDoTuDo,
   tongTaiSan,
   tuoiHienTai,
 } from '../src/game/engine'
@@ -58,22 +62,31 @@ for (const ts of TAI_SAN) {
 }
 
 function hud(s: GameState) {
-  return `[HUD] 📊 ${dinhDangTien(giaTriDauTu(s))} · 💵 ${dinhDangTien(s.tienMat)} · 😊 ${s.hanhPhuc}`
+  return (
+    `[HUD] 🕊️ ${(tienDoTuDo(s) * 100).toFixed(0)}% · 📊 ${dinhDangTien(giaTriDauTu(s))}` +
+    ` · 💵 ${dinhDangTien(s.tienMat)} · 😊 ${s.hanhPhuc}`
+  )
 }
 
 /** In một màn tổng kết năm — dùng chung cho các năm giữa và tổng kết cuối. */
-function inTongKet(tk: TongKetNam) {
+function inTongKet(tk: TongKetNam, s: GameState) {
+  console.log(`Tổng tài sản: ${dinhDangTien(tk.tongTaiSan)}`)
   console.log(
-    `Tổng tài sản: ${dinhDangTien(tk.tongTaiSan)} (${((tk.tongTaiSan / CONFIG.mucTieuTaiSan) * 100).toFixed(1)}% mục tiêu)`,
+    `Tự do tài chính: dòng tiền ${dinhDangTien(dongTienThuDong(s))} trên mức cần đạt` +
+      ` ${dinhDangTien(mucTieuTuDo(s))} (${(tienDoTuDo(s) * 100).toFixed(1)}%)`,
   )
   console.log(`Lương năm tới: ${dinhDangTien(tk.luong)} (${dinhDangPhanTram(tk.tangLuong)})`)
   if (tk.thuNhapThuDong > 0)
     console.log(`Thu nhập thụ động: ${dinhDangTien(tk.thuNhapThuDong)}`)
   if (tk.thuNhapBanDoi > 0)
     console.log(`Thu nhập của bạn đời: ${dinhDangTien(tk.thuNhapBanDoi)}`)
-  for (const l of tk.loiTucTaiSan)
+  for (const l of tk.bienDongTaiSan.filter((x) => x.dangNamGiu))
     console.log(
       `  ${l.ten}: ${dinhDangPhanTram(l.bienDong)}${l.loiTuc > 0 ? ` · lợi tức +${dinhDangTien(l.loiTuc)}` : ''}`,
+    )
+  for (const d of tk.thuNhapDoanhNghiep)
+    console.log(
+      `  🏪 ${d.ten}: ${dinhDangTien(d.soTien)} (${dinhDangPhanTram(d.bienDong)})`,
     )
   if (tk.phatKhatVong > 0) console.log(`Chưa đạt khát vọng: −${tk.phatKhatVong} hạnh phúc`)
   if (tk.hanhPhucTuUocNguyen > 0)
@@ -87,13 +100,13 @@ function inTongKet(tk: TongKetNam) {
 while (s.lichSu.length < soNamChoi) {
   if (s.phase === 'tongKet' && s.tongKet) {
     console.log(`\n──── 📋 TỔNG KẾT NĂM ${s.tongKet.nam} ────`)
-    inTongKet(s.tongKet)
+    inTongKet(s.tongKet, s)
     s = reducer(s, { type: 'dongTongKet' })
     continue
   }
   // Chế độ 'het': thắng rồi vẫn chọn sống trọn hành trình tới tuổi 100
   if (s.trangThai === 'thang' && soNamChoi === Number.POSITIVE_INFINITY) {
-    console.log('\n🌅 ĐÃ ĐẠT MỤC TIÊU — chọn "Chơi tiếp, sống trọn hành trình tới tuổi 100"')
+    console.log('\n🌅 ĐÃ TỰ DO TÀI CHÍNH — chọn "Chơi tiếp, sống trọn hành trình tới tuổi 100"')
     s = reducer(s, { type: 'choiTiepSauThang' })
     continue
   }
@@ -190,7 +203,7 @@ while (s.lichSu.length < soNamChoi) {
 
 if (s.phase === 'tongKet' && s.tongKet) {
   console.log(`\n──── 📋 TỔNG KẾT NĂM ${s.tongKet.nam} (năm thứ ${s.lichSu.length}) ────`)
-  inTongKet(s.tongKet)
+  inTongKet(s.tongKet, s)
 }
 
 console.log(`\n════════ SAU ${s.lichSu.length} NĂM ════════`)
@@ -230,6 +243,11 @@ for (const ts of TAI_SAN)
       `  ${ts.emoji} ${ts.ten}: ${s.soHuu[ts.id].toLocaleString('vi-VN')} ${ts.donViTen} = ${dinhDangTien(s.soHuu[ts.id] * s.giaTaiSan[ts.id])}`,
     )
 console.log(
-  `Tổng tài sản: ${dinhDangTien(tongTaiSan(s))} / mục tiêu ${dinhDangTien(CONFIG.mucTieuTaiSan)} (${((tongTaiSan(s) / CONFIG.mucTieuTaiSan) * 100).toFixed(1)}%)`,
+  `Tổng tài sản: ${dinhDangTien(tongTaiSan(s))} · cột mốc ${s.mocTaiSanDaQua.length}/` +
+    `${mocTaiSanCuaNghe(s.ngheId, s.chiSoGia).length} ` +
+    `[${mocTaiSanCuaNghe(s.ngheId, s.chiSoGia).map(dinhDangTien).join(' · ')}]`,
+)
+console.log(
+  `Tự do tài chính: dòng tiền ${dinhDangTien(dongTienThuDong(s))} / mức cần đạt ${dinhDangTien(mucTieuTuDo(s))} (${(tienDoTuDo(s) * 100).toFixed(1)}%)`,
 )
 console.log(`Hạnh phúc: ${s.hanhPhuc} (ngưỡng thua ${CONFIG.hanhPhucNguongThua})`)

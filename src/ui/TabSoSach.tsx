@@ -2,9 +2,14 @@ import { CONFIG } from '../game/config'
 import { TAI_SAN } from '../game/content'
 import {
   bienDoThuNhapThuDong,
+  dongTienThuDong,
   giaTriDauTu,
+  mocTaiSanCuaNghe,
+  mucTieuTuDo,
+  nghiaVuHangNam,
   phiBaoHiem,
   thuNhapThuDong,
+  tienDoTuDo,
   tongTaiSan,
   traNoMoiNam,
   tuoiHienTai,
@@ -43,6 +48,18 @@ export default function TabSoSach({ state }: { state: GameState }) {
     (t, v) => t + v.thanhToanMoiNam * v.namConLai,
     0,
   )
+
+  // Bảng tự do tài chính — chính là điều kiện thắng, nên tách riêng và bày đủ
+  // cả hai vế để người chơi biết mình còn thiếu bao nhiêu và thiếu ở đâu.
+  const dongTien = dongTienThuDong(state)
+  const loiTucDanhMuc = dongTien - thuDong
+  const phiYTe = phiBaoHiem(state)
+  const nghiaVu = nghiaVuHangNam(state)
+  const canDat = mucTieuTuDo(state)
+  const tienDo = tienDoTuDo(state)
+  const conThieu = Math.max(0, canDat - dongTien)
+  const mocNamNay = mocTaiSanCuaNghe(state.ngheId, state.chiSoGia)
+  const tong = tongTaiSan(state)
 
   /** năm (trong game) chạm tuổi nghỉ hưu: tuổi 60 rơi vào năm 40 */
   const namNghiHuu =
@@ -103,6 +120,92 @@ export default function TabSoSach({ state }: { state: GameState }) {
         </p>
       </div>
 
+      <div className="muc">🕊️ Tự do tài chính</div>
+      <div className="the">
+        <div className="hang">
+          <span className="hang-nhan">🏪 Thu nhập doanh nghiệp</span>
+          <span className="hang-gia-tri duong">{dinhDangTien(thuDong)}</span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">📊 Lợi tức kỳ vọng của danh mục</span>
+          <span className="hang-gia-tri duong">{dinhDangTien(loiTucDanhMuc)}</span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">
+            <strong>Dòng tiền thụ động</strong>
+          </span>
+          <span className="hang-gia-tri duong">{dinhDangTien(dongTien)}</span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">Chi phí sinh hoạt</span>
+          <span className="hang-gia-tri am">−{dinhDangTien(state.chiPhiHangNam)}</span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">Phí bảo hiểm y tế</span>
+          <span className="hang-gia-tri am">−{dinhDangTien(phiYTe)}</span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">Trả nợ</span>
+          <span className="hang-gia-tri am">
+            {traNo > 0 ? `−${dinhDangTien(traNo)}` : '—'}
+          </span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">
+            <strong>Nghĩa vụ hàng năm</strong>
+          </span>
+          <span className="hang-gia-tri">{dinhDangTien(nghiaVu)}</span>
+        </div>
+        <div className="hang">
+          <span className="hang-nhan">
+            <strong>
+              🎯 Mức cần đạt (đệm an toàn ×
+              {CONFIG.tuDoTaiChinh.heSoAnToan.toString().replace('.', ',')})
+            </strong>
+          </span>
+          <span className="hang-gia-tri">{dinhDangTien(canDat)}</span>
+        </div>
+        <div className="thanh-tien-do" style={{ margin: '10px 0 0' }}>
+          <div style={{ width: `${tienDo * 100}%` }} />
+        </div>
+        <div className="tien-do-chu" style={{ margin: '6px 0 0' }}>
+          {(tienDo * 100).toFixed(1).replace('.', ',')}%
+          {conThieu > 0
+            ? ` · còn thiếu ${dinhDangTien(conThieu)} mỗi năm`
+            : ' · đã tự do tài chính'}
+        </div>
+        <p className="mo-ta" style={{ margin: '10px 0 0' }}>
+          Đây là điều kiện thắng. Lợi tức lấy theo mức kỳ vọng của từng kênh nên con
+          số đứng yên cho bạn lên kế hoạch — đổi lại phải có đệm an toàn, vì thu nhập
+          thực nhận năm được năm mất. 🥇 Vàng và ⚡ tiền mã hoá không sinh lợi tức,
+          nên dù tăng giá bao nhiêu cũng không đóng góp đồng nào vào cột này. Phí bảo
+          hiểm y tế tính cả khi bạn chưa mua — tự do mà không có bảo hiểm thì chưa
+          phải tự do.
+        </p>
+      </div>
+
+      <div className="muc">🚩 Cột mốc tài sản</div>
+      <div className="the">
+        {mocNamNay.map((moc, i) => {
+          const daDat = state.mocTaiSanDaQua.includes(i)
+          return (
+            <div className="hang" key={i}>
+              <span className="hang-nhan">
+                {daDat ? '✅' : tong >= moc ? '🔜' : '⬜'} Cột mốc {i + 1}
+              </span>
+              <span className={`hang-gia-tri${daDat ? ' duong' : ''}`}>
+                {dinhDangTien(moc)}
+              </span>
+            </div>
+          )
+        })}
+        <p className="mo-ta" style={{ margin: '10px 0 0' }}>
+          Huy hiệu ghi nhận đường đi, không phải điều kiện thắng. Mốc cao nhất bằng{' '}
+          {CONFIG.mocTaiSan.mocCaoNhatTheoChiPhi} năm chi phí sinh hoạt của nghề bạn
+          chọn, và cả bốn mốc đều leo theo lạm phát để không bị thời gian làm rẻ đi.
+        </p>
+      </div>
+
       <div className="muc">🏆 Tài sản</div>
       <div className="the">
         <div className="hang">
@@ -124,7 +227,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
           <span className="hang-nhan">
             <strong>Tổng tài sản</strong>
           </span>
-          <span className="hang-gia-tri duong">{dinhDangTien(tongTaiSan(state))}</span>
+          <span className="hang-gia-tri duong">{dinhDangTien(tong)}</span>
         </div>
         <div className="hang">
           <span className="hang-nhan">Trong đó danh mục đầu tư</span>

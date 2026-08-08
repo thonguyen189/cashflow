@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CONFIG } from './game/config'
-import { reducer, taoGameMoi, tongTaiSan, tuoiHienTai } from './game/engine'
+import {
+  dongTienThuDong,
+  mocTaiSanCuaNghe,
+  mucTieuTuDo,
+  reducer,
+  taoGameMoi,
+  tienDoTuDo,
+  tuoiHienTai,
+} from './game/engine'
+import { dinhDangTien } from './game/format'
 import { luuVan, taiVan, xoaVan } from './game/luu'
 import type { Action, GameState } from './game/types'
 import ChonNghe from './ui/ChonNghe'
@@ -46,16 +55,21 @@ export default function App() {
   if (!state) return <ChonNghe onChon={batDau} />
 
   const ct = CONFIG.cotTruyen
-  const tong = tongTaiSan(state)
-  const tyLeMucTieu = tong / CONFIG.mucTieuTaiSan
+  const dongTien = dongTienThuDong(state)
+  const canCo = mucTieuTuDo(state)
   const tuoi = Math.min(tuoiHienTai(state), ct.tuoiVienMan)
   const namConLai = Math.max(0, ct.tuoiVienMan - tuoi)
-  // Sau khi đã chinh phục mục tiêu tài sản, thanh tiến độ chuyển sang đo
-  // hành trình cuộc đời — nếu không thì nó đứng im ở 100% suốt sáu chục năm.
-  const doDoiNguoi = state.daDatMucTieu
+  // Sau khi đã tự do tài chính, thanh tiến độ chuyển sang đo hành trình cuộc
+  // đời — nếu không thì nó đứng im ở 100% suốt sáu chục năm còn lại.
+  const doDoiNguoi = state.daTuDo
   const tienDo = doDoiNguoi
     ? (tuoi - ct.tuoiBatDau) / (ct.tuoiVienMan - ct.tuoiBatDau)
-    : Math.min(1, tyLeMucTieu)
+    : tienDoTuDo(state)
+
+  // Cột mốc tài sản là huy hiệu ghi nhận đường đi, không phải điều kiện thắng,
+  // nên chỉ nhắc mốc kế tiếp thay vì bày hết cả bốn mốc lên đầu màn hình.
+  const mocNamNay = mocTaiSanCuaNghe(state.ngheId, state.chiSoGia)
+  const mocKeTiep = mocNamNay.find((_, i) => !state.mocTaiSanDaQua.includes(i))
 
   return (
     <>
@@ -73,14 +87,6 @@ export default function App() {
 
       <div className="thanh-tien-do co-moc">
         <div style={{ width: `${tienDo * 100}%` }} />
-        {!doDoiNguoi &&
-          CONFIG.mocTaiSan.map((moc) => (
-            <span
-              key={moc}
-              className={`vach-moc${state.mocTaiSanDaQua.includes(moc) ? ' da-qua' : ''}`}
-              style={{ left: `${(moc / CONFIG.mucTieuTaiSan) * 100}%` }}
-            />
-          ))}
         {doDoiNguoi &&
           ct.mungThoTuoi.map((tuoiTho) => (
             <span
@@ -95,19 +101,25 @@ export default function App() {
       <div className="tien-do-chu">
         {doDoiNguoi ? (
           <>
-            🏆 Đã đạt mục tiêu · tài sản{' '}
-            {(tyLeMucTieu * 100).toFixed(0).replace('.', ',')}% mức 10 tỷ
+            🏆 Đã tự do tài chính · dòng tiền {dinhDangTien(dongTien)} trên mức cần
+            đạt {dinhDangTien(canCo)}
             {' · '}
             còn {namConLai} năm tới tuổi {ct.tuoiVienMan}
           </>
         ) : (
           <>
-            Mục tiêu:{' '}
-            {(CONFIG.mucTieuTaiSan / 1_000_000_000).toString().replace('.', ',')} tỷ
+            🕊️ Tự do tài chính: dòng tiền thụ động {dinhDangTien(dongTien)} trên mức
+            cần đạt {dinhDangTien(canCo)}
             {' · '}
-            đã đạt {(tyLeMucTieu * 100).toFixed(1).replace('.', ',')}%
+            đã đạt {(tienDo * 100).toFixed(1).replace('.', ',')}%
           </>
         )}
+      </div>
+      <div className="tien-do-chu">
+        🚩 Cột mốc tài sản {state.mocTaiSanDaQua.length}/{mocNamNay.length}
+        {mocKeTiep !== undefined
+          ? ` · kế tiếp ${dinhDangTien(mocKeTiep)}`
+          : ' · đã gom đủ cả bốn'}
       </div>
 
       <div className="noi-dung">

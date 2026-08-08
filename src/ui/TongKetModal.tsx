@@ -1,4 +1,4 @@
-import { CONFIG } from '../game/config'
+import { dongTienThuDong, mucTieuTuDo, tienDoTuDo } from '../game/engine'
 import { dinhDangTien, dinhDangPhanTram } from '../game/format'
 import type { Action, GameState, SuKienLoai } from '../game/types'
 
@@ -35,7 +35,9 @@ export default function TongKetModal({
 }) {
   const tk = state.tongKet
   if (!tk) return null
-  const tienDo = Math.min(1, tk.tongTaiSan / CONFIG.mucTieuTaiSan)
+  const tienDo = tienDoTuDo(state)
+  const dongTien = dongTienThuDong(state)
+  const canCo = mucTieuTuDo(state)
   /** chỉ những kênh người chơi đang thật sự nắm giữ mới là danh mục của họ */
   const danhMucDangNamGiu = tk.bienDongTaiSan.filter((l) => l.dangNamGiu)
   const tongThuNhapDoanhNghiep = tk.thuNhapDoanhNghiep.reduce(
@@ -53,11 +55,17 @@ export default function TongKetModal({
             <span className="hang-nhan">Tổng tài sản</span>
             <span className="hang-gia-tri duong">{dinhDangTien(tk.tongTaiSan)}</span>
           </div>
+          <div className="hang">
+            <span className="hang-nhan">🕊️ Dòng tiền thụ động trên mức cần đạt</span>
+            <span className="hang-gia-tri">
+              {dinhDangTien(dongTien)} trên {dinhDangTien(canCo)}
+            </span>
+          </div>
           <div className="thanh-tien-do" style={{ margin: '10px 0 0' }}>
             <div style={{ width: `${tienDo * 100}%` }} />
           </div>
           <div className="tien-do-chu" style={{ margin: '6px 0 0' }}>
-            {(tienDo * 100).toFixed(1).replace('.', ',')}% mục tiêu
+            {(tienDo * 100).toFixed(1).replace('.', ',')}% chặng đường tự do tài chính
           </div>
         </div>
 

@@ -6,6 +6,7 @@ const KHOA_LUU_CU = [
   'dong-tien-save-v1',
   'dong-tien-luu-v1-1',
   'dong-tien-luu-v1-2',
+  'dong-tien-luu-v1-3',
 ]
 
 /** Tự động lưu ván đang chơi vào localStorage. */
@@ -25,9 +26,10 @@ export function taiVan(): GameState | null {
     const s = JSON.parse(raw) as GameState
     // kiểm tra tối thiểu để không nạp phải dữ liệu của phiên bản cũ
     if (typeof s.nam !== 'number' || !s.soHuu || !s.giaTaiSan) return null
-    // các trường của bản v1.3: ván cũ thiếu chúng sẽ làm game vỡ ngay khi chạy,
-    // nên thà bỏ ván cũ còn hơn nạp vào rồi lỗi giữa chừng
+    // các trường của bản v1.3 và v1.4: ván cũ thiếu chúng sẽ làm game vỡ ngay
+    // khi chạy, nên thà bỏ ván cũ còn hơn nạp vào rồi lỗi giữa chừng
     if (!s.baoHiemXe || !s.khoanDangCho || !s.coHoiDaLam) return null
+    if (typeof s.daTuDo !== 'boolean') return null
     return s
   } catch {
     return null

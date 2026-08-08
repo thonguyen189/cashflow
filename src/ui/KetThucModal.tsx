@@ -1,5 +1,12 @@
 import { CONFIG } from '../game/config'
-import { tongTaiSan, tuoiHienTai } from '../game/engine'
+import {
+  dongTienThuDong,
+  mocTaiSanCuaNghe,
+  mucTieuTuDo,
+  tienDoTuDo,
+  tongTaiSan,
+  tuoiHienTai,
+} from '../game/engine'
 import { dinhDangTien } from '../game/format'
 import type { Action, GameState } from '../game/types'
 
@@ -26,9 +33,13 @@ export default function KetThucModal({
       ? 'ket-thuc-vien-man'
       : 'ket-thuc-thua'
   const tong = tongTaiSan(state)
-  const phanTramMucTieu = ((tong / CONFIG.mucTieuTaiSan) * 100)
-    .toFixed(1)
-    .replace('.', ',')
+  const dongTien = dongTienThuDong(state)
+  const canCo = mucTieuTuDo(state)
+  const phanTramTuDo = (tienDoTuDo(state) * 100).toFixed(1).replace('.', ',')
+  const mocNamNay = mocTaiSanCuaNghe(state.ngheId, state.chiSoGia)
+  const mocCaoNhatDaDat = state.mocTaiSanDaQua.length
+    ? mocNamNay[Math.max(...state.mocTaiSanDaQua)]
+    : undefined
 
   return (
     <div className="lop-phu">
@@ -46,18 +57,29 @@ export default function KetThucModal({
             </span>
           </div>
           <div className="hang">
+            <span className="hang-nhan">🕊️ Dòng tiền thụ động</span>
+            <span className="hang-gia-tri duong">{dinhDangTien(dongTien)}/năm</span>
+          </div>
+          <div className="hang">
+            <span className="hang-nhan">Mức cần đạt</span>
+            <span className="hang-gia-tri">{dinhDangTien(canCo)}/năm</span>
+          </div>
+          <div className="hang">
+            <span className="hang-nhan">Tự do tài chính đạt được</span>
+            <span className="hang-gia-tri">{phanTramTuDo}%</span>
+          </div>
+          <div className="hang">
             <span className="hang-nhan">Tổng tài sản</span>
             <span className="hang-gia-tri">{dinhDangTien(tong)}</span>
           </div>
           <div className="hang">
-            <span className="hang-nhan">Mục tiêu</span>
+            <span className="hang-nhan">🚩 Cột mốc tài sản</span>
             <span className="hang-gia-tri">
-              {dinhDangTien(CONFIG.mucTieuTaiSan)}
+              {state.mocTaiSanDaQua.length}/{mocNamNay.length}
+              {mocCaoNhatDaDat !== undefined
+                ? ` · cao nhất ${dinhDangTien(mocCaoNhatDaDat)}`
+                : ''}
             </span>
-          </div>
-          <div className="hang">
-            <span className="hang-nhan">Mục tiêu đạt được</span>
-            <span className="hang-gia-tri">{phanTramMucTieu}%</span>
           </div>
           <div className="hang">
             <span className="hang-nhan">Gia đình</span>

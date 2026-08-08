@@ -35,6 +35,21 @@ describe('cân bằng game', () => {
     }
   })
 
+  it('chỉ ôm vàng thì giàu mấy cũng không bao giờ tự do tài chính', () => {
+    const r = moPhongNhieuVan('kySuPhanMem', SO_VAN, {
+      ...CHIEN_LUOC_CAN_BANG,
+      uuTienTaiSan: ['vang'],
+      nhanCoHoiKinhDoanh: false,
+      nhanToChucSuKien: false,
+    })
+    // eslint-disable-next-line no-console
+    console.log(
+      `ôm vàng     thắng ${(r.tyLeThang * 100).toFixed(0)}%` +
+        ` · tài sản trung bình khi thua ${(r.taiSanTrungBinhKhiThua / 1e9).toFixed(1)} tỷ`,
+    )
+    expect(r.tyLeThang).toBe(0)
+  })
+
   it('chơi ẩu — từ chối mọi thẻ tiêu dùng — thì thua vì hạnh phúc', () => {
     const r = moPhongNhieuVan('giaoVien', 10, {
       ...CHIEN_LUOC_CAN_BANG,

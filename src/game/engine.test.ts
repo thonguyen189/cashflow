@@ -5,8 +5,12 @@ import {
   bienDoThuNhapThuDong,
   coHoiHopLe,
   dangCoBaoHiemXe,
+  dongTienThuDong,
   giaThucTe,
+  mocTaiSanCuaNghe,
   muaToiDa,
+  mucTieuTuDo,
+  nghiaVuHangNam,
   phiBaoHiem,
   phiBaoHiemXe,
   reducer,
@@ -350,28 +354,66 @@ describe('điều kiện kết thúc', () => {
     expect(reducer(vuaDu, { type: 'ketThucNam' }).trangThai).toBe('dangChoi')
   })
 
-  it('thắng khi tổng tài sản chạm mục tiêu', () => {
+  /**
+   * 5 tỷ trái phiếu, lợi tức kỳ vọng 6% = 300 triệu mỗi năm — thừa sức phủ
+   * nghĩa vụ năm đầu của giáo viên (108 triệu sinh hoạt + phí bảo hiểm y tế,
+   * nhân hệ số an toàn) kể cả sau khi lạm phát đẩy chi phí lên.
+   */
+  const dungTrangThaiTuDo = (): GameState => {
     const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
-    const giau: GameState = { ...s0, tienMat: CONFIG.mucTieuTaiSan * 2 }
-    expect(reducer(giau, { type: 'ketThucNam' }).trangThai).toBe('thang')
+    return {
+      ...s0,
+      tienMat: 200 * TRIEU,
+      soHuu: { ...s0.soHuu, traiPhieu: 5000 },
+    }
+  }
+
+  it('tiền mặt chất đống nhưng không đẻ ra dòng tiền thì vẫn chưa thắng', () => {
+    const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
+    const giau: GameState = { ...s0, tienMat: 50 * TY }
+    expect(reducer(giau, { type: 'ketThucNam' }).trangThai).toBe('dangChoi')
+  })
+
+  it('vàng không sinh lợi tức nên không mua nổi tự do tài chính', () => {
+    const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
+    // 50 tỷ vàng — giàu nứt đố đổ vách mà dòng tiền thụ động vẫn bằng 0
+    const omVang: GameState = { ...s0, soHuu: { ...s0.soHuu, vang: 6000 } }
+    expect(dongTienThuDong(omVang)).toBe(0)
+    expect(reducer(omVang, { type: 'ketThucNam' }).trangThai).toBe('dangChoi')
+  })
+
+  it('thắng khi dòng tiền thụ động phủ được nghĩa vụ hàng năm', () => {
+    const sau = reducer(dungTrangThaiTuDo(), { type: 'ketThucNam' })
+    expect(sau.trangThai).toBe('thang')
+    expect(dongTienThuDong(sau)).toBeGreaterThanOrEqual(mucTieuTuDo(sau))
+  })
+
+  it('trả nợ tính vào nghĩa vụ nên vay kịch trần không phải đường tắt', () => {
+    const s0 = dungTrangThaiTuDo()
+    const coNo: GameState = {
+      ...s0,
+      khoanVay: [
+        { id: 'thu', goc: 1 * TY, kyHan: 10, thanhToanMoiNam: 180 * TRIEU, namConLai: 10 },
+      ],
+    }
+    expect(nghiaVuHangNam(coNo)).toBe(nghiaVuHangNam(s0) + 180 * TRIEU)
+    expect(reducer(coNo, { type: 'ketThucNam' }).trangThai).toBe('dangChoi')
   })
 
   it('thắng rồi vẫn chơi tiếp được tới viên mãn, không thắng lặp lại', () => {
-    const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
-    const giau: GameState = { ...s0, tienMat: CONFIG.mucTieuTaiSan * 2 }
-    const thang = reducer(giau, { type: 'ketThucNam' })
+    const thang = reducer(dungTrangThaiTuDo(), { type: 'ketThucNam' })
     expect(thang.trangThai).toBe('thang')
-    expect(thang.daDatMucTieu).toBe(true)
+    expect(thang.daTuDo).toBe(true)
 
     const tiep = reducer(thang, { type: 'choiTiepSauThang' })
     expect(tiep.trangThai).toBe('dangChoi')
     expect(tiep.phase).toBe('chiPhi')
 
-    // Vẫn giàu hơn mục tiêu nhưng không kích hoạt thắng lần hai
+    // Vẫn tự do tài chính nhưng không kích hoạt thắng lần hai
     const nam2 = diTronMotNam(tiep, tiep.tienMat)
     expect(nam2.trangThai).toBe('dangChoi')
 
-    // Và tới hết năm 80 thì khép lại viên mãn, ghi nhận đã đạt mục tiêu
+    // Và tới hết năm 80 thì khép lại viên mãn, ghi nhận đã tự do trên đường đi
     const cuoiDoi = diTronMotNam({ ...tiep, nam: 80 }, tiep.tienMat)
     expect(cuoiDoi.trangThai).toBe('vienMan')
     expect(cuoiDoi.lyDoKetThuc).toContain('chinh phục')
@@ -384,7 +426,7 @@ describe('điều kiện kết thúc', () => {
     expect(s.lyDoKetThuc).toBeTruthy()
   })
 
-  it('hết năm 79 chưa đạt mục tiêu thì vẫn đang chơi', () => {
+  it('hết năm 79 chưa tự do tài chính thì vẫn đang chơi', () => {
     const s = diTronMotNam({ ...moiVan(), nam: 79 }, 500 * TRIEU)
     expect(s.trangThai).toBe('dangChoi')
     expect(s.nam).toBe(80)
@@ -880,22 +922,40 @@ describe('thẻ tiêu dùng không lặp lại năm liền trước', () => {
   })
 })
 
-describe('mốc tài sản trung gian', () => {
-  it('vượt 1 tỷ lần đầu có sự kiện mocTaiSan, năm sau không lặp lại', () => {
+describe('cột mốc tài sản', () => {
+  it('mốc suy ra từ chi phí sinh hoạt nên khác nhau theo nghề', () => {
+    // 25 lần chi phí sinh hoạt là mốc cao nhất, ba mốc dưới là 10% · 25% · 50%
+    expect(mocTaiSanCuaNghe('giaoVien')).toEqual([
+      300 * TRIEU,
+      700 * TRIEU,
+      1_400 * TRIEU,
+      2_700 * TRIEU,
+    ])
+    expect(mocTaiSanCuaNghe('bacSi').at(-1)).toBe(6_000 * TRIEU)
+    expect(mocTaiSanCuaNghe('kySuPhanMem').at(-1)).toBe(10_900 * TRIEU)
+  })
+
+  it('mốc leo theo mặt bằng giá để lạm phát không làm rẻ cột mốc', () => {
+    expect(mocTaiSanCuaNghe('giaoVien', 2).at(-1)).toBe(5_400 * TRIEU)
+    expect(mocTaiSanCuaNghe('giaoVien', 2)[0]).toBe(500 * TRIEU)
+  })
+
+  it('chạm mốc đầu lần đầu có sự kiện mocTaiSan, năm sau không lặp lại', () => {
     let s = duyetHetThe(reducer(moiVan('giaoVien'), { type: 'traChiPhi' }), false)
-    s = { ...s, tienMat: 1.2 * TY, hanhPhuc: 90 }
+    // 400 triệu vượt mốc 1 (300 triệu) nhưng chưa tới mốc 2 (700 triệu)
+    s = { ...s, tienMat: 400 * TRIEU, hanhPhuc: 90 }
     s = reducer(s, { type: 'ketThucNam' })
     expect(s.tongKet!.suKien.filter((k) => k.loai === 'mocTaiSan')).toHaveLength(1)
-    expect(s.mocTaiSanDaQua).toContain(1 * TY)
+    expect(s.mocTaiSanDaQua).toEqual([0])
 
-    // Năm thứ hai: vẫn trên 1 tỷ nhưng mốc đã ghi nhận rồi → không lặp
+    // Năm thứ hai: vẫn trên mốc 1 nhưng đã ghi nhận rồi → không lặp
     s = reducer(s, { type: 'dongTongKet' })
     s = duyetHetThe(reducer(s, { type: 'traChiPhi' }), false)
     s = { ...s, hanhPhuc: 90 }
     s = reducer(s, { type: 'ketThucNam' })
-    expect(tongTaiSan(s)).toBeLessThan(2.5 * TY)
+    expect(tongTaiSan(s)).toBeLessThan(700 * TRIEU)
     expect(s.tongKet!.suKien.filter((k) => k.loai === 'mocTaiSan')).toHaveLength(0)
-    expect(s.mocTaiSanDaQua).toEqual([1 * TY])
+    expect(s.mocTaiSanDaQua).toEqual([0])
   })
 })
 
