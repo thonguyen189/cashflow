@@ -1,0 +1,64 @@
+name: Build và triển khai lên GitHub Pages
+
+# GitHub Pages không tự biên dịch dự án Vite: nếu trỏ thẳng vào nhánh main nó sẽ
+# phục vụ index.html nguồn, trong đó có <script src="/src/main.tsx"> mà trình duyệt
+# không chạy được — trang tải xong là trắng. Quy trình này build ra dist/ rồi mới
+# đẩy lên Pages.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Không huỷ bản triển khai đang chạy dở, chỉ xếp hàng lần lượt.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Kiểm thử và build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v7
+
+      - name: Cài Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cài phụ thuộc
+        run: npm ci
+
+      - name: Chạy kiểm thử
+        run: npm test
+
+      - name: Build bản phát hành
+        run: npm run build
+
+      - name: Cấu hình Pages
+        uses: actions/configure-pages@v6
+
+      - name: Đóng gói thư mục dist
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    name: Triển khai
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Đưa lên GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
