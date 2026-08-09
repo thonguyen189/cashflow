@@ -7,6 +7,7 @@ const KHOA_LUU_CU = [
   'dong-tien-luu-v1-1',
   'dong-tien-luu-v1-2',
   'dong-tien-luu-v1-3',
+  'dong-tien-luu-v1-4',
 ]
 
 /** Tự động lưu ván đang chơi vào localStorage. */
@@ -31,6 +32,12 @@ export function taiVan(): GameState | null {
     if (!s.baoHiemXe || !s.khoanDangCho || !s.coHoiDaLam) return null
     if (!s.uocNguyenDaMat) return null
     if (typeof s.daTuDo !== 'boolean') return null
+    // trường của bản v1.5: ván v1.4 không có `heSoToiUuChiPhi` nên mọi phép nhân
+    // chi phí sẽ ra NaN ngay năm đầu tiên — thà bỏ ván cũ còn hơn nạp vào rồi vỡ
+    if (typeof s.heSoToiUuChiPhi !== 'number') return null
+    // Thiếu cờ này thì `daToiUuChiPhi` trả `undefined`, giới hạn "cả ván một lần"
+    // của gói hoạch định tài chính biến mất mà không có dấu hiệu gì trên màn hình
+    if (typeof s.daThueChuyenGiaTaiChinh !== 'boolean') return null
     return s
   } catch {
     return null

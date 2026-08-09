@@ -257,6 +257,123 @@ export const dangCoBaoHiemXe = (s: GameState, loai: LoaiBaoHiemXe): boolean =>
 export const giaThucTe = (s: GameState, giaGoc: Tien): Tien =>
   Math.round(giaGoc * s.chiSoGia)
 
+/* ---------- Chuyên gia đồng hành ---------- */
+
+/** Liệu trình tâm lý còn hiệu lực trong năm nay hay không. */
+export const dangTriLieu = (s: GameState): boolean => s.triLieuDenNam >= s.nam
+
+/** Số năm liệu trình còn lại, tính cả năm nay; hết hạn thì bằng 0. */
+export const soNamTriLieuConLai = (s: GameState): number =>
+  Math.max(0, s.triLieuDenNam - s.nam + 1)
+
+/**
+ * Điểm hạnh phúc mỗi năm của liệu trình thứ `soLan`, nhạt dần: 8 → 6 → 4 → 3 → 3…
+ *
+ * `soLan` đếm CẢ liệu trình đang chạy (lần đầu là 1) nên lần đầu chưa bị trừ điểm
+ * nào — reducer đã tăng `soLanTriLieu` ngay lúc thuê. Chuỗi nhạt dần mô phỏng việc
+ * DÙNG TRỊ LIỆU ĐỂ THAY CHO THAY ĐỔI NẾP SỐNG: mua thêm một liệu trình mà hoàn cảnh
+ * gây kiệt sức vẫn nguyên vẹn thì lần sau nhạt hơn lần trước. Đây là luật chơi, không
+ * phải nhận định về hiệu quả trị liệu ngoài đời. Về mặt cân bằng, cái sàn ở cuối
+ * chuỗi chặn chiến thuật "cứ có tiền thì mua hạnh phúc mãi mãi".
+ */
+export function hoiPhucTriLieu(soLan: number): number {
+  const tl = CONFIG.chuyenGia.tamLy
+  const daQua = Math.max(0, soLan - 1)
+  return Math.max(
+    tl.hanhPhucToiThieu,
+    tl.hanhPhucMoiNam - daQua * tl.giamHieuQuaMoiLan,
+  )
+}
+
+/**
+ * Đã thuê chuyên gia hoạch định tài chính chưa — cả ván chỉ được một lần.
+ *
+ * Đọc CỜ chứ không suy ra từ `heSoToiUuChiPhi < 1`. Suy ngược từ hệ số thì cái
+ * chốt "một lần" phụ thuộc vào việc `giamChiPhi` có nằm trong khoảng (0, 1) hay
+ * không: đặt `giamChiPhi: 0` để tắt gói khi đo lại cân bằng là việc hợp lệ với
+ * `config.ts`, mà làm thế thì hàm này trả `false` vĩnh viễn và người chơi bấm
+ * thuê được bao nhiêu lần tuỳ tiền, mỗi lần cộng thêm hạnh phúc ngay.
+ */
+export const daToiUuChiPhi = (s: GameState): boolean => s.daThueChuyenGiaTaiChinh
+
+/**
+ * Chi phí sinh hoạt của năm nay NẾU chưa từng thuê chuyên gia hoạch định tài chính.
+ *
+ * Dựng đúng tích mà bước 10 của `chuyenNam` đang dùng, chỉ bỏ đi `heSoToiUuChiPhi`.
+ * Có hàm dùng chung ở đây thì hai màn Trang chủ và Sổ sách không còn tự nhân lại
+ * mỗi nơi một kiểu — thêm một hệ số vào chi phí sinh hoạt ở bản sau là sửa đúng
+ * hai chỗ (bước 10 và hàm này) chứ không phải đi tìm khắp lớp giao diện.
+ */
+export function chiPhiChuaToiUu(s: GameState): Tien {
+  return Math.round((timNghe(s.ngheId)?.chiPhi ?? 0) * s.chiSoGia * s.heSoChiPhi)
+}
+
+/**
+ * Phần giảm chi phí đã thật sự vào sổ của năm nay hay chưa.
+ *
+ * Cờ tối ưu bật lên ngay giây bấm thuê, còn `chiPhiHangNam` thì cả ván chỉ được
+ * tính lại trong `chuyenNam`. Suốt phần còn lại của năm thuê, con số người chơi
+ * đang nhìn vẫn là chi phí CHƯA giảm — nên mọi câu chữ khoe "đang tiết kiệm" đều
+ * phải hỏi hàm này trước, nếu không hai màn hình sẽ nói ngược nhau về đúng món
+ * đắt nhất của bản này.
+ */
+export const toiUuDaVaoSo = (s: GameState): boolean =>
+  s.chiPhiHangNam < chiPhiChuaToiUu(s)
+
+/**
+ * Đang thuộc diện chương trình hỗ trợ (giảm nửa phí cả hai gói) hay không.
+ *
+ * Điều kiện là CỜ kiệt sức chứ KHÔNG phải mức hạnh phúc hiện tại. Cờ được chốt một
+ * lần ở Tổng kết năm TRƯỚC rồi đứng yên suốt năm nay, nên người chơi không tự tạo
+ * được điều kiện giảm giá ngay trong lượt của mình — nếu đọc `s.hanhPhuc` sống thì
+ * chỉ cần từ chối vài tấm thẻ cho hạnh phúc rơi xuống dưới ngưỡng là mua được giá
+ * rẻ, và thứ tự bấm nút cũng đổi được tổng tiền phải trả (gói tài chính cộng hạnh
+ * phúc ngay lúc thuê nên mua nó trước có thể đẩy hạnh phúc lên trên ngưỡng, làm gói
+ * tâm lý mất phần giảm giá). Đọc cờ còn đúng với câu chuyện hơn: chương trình hỗ trợ
+ * của cơ quan và cộng đồng xét trên một năm đã qua, không theo tâm trạng lúc bấm nút.
+ *
+ * ĐÁNH ĐỔI ĐÃ BIẾT, cố ý giữ nguyên: cờ chỉ được xét lại trong `chuyenNam` nên nó
+ * đứng yên suốt năm sau bất kể hạnh phúc leo lên tới đâu. Người chơi hiểu luật vẫn
+ * mở khoá được giá nửa bằng cách khép MỘT năm dưới ngưỡng cảnh báo rồi cả năm kế
+ * tiếp mua gì cũng rẻ một nửa — hạnh phúc trên 60 không có công dụng nào khác ngoài
+ * làm vùng đệm, nên vứt vài điểm gần như không mất gì. Thêm vế `s.hanhPhuc <
+ * hanhPhucNguongCanhBao` sẽ bịt đường ấy nhưng mở lại đúng hai cửa mà đoạn trên vừa
+ * đóng: thứ tự bấm nút đổi được tổng tiền phải trả, và giữ hạnh phúc thấp giữa pha
+ * thẻ bài lại thành có lợi. Đổi một lỗ hổng lấy hai lỗ hổng thì không đáng, nên luật
+ * giữ nguyên và khoảng trống này được ghi thẳng vào đặc tả (docs/05 mục B) để bản
+ * sau cân lại giá gói tài chính theo mức nửa phí chứ không theo mức đầy.
+ */
+export const dangDuocHoTro = (s: GameState): boolean => s.daCanhBaoKietSuc
+
+/** Hệ số phí dùng chung cho cả hai gói: đang được hỗ trợ thì còn một nửa. */
+const heSoPhiChuyenGia = (s: GameState): number =>
+  dangDuocHoTro(s) ? CONFIG.chuyenGia.heSoGiamPhiKhiKietSuc : 1
+
+/**
+ * Phí trọn gói liệu trình tâm lý, trả một lần lúc thuê.
+ *
+ * Nhân THẲNG với `chiPhiHangNam` — con số này đã gồm chỉ số giá — nên tuyệt đối
+ * không bọc thêm `giaThucTe`, y như `phiBaoHiemXe` đang làm; bọc thêm là lạm phát
+ * bị tính hai lần. Giao diện phải gọi đúng hàm này, nếu không nút sẽ hiện một giá
+ * mà engine lại trừ một giá khác.
+ */
+export function phiChuyenGiaTamLy(s: GameState): Tien {
+  return Math.round(
+    s.chiPhiHangNam *
+      CONFIG.chuyenGia.tamLy.tyLePhiTheoChiPhi *
+      heSoPhiChuyenGia(s),
+  )
+}
+
+/** Phí gói hoạch định tài chính, cũng tính thẳng trên chi phí sinh hoạt năm nay. */
+export function phiChuyenGiaTaiChinh(s: GameState): Tien {
+  return Math.round(
+    s.chiPhiHangNam *
+      CONFIG.chuyenGia.taiChinh.tyLePhiTheoChiPhi *
+      heSoPhiChuyenGia(s),
+  )
+}
+
 /**
  * Trần khoản vay: tổng thanh toán hàng năm không vượt quá
  * `tyLeThanhToanToiDa` × lương. Trả góp đều gốc + lãi đơn theo kỳ hạn.
@@ -490,6 +607,12 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     baoHiemDenNam: -1,
     baoHiemXe: { trachNhiemDanSu: -1, vatChatXe: -1, taiNanNguoiTrenXe: -1 },
 
+    triLieuDenNam: -1,
+    soLanTriLieu: 0,
+    daCanhBaoKietSuc: false,
+    daThueChuyenGiaTaiChinh: false,
+    heSoToiUuChiPhi: 1,
+
     khoanVay: [],
     doanhNghiep: [],
     coHoiDaLam: [],
@@ -546,6 +669,63 @@ const CHUYEN_TUOI_GIA = [
     tieuDe: 'Họp lớp sau nửa thế kỷ',
     moTa: 'Những mái đầu bạc gặp lại nhau, nhắc tên nhau vẫn đúng như thuở đôi mươi.',
     hanhPhuc: 10,
+  },
+] as const
+
+/**
+ * Ba nhịp của một liệu trình tâm lý, kể theo đúng thứ tự năm thứ nhất → thứ ba.
+ * Đây là mảng có THỨ TỰ chứ không phải bộ rút ngẫu nhiên như `CHUYEN_TUOI_GIA`:
+ * người chơi phải thấy được liệu trình tiến triển thì mới tin nó đáng tiền.
+ *
+ * Xuất ra ngoài để bài kiểm thử canh được hai thứ mà cái kẹp `Math.min(Math.max(…))`
+ * ở dưới sẽ nuốt im lặng: đúng thứ tự ba năm, và độ dài mảng phải khớp với
+ * `soNamLieuTrinh` — lệch nhau thì năm cuối kể lại chuyện của năm trước.
+ *
+ * Độ dài mỗi đoạn giữ quanh mức 20–25 chữ cho bằng nếp của các đoạn kể sẵn có:
+ * chúng nằm chung một danh sách trên bảng Tổng kết, đoạn nào dài gấp đôi là lộ ngay.
+ */
+export const CHUYEN_TRI_LIEU = [
+  {
+    tieuDe: 'Buổi trị liệu đầu tiên',
+    moTa: 'Bạn ngồi im gần hết giờ đầu, không biết bắt đầu từ đâu. Rồi thứ vẫn đè lên ngực mỗi sáng cũng được gọi đúng tên: bạn không lười, bạn đang kiệt sức.',
+  },
+  {
+    tieuDe: 'Dựng lại nếp sinh hoạt',
+    moTa: 'Chuyên gia không bàn chuyện lớn lao, chỉ cùng bạn sắp lại từng việc nhỏ: ngủ trước mười một giờ, sáng đi bộ hai mươi phút, và bớt ôm việc vào người.',
+  },
+  {
+    tieuDe: 'Buổi trị liệu cuối cùng',
+    moTa: 'Chuyên gia nói bạn đã đủ vững để tự đi tiếp, và dặn cứ quay lại bất cứ lúc nào thấy cần. Bạn ra về nhẹ tênh, mang theo những cách tự chăm mình cho những năm sau.',
+  },
+] as const
+
+/**
+ * Dấu hiệu kiệt sức đời thường, rút ngẫu nhiên khi hạnh phúc rơi dưới ngưỡng
+ * cảnh báo. Sự kiện này chỉ KỂ — không đổi tiền cũng không đổi hạnh phúc — vì
+ * nhiệm vụ của nó là gõ cửa nhắc người chơi trước khi quá muộn.
+ *
+ * Khác `rutThe` và `CHUYEN_TUOI_GIA`, bộ này rút bằng `rng.chon` KHÔNG kèm bộ lọc
+ * hoàn cảnh nào — ván chơi kéo từ tuổi 21 tới 100 nên bất kỳ đoạn nào cũng có thể
+ * rơi vào người độc thân năm thứ ba, hoặc cụ ông bảy mươi lăm đã lên chức ông bà.
+ * Vì vậy mọi chi tiết ở đây phải trung tính: không nhắc con cái, không xưng hô theo
+ * vai vế, không giả định nhân vật còn đi làm.
+ */
+const CHUYEN_KIET_SUC = [
+  {
+    tieuDe: 'Sáng nào cũng thấy nặng nề',
+    moTa: 'Chuông báo thức reo, bạn nằm thêm hai mươi phút chỉ vì chưa muốn bắt đầu một ngày nữa. Bạn bè bảo hay là đi gặp một chuyên gia tâm lý thử xem.',
+  },
+  {
+    tieuDe: 'Người thân nhận ra bạn ít cười hẳn',
+    moTa: 'Bữa cơm tối nhà bạn dạo này lặng lẽ lạ. Có người trong nhà nói thẳng ra: dạo này thấy bạn ít cười hẳn. Có lẽ đã đến lúc tìm người nghe mình nói.',
+  },
+  {
+    tieuDe: 'Đêm nằm mãi không ngủ được',
+    moTa: 'Cứ tắt đèn là đầu lại quay về mấy con số: khoản phải trả tháng tới, chỗ tiền còn thiếu, những thứ chưa biết xoay đâu ra. Ba giờ sáng bạn vẫn mở mắt nhìn trần nhà.',
+  },
+  {
+    tieuDe: 'Việc gì cũng thấy quá sức',
+    moTa: 'Những việc trước đây làm trong một buổi thì nay bạn dời hết ngày này sang ngày khác.',
   },
 ] as const
 
@@ -1040,7 +1220,29 @@ function chuyenNam(s: GameState): GameState {
   const tangLuong = s.luong > 0 ? luongMoi / s.luong - 1 : 0
   tienMat += luongMoi
 
-  /* --- 9. Hạnh phúc: phạt khát vọng và thưởng ước nguyện --- */
+  /* --- 9. Hạnh phúc: buổi trị liệu, phạt khát vọng và thưởng ước nguyện --- */
+
+  // Buổi trị liệu đứng TRƯỚC phạt khát vọng để điểm hồi được tính vào bức tranh
+  // hạnh phúc của cả năm. Điểm hồi đi thẳng vào sự kiện chứ không thành một dòng
+  // riêng của bảng tổng kết: khoản nào có chuyện để kể thì mang luôn số điểm,
+  // giống hệt cột mốc tài sản; hai dòng riêng chỉ dành cho khoản đều đặn không
+  // có gì để kể.
+  if (dangTriLieu(s)) {
+    // Mua ở năm N thì `triLieuDenNam` = N+2, và trong `chuyenNam` thì `s.nam`
+    // vẫn là năm cũ — nên công thức này cho đúng 1, 2, 3 rồi liệu trình tắt.
+    const namThu = CONFIG.chuyenGia.tamLy.soNamLieuTrinh - soNamTriLieuConLai(s) + 1
+    const chuyen =
+      CHUYEN_TRI_LIEU[Math.min(Math.max(namThu, 1), CHUYEN_TRI_LIEU.length) - 1]!
+    const hpTriLieu = apHanhPhuc(hoiPhucTriLieu(s.soLanTriLieu))
+    suKien.push({
+      loai: 'triLieu',
+      tieuDe: chuyen.tieuDe,
+      moTa: chuyen.moTa,
+      tienThayDoi: 0,
+      hanhPhucThayDoi: hpTriLieu,
+    })
+  }
+
   // Ghi lại số điểm THỰC bị trừ / thực nhận, không phải con số danh nghĩa —
   // để bảng tổng kết cộng lại đúng bằng mức hạnh phúc thay đổi trong năm.
   // Dùng danh sách ước nguyện SAU nhóm sự kiện giao thông: xe vừa mất trộm thì
@@ -1061,7 +1263,12 @@ function chuyenNam(s: GameState): GameState {
   const chiSoGia = s.chiSoGia * (1 + lamPhat)
   const heSoChiPhi = tinhHeSoChiPhi(daKetHon, conCai, namMoi)
   const nghe = timNghe(s.ngheId)!
-  const chiPhiHangNam = Math.round(nghe.chiPhi * chiSoGia * heSoChiPhi)
+  // Hệ số tối ưu chi tiêu nằm ở đây chứ không trừ một lần khi thuê: chi phí năm
+  // nào cũng được dựng lại từ chi phí gốc của nghề, nên phần giảm phải nhân vào
+  // mỗi năm thì mới thật sự vĩnh viễn.
+  const chiPhiHangNam = Math.round(
+    nghe.chiPhi * chiSoGia * heSoChiPhi * s.heSoToiUuChiPhi,
+  )
 
   /* --- 11. Thiếu tiền mặt thì buộc phải bán tài sản trang trải --- */
   let soHuu = s.soHuu
@@ -1124,7 +1331,38 @@ function chuyenNam(s: GameState): GameState {
     })
   }
 
-  /* --- 13. Rút bài cho năm mới, theo giai đoạn đời và không lặp năm trước --- */
+  /* --- 13. Cảnh báo kiệt sức: chốt sổ tinh thần của cả năm ---
+   * Khối này BẮT BUỘC đứng ở đây, sau bước 12, chứ không phải ở cuối bước 9 —
+   * đây là cái bẫy chính của bản v1.5. Sau bước 9 biến `hanhPhuc` còn bị sửa hai
+   * lần nữa: bước 11 trừ 10 điểm khi túng thiếu phải bán tài sản, bước 12 cộng 5
+   * điểm cho mỗi cột mốc tài sản vừa chạm. Xét sớm thì một năm đóng lại ở 63 điểm
+   * vẫn bị kể chuyện kiệt sức và cờ kẹt ở trạng thái bật, còn một năm tụt xuống 48
+   * vì túng thiếu lại không được kể một chữ nào.
+   *
+   * Vì cờ này cũng là điều kiện giảm nửa phí chuyên gia (xem `dangDuocHoTro`), đặt
+   * sai chỗ sẽ biến một lỗi kể chuyện thành một lỗi tiền bạc. Sự kiện `kietSuc` vì
+   * vậy đứng CUỐI mảng `suKien`, sau cả lạm phát — nó là lời khép lại của năm.
+   *
+   * Cờ tắt trở lại ngay khi hạnh phúc leo lên bằng hoặc trên ngưỡng, nhờ vậy câu
+   * chuyện chỉ kể lại khi người chơi thật sự rơi xuống lần nữa chứ không lải nhải
+   * mỗi năm suốt quãng nằm dưới đáy.
+   */
+  let daCanhBaoKietSuc = s.daCanhBaoKietSuc
+  if (hanhPhuc >= CONFIG.hanhPhucNguongCanhBao) {
+    daCanhBaoKietSuc = false
+  } else if (!daCanhBaoKietSuc) {
+    const chuyen = rng.chon(CHUYEN_KIET_SUC)
+    suKien.push({
+      loai: 'kietSuc',
+      tieuDe: chuyen.tieuDe,
+      moTa: chuyen.moTa,
+      tienThayDoi: 0,
+      hanhPhucThayDoi: 0,
+    })
+    daCanhBaoKietSuc = true
+  }
+
+  /* --- 14. Rút bài cho năm mới, theo giai đoạn đời và không lặp năm trước --- */
   const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax), {
     daKetHon,
     conCai,
@@ -1154,6 +1392,9 @@ function chuyenNam(s: GameState): GameState {
     lichSuGia,
     uocNguyenDaMua,
     uocNguyenDaMat,
+    // Ba trường chuyên gia còn lại chỉ đổi trong reducer nên đi theo phép trải
+    // `...s` là đủ; riêng cờ này do chính `chuyenNam` bật tắt, phải gán tường minh.
+    daCanhBaoKietSuc,
     khoanVay,
     khoanDangCho: [],
     daKetHon,
@@ -1277,6 +1518,36 @@ export function reducer(s: GameState, a: Action): GameState {
         ...s,
         tienMat: s.tienMat - phi,
         baoHiemXe: { ...s.baoHiemXe, [a.loai]: s.nam },
+      }
+    }
+
+    case 'thueChuyenGiaTamLy': {
+      // Chỉ được mua liệu trình mới khi liệu trình cũ đã hết hạn — trị liệu là
+      // một quá trình nhiều năm, chồng hai liệu trình lên nhau không có nghĩa gì.
+      if (!choPhepHanhDongTuDo(s) || dangTriLieu(s)) return s
+      const phi = phiChuyenGiaTamLy(s)
+      if (s.tienMat < phi) return s
+      return {
+        ...s,
+        tienMat: s.tienMat - phi,
+        // Liệu trình tính CẢ năm mua nên hạn cuối lùi lại một năm so với số năm.
+        triLieuDenNam: s.nam + CONFIG.chuyenGia.tamLy.soNamLieuTrinh - 1,
+        soLanTriLieu: s.soLanTriLieu + 1,
+      }
+    }
+
+    case 'thueChuyenGiaTaiChinh': {
+      if (!choPhepHanhDongTuDo(s) || daToiUuChiPhi(s)) return s
+      const phi = phiChuyenGiaTaiChinh(s)
+      if (s.tienMat < phi) return s
+      return {
+        ...s,
+        tienMat: s.tienMat - phi,
+        daThueChuyenGiaTaiChinh: true,
+        heSoToiUuChiPhi: 1 - CONFIG.chuyenGia.taiChinh.giamChiPhi,
+        // Đi qua `themHanhPhuc` để trần mềm vẫn có hiệu lực, giống mọi khoản
+        // cộng hạnh phúc khác trong game.
+        hanhPhuc: themHanhPhuc(s.hanhPhuc, CONFIG.chuyenGia.taiChinh.hanhPhucNgay),
       }
     }
 

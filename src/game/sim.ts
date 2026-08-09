@@ -1,7 +1,10 @@
+import { CONFIG } from './config'
 import { TAI_SAN, timUocNguyen } from './content'
 import {
+  daToiUuChiPhi,
   dangCoBaoHiem,
   dangCoBaoHiemXe,
+  dangTriLieu,
   dongTienThuDong,
   giaThucTe,
   giaUocNguyen,
@@ -10,6 +13,8 @@ import {
   mucTieuTuDo,
   phiBaoHiem,
   phiBaoHiemXe,
+  phiChuyenGiaTaiChinh,
+  phiChuyenGiaTamLy,
   reducer,
   taoGameMoi,
   tongTaiSan,
@@ -45,6 +50,10 @@ export interface ChienLuoc {
   muaBaoHiemXe: readonly LoaiBaoHiemXe[]
   muaGiaoDuc: boolean
   muaUocNguyen: boolean
+  /** thuê chuyên gia tâm lý mỗi khi hạnh phúc rơi xuống dưới ngưỡng cảnh báo */
+  thueChuyenGiaTamLy: boolean
+  /** thuê chuyên gia hoạch định tài chính ngay khi đủ tiền */
+  thueChuyenGiaTaiChinh: boolean
   nhanCoHoiKinhDoanh: boolean
   nhanCanhBac: boolean
   /** nhận cơ hội tổ chức sự kiện — kỳ vọng dương, mở kết quả ngay cuối năm */
@@ -61,6 +70,8 @@ export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
   muaBaoHiemXe: ['trachNhiemDanSu', 'vatChatXe', 'taiNanNguoiTrenXe'],
   muaGiaoDuc: true,
   muaUocNguyen: true,
+  thueChuyenGiaTamLy: true,
+  thueChuyenGiaTaiChinh: true,
   nhanCoHoiKinhDoanh: true,
   nhanCanhBac: false,
   nhanToChucSuKien: true,
@@ -104,18 +115,27 @@ export function moPhongMotVan(
       const the = s.theConLai[0]!
       const gia = giaThucTe(s, the.gia)
       const moiDiem = gia / the.diem
-      // giữ hạnh phúc an toàn: dưới 65 thì nhận rộng tay hơn
+      // Giữ hạnh phúc an toàn: dưới 65 thì nhận rộng tay hơn. Số 65 là vùng đệm CỐ Ý
+      // nằm trên `hanhPhucNguongCanhBao` để bot phản ứng sớm hơn một nhịp so với lúc
+      // game bắt đầu kể chuyện kiệt sức.
+      //
+      // `s.chiSoGia` phải nhân vào CẢ HAI nhánh: ngưỡng đo bằng tiền trên mỗi điểm
+      // hạnh phúc, mà giá thẻ leo theo lạm phát. Chỉ nhân ở nhánh thường thì khi
+      // `chiSoGia` vượt 4, nhánh "nới rộng tay" hoá ra chặt hơn nhánh thường — đúng
+      // ngược lại ý định. Bộ số hiện tại chưa chạm vào ca đó, nhưng nới biên lạm
+      // phát hay kéo dài ván chơi là nó bật lên.
       const nguong =
-        s.hanhPhuc < 65 ? cl.nguongMoiDiem * 4 : cl.nguongMoiDiem * s.chiSoGia
+        (s.hanhPhuc < 65 ? cl.nguongMoiDiem * 4 : cl.nguongMoiDiem) * s.chiSoGia
       const nhan = moiDiem <= nguong && s.tienMat >= gia
       s = reducer(s, { type: 'quyetDinhThe', nhan })
       continue
     }
 
     // ---- giai đoạn tự do ----
-    // 1. bảo hiểm trước, vì rẻ mà chặn được cú đau
+    // 1. bảo hiểm trước, vì rẻ mà chặn được cú đau.
+    // phiBaoHiem đã gồm lạm phát — không bọc thêm giaThucTe.
     if (cl.muaBaoHiem && !dangCoBaoHiem(s)) {
-      const phi = giaThucTe(s, phiBaoHiem(s))
+      const phi = phiBaoHiem(s)
       if (s.tienMat > phi * 3) {
         const sau = reducer(s, { type: 'muaBaoHiem' })
         if (sau !== s) {
@@ -144,7 +164,42 @@ export function moPhongMotVan(
       if (daMuaBaoHiemXe) continue
     }
 
-    // 3. khát vọng, để cắt khoản phạt hạnh phúc hàng năm. Giá khoá thời trẻ,
+    // 3. chuyên gia tâm lý — chỉ gọi khi tinh thần đã rơi xuống vùng cảnh báo.
+    // Không đòi khoản đệm gấp ba như bảo hiểm: đây là cấp cứu chứ không phải
+    // khoản chi phòng xa, mà phí cũng chỉ bằng một phần tư chi phí sinh hoạt
+    // (còn một nửa chừng ấy khi đang dưới ngưỡng), nên chờ đủ đệm là chờ chết.
+    // phiChuyenGiaTamLy đã gồm lạm phát nên tuyệt đối không bọc thêm giaThucTe.
+    if (
+      cl.thueChuyenGiaTamLy &&
+      s.hanhPhuc < CONFIG.hanhPhucNguongCanhBao &&
+      !dangTriLieu(s)
+    ) {
+      const phi = phiChuyenGiaTamLy(s)
+      if (s.tienMat >= phi) {
+        const sau = reducer(s, { type: 'thueChuyenGiaTamLy' })
+        if (sau !== s) {
+          s = sau
+          continue
+        }
+      }
+    }
+
+    // 4. chuyên gia hoạch định tài chính — một lần cho cả ván, càng sớm càng
+    // lời vì tám phần trăm chi phí tiết kiệm được cộng dồn suốt phần đời còn
+    // lại. Vẫn giữ khuôn thận trọng gấp ba lần phí: gói này đắt gấp gần năm lần
+    // liệu trình, dốc sạch tiền mặt cho nó thì năm sau không còn gì để trả chi phí.
+    if (cl.thueChuyenGiaTaiChinh && !daToiUuChiPhi(s)) {
+      const phi = phiChuyenGiaTaiChinh(s)
+      if (s.tienMat > phi * 3) {
+        const sau = reducer(s, { type: 'thueChuyenGiaTaiChinh' })
+        if (sau !== s) {
+          s = sau
+          continue
+        }
+      }
+    }
+
+    // 5. khát vọng, để cắt khoản phạt hạnh phúc hàng năm. Giá khoá thời trẻ,
     //    trừ khi món đó đã từng mất — khi ấy phải mua lại theo giá hiện hành.
     if (cl.muaUocNguyen && !s.uocNguyenDaMua.includes(s.khatVongId)) {
       const un = timUocNguyen(s.khatVongId)
@@ -160,7 +215,7 @@ export function moPhongMotVan(
       }
     }
 
-    // 4. học lên, ưu tiên bậc đắt nhất còn mua nổi
+    // 6. học lên, ưu tiên bậc đắt nhất còn mua nổi
     if (cl.muaGiaoDuc) {
       const ungVien = [...khoaHocConLai(s)]
         .reverse()
@@ -174,7 +229,7 @@ export function moPhongMotVan(
       }
     }
 
-    // 5. cơ hội: xử lý từng cái một, vòng lặp sẽ quay lại lo cái tiếp theo
+    // 7. cơ hội: xử lý từng cái một, vòng lặp sẽ quay lại lo cái tiếp theo
     const coHoi = s.coHoiNamNay[0]
     if (coHoi) {
       const gia = giaThucTe(s, coHoi.gia)
@@ -189,7 +244,7 @@ export function moPhongMotVan(
       continue
     }
 
-    // 6. đem phần dư đi đầu tư
+    // 8. đem phần dư đi đầu tư
     const duPhong = s.chiPhiHangNam * cl.duPhongTheoChiPhi
     const coTheDung = s.tienMat - duPhong
     if (coTheDung > 0) {
@@ -211,7 +266,7 @@ export function moPhongMotVan(
       if (daMua) continue
     }
 
-    // 7. hết việc thì đóng năm
+    // 9. hết việc thì đóng năm
     s = reducer(s, { type: 'ketThucNam' })
   }
 

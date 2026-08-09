@@ -126,6 +126,75 @@ Có ba loại cơ hội:
   tệ nhất cũng chỉ lỗ một phần vốn. Chỗ để tiền nhàn rỗi làm việc một năm mà không
   phải khoá vốn vĩnh viễn.
 
+## Đừng đợi kiệt sức mới đi gặp chuyên gia
+
+Hạnh phúc là điều kiện thua duy nhất, nhưng trước đây người chơi chỉ biết ngồi nhìn
+nó trôi: thẻ tiêu dùng do máy rút, ước nguyện thì mua hết ba món là hết đường. Mục
+🧑‍⚕️ **Chuyên gia đồng hành** ở Trang chủ mở ra hai khoản chi rất thật của đời người,
+và cả hai đều là đầu tư chứ không phải phung phí:
+
+- 🧘 **Chuyên gia tâm lý** — phí bằng **25% chi phí sinh hoạt** một năm, đổi lấy một
+  liệu trình **ba năm**, mỗi năm cộng hạnh phúc ở màn Tổng kết. Liệu trình cũ hết hạn
+  mới thuê được liệu trình mới, và **hiệu quả nhạt dần** theo số lần đã trị liệu:
+  **8 → 6 → 4 → 3 → 3 …** điểm mỗi năm. Chuỗi nhạt dần này mô phỏng việc dùng trị
+  liệu để thay cho thay đổi nếp sống — mua thêm một liệu trình mà hoàn cảnh gây kiệt
+  sức vẫn nguyên vẹn thì lần sau nhạt hơn lần trước — và về mặt luật chơi, nó chặn
+  lối chơi "cứ có tiền thì mua hạnh phúc mãi mãi".
+- 🧭 **Chuyên gia hoạch định tài chính** — phí bằng **1,2 lần chi phí sinh hoạt** một
+  năm, thuê **một lần duy nhất** cả ván. Hai người ngồi soát lại từng khoản chi, tìm
+  ra chỗ tiền rò rỉ: chi phí sinh hoạt giảm **8% vĩnh viễn**, kèm 6 điểm hạnh phúc
+  ngay lúc thuê.
+
+Liệu trình tâm lý cho tổng 24 điểm — so với chiếc 🛵 xe máy 80 triệu cộng 5 điểm mỗi
+năm đến hết đời thì lỗ nặng nếu tính đường dài. Đó là chủ ý: nó là **cấp cứu, không
+phải kênh đầu tư hạnh phúc**. Ngược lại, gói hoạch định hoàn vốn trong quãng **11 đến
+13 năm**: phép chia 1,2 cho 0,08 ra 15 năm chỉ đúng nếu khoản tiết kiệm đứng yên, mà
+nó không đứng yên — chi phí sinh hoạt leo theo lạm phát mỗi năm rồi leo tiếp khi cưới
+và khi sinh con, nên tám phần trăm của những năm sau đáng tiền hơn hẳn tám phần trăm
+của năm đầu. Tám phần trăm ấy cũng không chỉ cắt vào riêng dòng chi phí sinh hoạt:
+sàn phí bảo hiểm y tế, nghĩa vụ hàng năm, chi phí đám cưới, học phí đại học của con,
+viện phí khi ốm đau và tổn thất khi có sự cố đời sống đều lấy chi phí sinh hoạt làm
+gốc tính, nên tất cả cùng giảm theo. Vì nghĩa vụ hàng năm nằm trong danh sách đó, gói
+hoạch định còn hạ luôn mức cần đạt để tự do tài chính. Riêng cột mốc tài sản **không**
+đổi theo — huy hiệu vẫn tính trên chi phí gốc của nghề để giữ nguyên thước đo giữa
+các ván.
+
+### Ngưỡng cảnh báo 60 và chương trình hỗ trợ
+
+Hạnh phúc rơi xuống dưới **60** thì game bắt đầu kể: 😔 **kiệt sức** — sáng nào cũng
+thấy nặng nề khi mở mắt, người thân nhận ra bạn ít cười hẳn, đêm nằm mãi không ngủ
+được vì nghĩ chuyện tiền nong. Chuyện chỉ kể một lần cho mỗi lần rơi, leo lại trên
+ngưỡng rồi rơi tiếp thì mới kể lại. Ô hạnh phúc trên thanh chỉ số cũng chuyển vàng,
+để người chơi thấy mình bước vào vùng nguy hiểm trước một nhịp thay vì tới lúc đỏ
+mới biết.
+
+Từ lúc bảng Tổng kết ghi nhận bạn kiệt sức cho tới khi hạnh phúc leo lại từ **60**
+trở lên, **cả hai gói còn một nửa phí** — trong truyện là chương trình hỗ trợ của cơ
+quan và cộng đồng dành cho người đang khủng hoảng, và nó kéo dài suốt quãng bạn còn ở
+dưới ngưỡng chứ không hết sau một năm. Xin nhớ mức giảm này bám vào kết luận đã chốt
+ở bảng Tổng kết chứ không bám vào con số hạnh phúc lúc bạn bấm nút: chương trình hỗ
+trợ xét trên một năm đã qua, nên tụt xuống dưới ngưỡng ngay giữa năm nay cũng không
+mua được giá rẻ của năm nay. Nhờ vậy không ai tự tạo được điều kiện giảm giá bằng
+cách từ chối vài tấm thẻ tiêu dùng cho hạnh phúc rơi xuống, và thứ tự bấm hai nút
+cũng không làm đổi tổng tiền phải trả.
+
+Mức giảm nửa phí cũng không phải lỗ hổng, vì liệu trình trả về theo từng năm chứ
+không hồi tức thì:
+
+```
+bấm Kết thúc năm  →  kiểm tra thua (hạnh phúc < 50)  →  sang năm mới  →  trị liệu cộng điểm
+```
+
+Buổi trị liệu chỉ diễn ra **sau** cửa ải thua. Nên hạnh phúc **50–59** là cửa sổ hành
+động thật: mua liệu trình lúc này, qua được cửa ải, năm sau đã có điểm hồi. Còn
+**dưới 50** thì đã quá muộn cho liệu trình — lúc ấy chỉ còn hai đường cứu, và cả hai
+đều cộng điểm ngay trong năm chứ không đợi sang năm: thẻ tiêu dùng, hoặc sáu điểm
+hạnh phúc của gói hoạch định tài chính. Gói hoạch định thật sự kéo nổi bạn từ 44 lên
+50 và qua ải, nhưng nó là chiếc phao đắt đỏ dùng đúng một lần cả ván, giá bằng 60 đến
+120 phần trăm chi phí sinh hoạt của trọn một năm, và bạn phải sẵn ngần ấy tiền mặt
+vào đúng lúc túng quẫn nhất. Bài học nằm đúng ở chỗ đó: **đừng đợi kiệt sức mới đi
+gặp chuyên gia.**
+
 ## Chạy
 
 ```bash
@@ -142,7 +211,7 @@ npm run build      # build ra thư mục dist/, mở bằng file:// cũng chạy
 
 Toàn bộ số liệu cân bằng nằm trong **[src/game/config.ts](src/game/config.ts)** — hệ số
 an toàn của tự do tài chính, cột mốc tài sản, ngưỡng hạnh phúc, biên độ lạm phát,
-lãi vay, xác suất sự kiện.
+lãi vay, xác suất sự kiện, phí và hiệu quả của hai gói chuyên gia đồng hành.
 
 Nút vặn chính là `tuDoTaiChinh.heSoAnToan`. Nó điều chỉnh **nhịp độ** chứ không phải
 tỉ lệ thắng: mô phỏng cho thấy nâng từ 1,0 lên 2,0 kéo ván dài thêm khoảng năm năm

@@ -145,6 +145,8 @@ export type SuKienLoai =
   | 'xeHongNang'
   | 'matTromXe'
   | 'phatThieuBaoHiemXe'
+  | 'kietSuc'
+  | 'triLieu'
   | 'suKienKetQua'
 
 export interface SuKien {
@@ -230,6 +232,26 @@ export interface GameState {
   /** năm cuối cùng từng loại bảo hiểm xe còn hiệu lực; -1 nghĩa là chưa từng mua */
   baoHiemXe: Record<LoaiBaoHiemXe, number>
 
+  /** ---------- Chuyên gia đồng hành ---------- */
+  /** năm cuối cùng liệu trình tâm lý còn hiệu lực; -1 nghĩa là chưa từng trị liệu */
+  triLieuDenNam: number
+  /** số liệu trình đã mua, dùng để làm nhạt dần hiệu quả các lần sau */
+  soLanTriLieu: number
+  /** đã kể chuyện kiệt sức cho lần rơi này chưa */
+  daCanhBaoKietSuc: boolean
+  /**
+   * Đã thuê chuyên gia hoạch định tài chính chưa — cả ván chỉ được một lần.
+   *
+   * Phải là cờ riêng chứ không suy ra từ `heSoToiUuChiPhi < 1`: suy ngược như vậy
+   * thì giới hạn "một lần" chỉ còn hiệu lực khi `giamChiPhi` nằm hẳn trong khoảng
+   * (0, 1), mà đặt `giamChiPhi: 0` để tắt gói khi đo cân bằng là việc hoàn toàn
+   * hợp lệ với `config.ts`. Đây cũng là khuôn chung của mọi món mua một lần khác:
+   * `baoHiemDenNam`, `uocNguyenDaMua`, `triLieuDenNam`.
+   */
+  daThueChuyenGiaTaiChinh: boolean
+  /** hệ số chi phí sau khi tối ưu chi tiêu cùng chuyên gia, khởi điểm 1 */
+  heSoToiUuChiPhi: number
+
   khoanVay: KhoanVay[]
   doanhNghiep: DoanhNghiep[]
   /** id các cơ hội "chỉ một lần" đã tham gia, để không mời lại */
@@ -271,6 +293,8 @@ export type Action =
   | { type: 'muaKhoaHoc'; khoaHocId: string }
   | { type: 'muaBaoHiem' }
   | { type: 'muaBaoHiemXe'; loai: LoaiBaoHiemXe }
+  | { type: 'thueChuyenGiaTamLy' }
+  | { type: 'thueChuyenGiaTaiChinh' }
   | { type: 'muaUocNguyen'; uocNguyenId: string }
   | { type: 'dauTu'; assetId: AssetId; soDonVi: number }
   | { type: 'ban'; assetId: AssetId; soDonVi: number }

@@ -2,14 +2,18 @@ import { CONFIG } from '../game/config'
 import { TAI_SAN } from '../game/content'
 import {
   bienDoThuNhapThuDong,
+  dangTriLieu,
+  daToiUuChiPhi,
   dongTienThuDong,
   giaTriDauTu,
   mocTaiSanCuaNghe,
   mucTieuTuDo,
   nghiaVuHangNam,
   phiBaoHiem,
+  soNamTriLieuConLai,
   thuNhapThuDong,
   tienDoTuDo,
+  toiUuDaVaoSo,
   tongTaiSan,
   traNoMoiNam,
   tuoiHienTai,
@@ -65,6 +69,28 @@ export default function TabSoSach({ state }: { state: GameState }) {
   const namNghiHuu =
     CONFIG.cotTruyen.tuoiNghiHuu - CONFIG.cotTruyen.tuoiBatDau + 1
 
+  // Chi phí sinh hoạt xuất hiện ở hai bảng khác nhau, nên ghi chú tối ưu phải dùng
+  // chung một đoạn: tách ra thế này thì không có chuyện sửa một chỗ quên chỗ kia,
+  // và mức giảm luôn đọc thẳng từ cấu hình chứ không viết cứng con số 8.
+  const mucGiamChiPhi = dinhDangPhanTram(-CONFIG.chuyenGia.taiChinh.giamChiPhi, 0)
+
+  // Vì sao phải so sánh chứ không hỏi mỗi `daToiUuChiPhi`: cờ tối ưu bật lên ngay
+  // giây bấm thuê, còn `chiPhiHangNam` thì cả ván chỉ được tính lại một lần duy nhất
+  // trong `chuyenNam`. Suốt phần còn lại của năm thuê, con số bày ở hai bảng dưới vẫn
+  // là chi phí CHƯA giảm — ghi "đã tối ưu" cạnh nó là nói sai, mà người chơi vừa trả
+  // một khoản bằng 60–120% chi phí sinh hoạt cả năm thì tưởng mình bị lừa là phải.
+  // Phép so nằm trong engine (`toiUuDaVaoSo`) để Trang chủ hỏi đúng câu hỏi này.
+  const daVaoSo = toiUuDaVaoSo(state)
+  const ghiChuToiUuChiPhi = !daToiUuChiPhi(state) ? null : (
+    <span className={daVaoSo ? 'duong' : undefined}>
+      {' '}
+      · 🧭{' '}
+      {daVaoSo
+        ? `đã tối ưu ${mucGiamChiPhi}`
+        : `${mucGiamChiPhi} sẽ áp dụng từ năm sau`}
+    </span>
+  )
+
   return (
     <>
       <div className="muc">💵 Dòng tiền một năm</div>
@@ -94,7 +120,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
           </div>
         )}
         <div className="hang">
-          <span className="hang-nhan">Chi phí sinh hoạt</span>
+          <span className="hang-nhan">Chi phí sinh hoạt{ghiChuToiUuChiPhi}</span>
           <span className="hang-gia-tri am">−{dinhDangTien(state.chiPhiHangNam)}</span>
         </div>
         <div className="hang">
@@ -137,7 +163,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
           <span className="hang-gia-tri duong">{dinhDangTien(dongTien)}</span>
         </div>
         <div className="hang">
-          <span className="hang-nhan">Chi phí sinh hoạt</span>
+          <span className="hang-nhan">Chi phí sinh hoạt{ghiChuToiUuChiPhi}</span>
           <span className="hang-gia-tri am">−{dinhDangTien(state.chiPhiHangNam)}</span>
         </div>
         <div className="hang">
@@ -296,6 +322,19 @@ export default function TabSoSach({ state }: { state: GameState }) {
             {state.baoHiemDenNam >= state.nam
               ? `Còn hiệu lực · ${dinhDangTien(phiBaoHiem(state))}/năm`
               : 'Chưa mua'}
+          </span>
+        </div>
+        {/* Sổ sách không có mục hạnh phúc riêng, mà liệu trình tâm lý đúng là một
+            lớp bảo vệ có thời hạn y hệt bảo hiểm y tế — nên nó đứng ngay dưới đó,
+            để người chơi soát hạn cả hai trong cùng một lần nhìn. */}
+        <div className="hang">
+          <span className="hang-nhan">🧘 Liệu trình tâm lý</span>
+          <span className={`hang-gia-tri${dangTriLieu(state) ? ' duong' : ''}`}>
+            {dangTriLieu(state)
+              ? `Đang trong liệu trình · còn ${soNamTriLieuConLai(state)} năm`
+              : state.soLanTriLieu > 0
+                ? `Đã trải qua ${state.soLanTriLieu} liệu trình`
+                : 'Chưa trị liệu'}
           </span>
         </div>
         {xe && (

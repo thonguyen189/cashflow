@@ -118,6 +118,14 @@ export const CONFIG = {
   /** thua nếu hạnh phúc thấp hơn mức này lúc bấm Kết thúc năm */
   hanhPhucNguongThua: 50,
   /**
+   * Dưới mức này thì kể chuyện kiệt sức và mở chương trình hỗ trợ của chuyên gia.
+   *
+   * Đứng ở cấp cao nhất ngay cạnh ngưỡng thua vì hai con số là anh em của cùng một
+   * khái niệm — vùng nguy hiểm của thanh hạnh phúc — và cả HUD lẫn thẻ hành động
+   * cuối năm đều phải đọc cả hai để tô màu và nhắc nhở cho khớp nhau.
+   */
+  hanhPhucNguongCanhBao: 60,
+  /**
    * Lợi ích giảm dần: điểm nhận được vượt quá `tranMem` chỉ còn `heSoVuotTran`,
    * và không bao giờ vượt `tranCung`. Bản gốc để hạnh phúc lên 208 vô nghĩa.
    */
@@ -216,6 +224,81 @@ export const CONFIG = {
     phatMatHanhPhuc: 3,
   },
 
+  /** ---------- Chuyên gia đồng hành ----------
+   * Hai gói dịch vụ để người chơi CHỦ ĐỘNG can thiệp khi hạnh phúc tụt dốc. Trước
+   * bản này mọi đường hồi phục đều thụ động: thẻ tiêu dùng do máy rút, ước nguyện
+   * thì đắt và chỉ có ba món — hết là hết đường, chỉ còn ngồi nhìn thanh hạnh phúc
+   * trôi về ngưỡng thua.
+   *
+   * ---------- Vì sao trị liệu KHÔNG phá vỡ điều kiện thua ----------
+   * Liệu trình cho tổng 24 điểm với giá bằng 25% chi phí sinh hoạt một năm. So với
+   * ước nguyện xe máy — 80 triệu đổi lấy 5 điểm mỗi năm tới hết đời — trị liệu lỗ
+   * nặng nếu tính đường dài. Đó là chủ ý: nó là CẤP CỨU, không phải kênh đầu tư
+   * hạnh phúc. Ai mua nó thay cho ước nguyện sẽ nghèo cả tiền lẫn điểm.
+   *
+   * Trường hợp xấu nhất — người chơi giàu mua liệu trình nối tiếp trọn đời — quy về
+   * `hanhPhucToiThieu` điểm mỗi năm với chi phí đều đặn 8,3% chi phí sinh hoạt hàng
+   * năm, vẫn thua xa một chiếc xe máy. Chuỗi nhạt dần do `giamHieuQuaMoiLan` sinh ra
+   * chính là thứ chặn chiến thuật "cứ có tiền thì mua hạnh phúc mãi mãi"; chuỗi cụ
+   * thể và lý do trong truyện của nó nằm ở đúng một chỗ — chú thích của
+   * `hoiPhucTriLieu` trong engine.ts — nên chỉnh ba con số dưới đây là phải đọc lại
+   * chú thích ấy chứ không phải đi sửa một đoạn văn chép lại ở đây.
+   *
+   * ---------- Vì sao giảm nửa phí khi kiệt sức không phải lỗ hổng ----------
+   * Điều kiện giảm giá là CỜ `daCanhBaoKietSuc`, không phải mức hạnh phúc hiện tại.
+   * Cờ được chốt một lần ở Tổng kết năm TRƯỚC rồi đứng yên suốt năm nay, nên người
+   * chơi không tự tạo được điều kiện giảm giá ngay giữa pha thẻ bài bằng cách từ
+   * chối vài tấm thẻ cho hạnh phúc rơi xuống, và thứ tự bấm nút cũng không đổi được
+   * tổng tiền phải trả. Đọc cờ còn đúng với câu chuyện hơn: chương trình hỗ trợ xét
+   * trên một năm đã qua chứ không theo tâm trạng lúc bấm nút.
+   *
+   * Vế còn lại của rào chắn là mốc thời gian: liệu trình trả về theo TỪNG NĂM chứ
+   * không hồi tức thì, mà buổi trị liệu lại diễn ra sau cửa ải thua trong
+   * `chuyenNam`. Nên hạnh phúc 50–59 là cửa sổ hành động thật (mua lúc này thì năm
+   * sau đã có điểm hồi), còn dưới 50 thì liệu trình đã quá muộn.
+   *
+   * CHÚ Ý: gói hoạch định tài chính thì CÓ cứu được năm đang thua, vì điểm hạnh phúc
+   * của nó cộng ngay trong reducer nên kéo nổi người chơi từ 44 lên 50 để qua ải.
+   * Đây là chủ ý chứ không phải sơ suất — chiếc phao đắt đỏ dùng đúng một lần cả ván,
+   * giá bằng 60–120% chi phí sinh hoạt trọn một năm, và phải sẵn ngần ấy tiền mặt vào
+   * đúng lúc túng quẫn nhất. Bài học vẫn nguyên: đừng đợi kiệt sức mới đi gặp chuyên
+   * gia.
+   *
+   * ---------- Gói hoạch định tài chính ----------
+   * Hoàn vốn quãng 11–13 năm. CHÚ Ý: phép chia 1,2 ÷ 0,08 ra 15 năm chỉ đúng nếu
+   * khoản tiết kiệm đứng yên, mà nó không đứng yên — `chiPhiHangNam` leo theo lạm
+   * phát 3–9% mỗi năm rồi leo tiếp khi cưới và sinh con.
+   *
+   * Ngoài ra 8% ấy còn cắt vào SÁU khoản khác đều neo vào `chiPhiHangNam`: sàn phí
+   * bảo hiểm y tế (0,5), nghĩa vụ hàng năm (1,0), chi phí đám cưới (1,0), học phí đại
+   * học mỗi con (0,8), viện phí khi ốm đau (0,3) và sự cố đời sống (0,15). Vì
+   * `nghiaVuHangNam` nằm trong danh sách, giảm 8% chi phí cũng hạ mức cần đạt để tự
+   * do tài chính chừng ấy — một khoản đầu tư dài hơi thật sự. Cột mốc tài sản CỐ Ý
+   * không đổi theo, vì `mocTaiSanCuaNghe` tính trên chi phí gốc của nghề để bảng huy
+   * hiệu giữ nguyên thước đo giữa các ván.
+   */
+  chuyenGia: {
+    /** phí cả hai gói còn lại tỉ lệ này khi cờ kiệt sức đang bật */
+    heSoGiamPhiKhiKietSuc: 0.5,
+
+    tamLy: {
+      /** phí = tỉ lệ này × chi phí sinh hoạt của năm mua */
+      tyLePhiTheoChiPhi: 0.25,
+      soNamLieuTrinh: 3,
+      hanhPhucMoiNam: 8,
+      /** mỗi liệu trình đã qua làm lần sau nhạt đi ngần này điểm */
+      giamHieuQuaMoiLan: 2,
+      hanhPhucToiThieu: 3,
+    },
+
+    taiChinh: {
+      tyLePhiTheoChiPhi: 1.2,
+      /** chi phí sinh hoạt giảm vĩnh viễn tỉ lệ này */
+      giamChiPhi: 0.08,
+      hanhPhucNgay: 6,
+    },
+  },
+
   /** ---------- Khát vọng ---------- */
   /** hạnh phúc bị trừ mỗi năm khi chưa đạt được khát vọng của nghề */
   phatKhatVongMoiNam: 5,
@@ -262,7 +345,7 @@ export const CONFIG = {
   soDiemGiaQuaKhu: 9,
 
   /** ---------- Lưu ván ---------- */
-  luuKey: 'dong-tien-luu-v1-4',
+  luuKey: 'dong-tien-luu-v1-5',
 } as const
 
 export type Config = typeof CONFIG

@@ -10,21 +10,29 @@ import {
   timUocNguyen,
 } from './content'
 import {
+  CHUYEN_TRI_LIEU,
   bienDoThuNhapThuDong,
   coHoiHopLe,
   daDatKhatVong,
+  daToiUuChiPhi,
   dangCoBaoHiemXe,
+  dangDuocHoTro,
+  dangTriLieu,
   dongTienThuDong,
   giaThucTe,
   giaUocNguyen,
   hanhPhucTuUocNguyen,
+  hoiPhucTriLieu,
   mocTaiSanCuaNghe,
   muaToiDa,
   mucTieuTuDo,
   nghiaVuHangNam,
   phiBaoHiem,
   phiBaoHiemXe,
+  phiChuyenGiaTaiChinh,
+  phiChuyenGiaTamLy,
   reducer,
+  soNamTriLieuConLai,
   taoGameMoi,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
@@ -1296,5 +1304,589 @@ describe('chuyện tuổi già', () => {
       cur = { ...reducer(sau, { type: 'dongTongKet' }), hanhPhuc: 100 }
     }
     expect(daGap).toBe(true)
+  })
+})
+
+describe('chuyên gia đồng hành', () => {
+  const CG = CONFIG.chuyenGia
+  /** Rủng rỉnh tới mức tiền nong không bao giờ là biến số làm nhiễu phép đo. */
+  const TIEN_DU = 5 * TY
+
+  /**
+   * Ván đã trả chi phí, dư tiền, hạnh phúc neo sẵn theo ý muốn.
+   *
+   * Neo hạnh phúc là bắt buộc ở nhóm này: chuyện kiệt sức đọc mức hạnh phúc cuối
+   * năm, nên để nó trôi theo thẻ bài là phép đo mất tất định. Phí hai gói thì
+   * KHÔNG đọc `hanhPhuc` mà đọc cờ `daCanhBaoKietSuc` — muốn dựng cảnh được hỗ
+   * trợ nửa phí thì phải bật cờ, chứ hạ hạnh phúc là vô nghĩa.
+   */
+  const vanDuTien = (hanhPhuc: number, ngheId = 'giaoVien'): GameState => {
+    const s = reducer(moiVan(ngheId), { type: 'traChiPhi' })
+    return { ...s, tienMat: TIEN_DU, hanhPhuc }
+  }
+
+  /** Giá gốc chưa giảm của hai gói, tính thẳng trên chi phí sinh hoạt năm nay. */
+  const giaDuTamLy = (s: GameState) =>
+    Math.round(s.chiPhiHangNam * CG.tamLy.tyLePhiTheoChiPhi)
+  const giaDuTaiChinh = (s: GameState) =>
+    Math.round(s.chiPhiHangNam * CG.taiChinh.tyLePhiTheoChiPhi)
+
+  /** Đóng năm tại chỗ: từ chối hết thẻ, neo lại hạnh phúc rồi bấm kết thúc năm. */
+  const dongNam = (s: GameState, hanhPhuc: number): GameState => {
+    const cur = duyetHetThe(s, false)
+    return reducer({ ...cur, hanhPhuc }, { type: 'ketThucNam' })
+  }
+
+  /** Đóng bảng tổng kết, cấp lại tiền mặt rồi trả chi phí của năm mới. */
+  const sangNamMoi = (sau: GameState): GameState => {
+    const moi = { ...reducer(sau, { type: 'dongTongKet' }), tienMat: TIEN_DU }
+    return reducer(moi, { type: 'traChiPhi' })
+  }
+
+  /**
+   * Neo hạnh phúc ở 60 cho các phép đo điểm trị liệu: vừa đúng ngưỡng cảnh báo
+   * nên năm nào cũng đóng lại phía trên đáy, lại còn thừa chỗ dưới trần mềm 100
+   * để một cú cộng bất ngờ giữa năm (đám cưới chẳng hạn) cũng không làm điểm hồi
+   * bị chiết khấu — phép đo mới đọc được đúng con số danh nghĩa.
+   */
+  const NEO_DO_DIEM = 60
+
+  it('thuê chuyên gia tâm lý trừ đúng phí và đặt hạn liệu trình ba năm', () => {
+    const s = vanDuTien(70)
+    expect(dangTriLieu(s)).toBe(false)
+    expect(soNamTriLieuConLai(s)).toBe(0)
+
+    const phi = phiChuyenGiaTamLy(s)
+    expect(phi).toBe(Math.round(s.chiPhiHangNam * CG.tamLy.tyLePhiTheoChiPhi))
+
+    const sau = reducer(s, { type: 'thueChuyenGiaTamLy' })
+    expect(sau.tienMat).toBe(s.tienMat - phi)
+    expect(sau.soLanTriLieu).toBe(1)
+    // Liệu trình tính cả năm mua nên hạn cuối chỉ lùi hai năm
+    expect(sau.triLieuDenNam).toBe(s.nam + CG.tamLy.soNamLieuTrinh - 1)
+    expect(dangTriLieu(sau)).toBe(true)
+    expect(soNamTriLieuConLai(sau)).toBe(CG.tamLy.soNamLieuTrinh)
+
+    const ngheo: GameState = { ...s, tienMat: phi - 1 }
+    expect(reducer(ngheo, { type: 'thueChuyenGiaTamLy' })).toBe(ngheo)
+  })
+
+  it('liệu trình hồi đúng ba năm liên tiếp rồi dừng hẳn, kể đúng thứ tự ba nhịp', () => {
+    let s = reducer(vanDuTien(NEO_DO_DIEM), { type: 'thueChuyenGiaTamLy' })
+    const namMua = s.nam
+    const namCoTriLieu: number[] = []
+    const tieuDeTheoNam: string[] = []
+
+    for (let i = 0; i < 5 && s.trangThai === 'dangChoi'; i++) {
+      const namDang = s.nam
+      const sau = dongNam(s, NEO_DO_DIEM)
+      const triLieu = sau.tongKet!.suKien.filter((k) => k.loai === 'triLieu')
+      // Mỗi năm nhiều nhất một buổi trị liệu, không có chuyện kể chồng lên nhau
+      expect(triLieu.length).toBeLessThanOrEqual(1)
+      if (triLieu.length === 1) {
+        namCoTriLieu.push(namDang)
+        tieuDeTheoNam.push(triLieu[0]!.tieuDe)
+        expect(triLieu[0]!.tienThayDoi).toBe(0)
+        expect(triLieu[0]!.hanhPhucThayDoi).toBe(CG.tamLy.hanhPhucMoiNam)
+        expect(triLieu[0]!.moTa.length).toBeGreaterThan(0)
+      }
+      s = sangNamMoi(sau)
+    }
+
+    expect(namCoTriLieu).toEqual([namMua, namMua + 1, namMua + 2])
+    expect(dangTriLieu(s)).toBe(false)
+
+    // Ba nhịp phải khác nhau VÀ đúng thứ tự. Chỉ khẳng định `tieuDe.length > 0` thì
+    // thay cả công thức chọn nhịp bằng `CHUYEN_TRI_LIEU[0]` bộ test vẫn xanh, mà
+    // người chơi thì nghe "Buổi trị liệu đầu tiên" ba năm liền.
+    expect(new Set(tieuDeTheoNam).size).toBe(3)
+    expect(tieuDeTheoNam).toEqual(CHUYEN_TRI_LIEU.map((c) => c.tieuDe))
+  })
+
+  it('số nhịp kể của liệu trình khớp đúng số năm liệu trình', () => {
+    // Cái kẹp Math.min/Math.max trong `chuyenNam` nuốt im lặng mọi sai lệch: nâng
+    // `soNamLieuTrinh` lên 4 mà quên viết nhịp thứ tư thì năm cuối kể lại nhịp ba,
+    // người chơi nghe "Buổi trị liệu cuối cùng" hai năm liên tiếp mà test vẫn xanh.
+    expect(CHUYEN_TRI_LIEU.length).toBe(CG.tamLy.soNamLieuTrinh)
+  })
+
+  it('không mua chồng liệu trình khi liệu trình cũ còn hạn', () => {
+    const s = reducer(vanDuTien(70), { type: 'thueChuyenGiaTamLy' })
+    expect(dangTriLieu(s)).toBe(true)
+    expect(reducer(s, { type: 'thueChuyenGiaTamLy' })).toBe(s)
+
+    // Ngay cả năm cuối cùng của liệu trình vẫn còn hiệu lực nên vẫn bị chặn
+    const namCuoi: GameState = { ...s, nam: s.triLieuDenNam }
+    expect(reducer(namCuoi, { type: 'thueChuyenGiaTamLy' })).toBe(namCuoi)
+
+    // Hết hạn thì mở lại, và lần này đếm sang liệu trình thứ hai
+    const hetHan: GameState = { ...s, nam: s.triLieuDenNam + 1 }
+    expect(dangTriLieu(hetHan)).toBe(false)
+    const lanHai = reducer(hetHan, { type: 'thueChuyenGiaTamLy' })
+    expect(lanHai.soLanTriLieu).toBe(2)
+    expect(lanHai.triLieuDenNam).toBe(hetHan.nam + CG.tamLy.soNamLieuTrinh - 1)
+  })
+
+  it('liệu trình lần hai hồi 6 điểm, lần ba hồi 4, từ lần tư trở đi đứng ở sàn 3', () => {
+    expect(hoiPhucTriLieu(1)).toBe(CG.tamLy.hanhPhucMoiNam)
+    expect(hoiPhucTriLieu(2)).toBe(6)
+    expect(hoiPhucTriLieu(3)).toBe(4)
+    expect(hoiPhucTriLieu(4)).toBe(CG.tamLy.hanhPhucToiThieu)
+    expect(hoiPhucTriLieu(9)).toBe(CG.tamLy.hanhPhucToiThieu)
+
+    // Và chuỗi nhạt dần đó phải thật sự chạy vào sự kiện của năm mua
+    const bangSoLan: [number, number][] = [
+      [0, 8],
+      [1, 6],
+      [2, 4],
+      [3, 3],
+      [7, 3],
+    ]
+    for (const [soLanTruoc, diem] of bangSoLan) {
+      const s0 = vanDuTien(NEO_DO_DIEM)
+      // Dựng cảnh "đã trị liệu ngần này lần, liệu trình gần nhất vừa hết hạn"
+      const daTung: GameState = {
+        ...s0,
+        soLanTriLieu: soLanTruoc,
+        triLieuDenNam: s0.nam - 1,
+      }
+      const s = reducer(daTung, { type: 'thueChuyenGiaTamLy' })
+      expect(s.soLanTriLieu).toBe(soLanTruoc + 1)
+      const triLieu = dongNam(s, NEO_DO_DIEM).tongKet!.suKien.find(
+        (k) => k.loai === 'triLieu',
+      )!
+      expect(triLieu.hanhPhucThayDoi).toBe(diem)
+    }
+  })
+
+  it('điểm hồi trị liệu bị trần mềm cắt thì sự kiện ghi số THỰC nhận', () => {
+    // Neo trên trần mềm 100 nhưng còn cách trần cứng 130 một quãng: dù trong năm
+    // có sụt vài điểm thì lúc tới lượt trị liệu vẫn nằm trên trần mềm, nên phần
+    // cộng chắc chắn bị chiết khấu — mà vẫn chưa chạm trần cứng để về đúng 0.
+    const NEO_TREN_TRAN = CONFIG.hanhPhucTranMem + 20
+    const s = reducer(vanDuTien(NEO_TREN_TRAN), { type: 'thueChuyenGiaTamLy' })
+    const sau = dongNam(s, NEO_TREN_TRAN)
+    const triLieu = sau.tongKet!.suKien.find((k) => k.loai === 'triLieu')!
+
+    // Danh nghĩa 8 điểm, nhưng đang ở trên trần mềm nên thực nhận phải nhỏ hơn
+    expect(triLieu.hanhPhucThayDoi).toBeLessThan(CG.tamLy.hanhPhucMoiNam)
+    expect(triLieu.hanhPhucThayDoi).toBeGreaterThan(0)
+    expect(triLieu.hanhPhucThayDoi).toBe(
+      themHanhPhuc(NEO_TREN_TRAN, CG.tamLy.hanhPhucMoiNam) - NEO_TREN_TRAN,
+    )
+
+    // Bất biến chung của bảng tổng kết: cộng lại các khoản phải ra đúng mức
+    // hạnh phúc thật sự thay đổi trong năm
+    const tk = sau.tongKet!
+    const tongTuSuKien = tk.suKien.reduce((t, k) => t + k.hanhPhucThayDoi, 0)
+    expect(sau.hanhPhuc).toBe(
+      NEO_TREN_TRAN + tongTuSuKien + tk.hanhPhucTuUocNguyen - tk.phatKhatVong,
+    )
+  })
+
+  it('cờ kiệt sức đang bật thì phí cả hai gói còn một nửa, cờ tắt thì trả giá đủ', () => {
+    const binhThuong = vanDuTien(70)
+    expect(dangDuocHoTro(binhThuong)).toBe(false)
+    const duocHoTro: GameState = { ...binhThuong, daCanhBaoKietSuc: true }
+    expect(dangDuocHoTro(duocHoTro)).toBe(true)
+
+    expect(phiChuyenGiaTamLy(binhThuong)).toBe(giaDuTamLy(binhThuong))
+    expect(phiChuyenGiaTaiChinh(binhThuong)).toBe(giaDuTaiChinh(binhThuong))
+
+    expect(phiChuyenGiaTamLy(duocHoTro)).toBe(
+      Math.round(giaDuTamLy(duocHoTro) * CG.heSoGiamPhiKhiKietSuc),
+    )
+    expect(phiChuyenGiaTaiChinh(duocHoTro)).toBe(
+      Math.round(giaDuTaiChinh(duocHoTro) * CG.heSoGiamPhiKhiKietSuc),
+    )
+    // Nhân đôi lại phải về đúng giá gốc, chỉ lệch trong phạm vi làm tròn
+    expect(
+      Math.abs(phiChuyenGiaTamLy(duocHoTro) * 2 - phiChuyenGiaTamLy(binhThuong)),
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs(phiChuyenGiaTaiChinh(duocHoTro) * 2 - phiChuyenGiaTaiChinh(binhThuong)),
+    ).toBeLessThanOrEqual(1)
+  })
+
+  it('phí bám theo CỜ chứ không theo hạnh phúc sống, nên không tự tạo được giá rẻ', () => {
+    const goc = vanDuTien(70)
+
+    // Từ chối vài tấm thẻ cho hạnh phúc rơi tận đáy giữa lượt của mình vẫn KHÔNG
+    // mở được chương trình hỗ trợ: cờ mới chốt ở Tổng kết năm trước và đang tắt.
+    const buonMaCoTat: GameState = { ...goc, hanhPhuc: 10 }
+    expect(dangDuocHoTro(buonMaCoTat)).toBe(false)
+    expect(phiChuyenGiaTamLy(buonMaCoTat)).toBe(giaDuTamLy(buonMaCoTat))
+    expect(phiChuyenGiaTaiChinh(buonMaCoTat)).toBe(giaDuTaiChinh(buonMaCoTat))
+
+    // Ngược lại, năm trước đã chốt là kiệt sức thì năm nay dù hạnh phúc đã leo
+    // cao ngất vẫn được hỗ trợ — chương trình xét trên một năm đã qua.
+    const vuiMaCoBat: GameState = {
+      ...goc,
+      hanhPhuc: CONFIG.hanhPhucTranMem,
+      daCanhBaoKietSuc: true,
+    }
+    expect(phiChuyenGiaTamLy(vuiMaCoBat)).toBe(
+      Math.round(giaDuTamLy(vuiMaCoBat) * CG.heSoGiamPhiKhiKietSuc),
+    )
+    expect(phiChuyenGiaTaiChinh(vuiMaCoBat)).toBe(
+      Math.round(giaDuTaiChinh(vuiMaCoBat) * CG.heSoGiamPhiKhiKietSuc),
+    )
+
+    // Thứ tự bấm nút cũng không đổi được tổng tiền: gói tài chính cộng 6 điểm
+    // ngay lúc thuê, mà phí gói tâm lý sau đó vẫn y nguyên.
+    const sauTaiChinh = reducer(vuiMaCoBat, { type: 'thueChuyenGiaTaiChinh' })
+    expect(sauTaiChinh.hanhPhuc).toBeGreaterThan(vuiMaCoBat.hanhPhuc)
+    expect(phiChuyenGiaTamLy(sauTaiChinh)).toBe(phiChuyenGiaTamLy(vuiMaCoBat))
+  })
+
+  it('tiền mặt bị trừ ĐÚNG BẰNG giá trị hai hàm phí trả về, ở cả hai trạng thái cờ', () => {
+    for (const coBat of [false, true]) {
+      const s: GameState = { ...vanDuTien(70), daCanhBaoKietSuc: coBat }
+
+      const phiTamLy = phiChuyenGiaTamLy(s)
+      expect(reducer(s, { type: 'thueChuyenGiaTamLy' }).tienMat).toBe(
+        s.tienMat - phiTamLy,
+      )
+
+      const phiTaiChinh = phiChuyenGiaTaiChinh(s)
+      expect(reducer(s, { type: 'thueChuyenGiaTaiChinh' }).tienMat).toBe(
+        s.tienMat - phiTaiChinh,
+      )
+
+      // Đúng bằng nghĩa là cả hai chiều: giá gốc chỉ bị trừ khi cờ đang tắt
+      expect(phiTamLy).toBe(
+        coBat ? Math.round(giaDuTamLy(s) * CG.heSoGiamPhiKhiKietSuc) : giaDuTamLy(s),
+      )
+      expect(phiTaiChinh).toBe(
+        coBat
+          ? Math.round(giaDuTaiChinh(s) * CG.heSoGiamPhiKhiKietSuc)
+          : giaDuTaiChinh(s),
+      )
+    }
+  })
+
+  it('chặn thuê cả hai gói khi thiếu tiền hoặc khi ngoài giai đoạn tự do', () => {
+    for (const coBat of [false, true]) {
+      const s: GameState = { ...vanDuTien(70), daCanhBaoKietSuc: coBat }
+
+      // Thiếu đúng một đồng so với phí THỰC phải trả là đã không mua nổi
+      const thieuTamLy: GameState = { ...s, tienMat: phiChuyenGiaTamLy(s) - 1 }
+      expect(reducer(thieuTamLy, { type: 'thueChuyenGiaTamLy' })).toBe(thieuTamLy)
+      const thieuTaiChinh: GameState = { ...s, tienMat: phiChuyenGiaTaiChinh(s) - 1 }
+      expect(reducer(thieuTaiChinh, { type: 'thueChuyenGiaTaiChinh' })).toBe(
+        thieuTaiChinh,
+      )
+
+      // Vừa đủ đồng cuối cùng thì mua được, tiền mặt về sạch không
+      const vuaDuTamLy: GameState = { ...s, tienMat: phiChuyenGiaTamLy(s) }
+      expect(reducer(vuaDuTamLy, { type: 'thueChuyenGiaTamLy' }).tienMat).toBe(0)
+      const vuaDuTaiChinh: GameState = { ...s, tienMat: phiChuyenGiaTaiChinh(s) }
+      expect(reducer(vuaDuTaiChinh, { type: 'thueChuyenGiaTaiChinh' }).tienMat).toBe(0)
+    }
+
+    // Đang xem bảng Tổng kết năm thì mọi hành động tự do đều đóng lại
+    const tongKet = dongNam(vanDuTien(70), 70)
+    expect(tongKet.phase).toBe('tongKet')
+    expect(tongKet.tienMat).toBeGreaterThan(phiChuyenGiaTaiChinh(tongKet))
+    expect(reducer(tongKet, { type: 'thueChuyenGiaTamLy' })).toBe(tongKet)
+    expect(reducer(tongKet, { type: 'thueChuyenGiaTaiChinh' })).toBe(tongKet)
+
+    // Ván đã khép lại cũng vậy, dù túi vẫn còn đầy tiền
+    const daThua: GameState = {
+      ...vanDuTien(70),
+      trangThai: 'thua',
+      phase: 'ketThuc',
+    }
+    expect(reducer(daThua, { type: 'thueChuyenGiaTamLy' })).toBe(daThua)
+    expect(reducer(daThua, { type: 'thueChuyenGiaTaiChinh' })).toBe(daThua)
+  })
+
+  it('chuyên gia tài chính giảm chi phí sinh hoạt 8% từ năm sau và giữ mãi về sau', () => {
+    const nghe = timNghe('giaoVien')!
+    const heSo = 1 - CG.taiChinh.giamChiPhi
+    const s0 = vanDuTien(70)
+    const phi = phiChuyenGiaTaiChinh(s0)
+    expect(phi).toBe(Math.round(s0.chiPhiHangNam * CG.taiChinh.tyLePhiTheoChiPhi))
+
+    const s1 = reducer(s0, { type: 'thueChuyenGiaTaiChinh' })
+    expect(s1.tienMat).toBe(s0.tienMat - phi)
+    expect(daToiUuChiPhi(s1)).toBe(true)
+    expect(s1.heSoToiUuChiPhi).toBe(heSo)
+    expect(s1.hanhPhuc).toBe(themHanhPhuc(s0.hanhPhuc, CG.taiChinh.hanhPhucNgay))
+    // Năm mua vẫn trả chi phí cũ — phần giảm chỉ có hiệu lực từ năm sau
+    expect(s1.chiPhiHangNam).toBe(s0.chiPhiHangNam)
+
+    let s = s1
+    for (let i = 0; i < 6 && s.trangThai === 'dangChoi'; i++) {
+      s = sangNamMoi(dongNam(s, 70))
+      // Làm tròn đúng một lần trên cả tích, y hệt engine — chia hai bước rồi
+      // làm tròn từng bước là lệch một đồng ở những con số hàng trăm triệu
+      expect(s.chiPhiHangNam).toBe(
+        Math.round(nghe.chiPhi * s.chiSoGia * s.heSoChiPhi * heSo),
+      )
+      const chuaToiUu = Math.round(nghe.chiPhi * s.chiSoGia * s.heSoChiPhi)
+      expect(s.chiPhiHangNam).toBeLessThan(chuaToiUu)
+      expect(s.chiPhiHangNam / chuaToiUu).toBeCloseTo(heSo, 6)
+    }
+    // Lạm phát vẫn đẩy chi phí lên, phần giảm 8% chỉ đi kèm chứ không bị bào mòn
+    expect(s.chiSoGia).toBeGreaterThan(1)
+    expect(s.heSoToiUuChiPhi).toBe(heSo)
+
+    // Cưới xin và con cái đẩy hệ số chi phí lên hẳn, mà 8% vẫn cắt đúng chừng ấy
+    const coGiaDinh = sangNamMoi(
+      dongNam({ ...s, daKetHon: true, conCai: [s.nam - 1, s.nam - 3] }, 70),
+    )
+    expect(coGiaDinh.heSoChiPhi).toBeGreaterThan(1.2)
+    expect(coGiaDinh.chiPhiHangNam).toBe(
+      Math.round(nghe.chiPhi * coGiaDinh.chiSoGia * coGiaDinh.heSoChiPhi * heSo),
+    )
+    expect(coGiaDinh.chiPhiHangNam).toBeLessThan(
+      Math.round(nghe.chiPhi * coGiaDinh.chiSoGia * coGiaDinh.heSoChiPhi),
+    )
+    expect(coGiaDinh.heSoToiUuChiPhi).toBe(heSo)
+  })
+
+  it('cả ván chỉ thuê được chuyên gia tài chính một lần', () => {
+    const s0 = vanDuTien(70)
+    const s1 = reducer(s0, { type: 'thueChuyenGiaTaiChinh' })
+    expect(s1).not.toBe(s0)
+    expect(reducer(s1, { type: 'thueChuyenGiaTaiChinh' })).toBe(s1)
+
+    // Sang năm sau, tiền đầy túi mà vẫn bị chặn, và chi phí không giảm thêm lần nữa
+    const namSau = sangNamMoi(dongNam(s1, 70))
+    expect(daToiUuChiPhi(namSau)).toBe(true)
+    expect(reducer(namSau, { type: 'thueChuyenGiaTaiChinh' })).toBe(namSau)
+    expect(namSau.heSoToiUuChiPhi).toBe(1 - CG.taiChinh.giamChiPhi)
+  })
+
+  it('gói tài chính hạ nghĩa vụ và mục tiêu tự do, còn cột mốc tài sản đứng yên', () => {
+    const goc = vanDuTien(70)
+    const daThue = reducer(goc, { type: 'thueChuyenGiaTaiChinh' })
+
+    // Hai nhánh chạy cùng seed và cùng chuỗi hành động, chỉ khác đúng gói dịch vụ
+    const khong = sangNamMoi(dongNam(goc, 70))
+    const co = sangNamMoi(dongNam(daThue, 70))
+    expect(co.chiSoGia).toBe(khong.chiSoGia)
+    expect(co.heSoChiPhi).toBe(khong.heSoChiPhi)
+    expect(co.luong).toBe(khong.luong)
+
+    const chenhChiPhi = khong.chiPhiHangNam - co.chiPhiHangNam
+    expect(chenhChiPhi).toBeGreaterThan(0)
+    expect(nghiaVuHangNam(co)).toBeLessThan(nghiaVuHangNam(khong))
+    expect(nghiaVuHangNam(khong) - nghiaVuHangNam(co)).toBeGreaterThanOrEqual(
+      chenhChiPhi,
+    )
+    expect(mucTieuTuDo(co)).toBeLessThan(mucTieuTuDo(khong))
+
+    // Bảng huy hiệu giữ nguyên thước đo: mốc dựng trên chi phí GỐC của nghề, không
+    // đi theo chi phí sinh hoạt đã giảm.
+    //
+    // Cố ý KHÔNG so hai lời gọi `mocTaiSanCuaNghe` với nhau: hàm chỉ nhận
+    // `(ngheId, chiSoGia)`, mà mấy dòng trên vừa chốt hai nhánh cùng `ngheId` và
+    // cùng `chiSoGia` — so như vậy là f(a,b) với chính f(a,b), không đột biến nào
+    // làm nó đỏ được. Phải neo vào con số dựng lại từ `content.ts` và `CONFIG`.
+    const cm = CONFIG.mocTaiSan
+    const chiPhiGocCuaNghe = timNghe(co.ngheId)!.chiPhi
+    const mocDungLai = cm.tyLeCacMoc.map((tyLe) =>
+      Math.max(
+        cm.lamTronToi,
+        Math.round(
+          (chiPhiGocCuaNghe * cm.mocCaoNhatTheoChiPhi * co.chiSoGia * tyLe) /
+            cm.lamTronToi,
+        ) * cm.lamTronToi,
+      ),
+    )
+    expect(mocTaiSanCuaNghe(co.ngheId, co.chiSoGia)).toEqual(mocDungLai)
+
+    // Và mốc KHÔNG tỉ lệ theo `chiPhiHangNam` đã giảm: cùng một mốc tiền chia cho
+    // chi phí sinh hoạt của nhánh đã tối ưu phải ra nhiều năm chi phí hơn — đó
+    // chính là điều đột biến "nhân thêm heSoToiUuChiPhi vào mốc" sẽ phá vỡ.
+    expect(
+      mocTaiSanCuaNghe(co.ngheId, co.chiSoGia)[0]! / co.chiPhiHangNam,
+    ).toBeGreaterThan(
+      mocTaiSanCuaNghe(khong.ngheId, khong.chiSoGia)[0]! / khong.chiPhiHangNam,
+    )
+  })
+
+  it('chuyện kiệt sức kể một lần cho mỗi lần rơi, không lải nhải mỗi năm', () => {
+    const demKietSuc = (s: GameState) =>
+      s.tongKet!.suKien.filter((k) => k.loai === 'kietSuc').length
+    // Vừa đúng ngưỡng thua nên qua được cửa ải, nhưng chắc chắn nằm dưới ngưỡng cảnh báo
+    const DAY = CONFIG.hanhPhucNguongThua
+    // Đánh dấu mọi cột mốc tài sản là đã qua: túi 5 tỷ vượt sạch bốn mốc ngay
+    // năm đầu, mỗi mốc lại cộng hạnh phúc ở bước 12 — sau khi cờ kiệt sức đã
+    // xét xong — nên để nguyên thì hạnh phúc cuối năm không còn phản ánh
+    // đúng cái đáy mà bài kiểm thử này muốn dựng.
+    const goc = vanDuTien(70)
+    let s: GameState = {
+      ...goc,
+      mocTaiSanDaQua: mocTaiSanCuaNghe(goc.ngheId).map((_, i) => i),
+    }
+    expect(s.daCanhBaoKietSuc).toBe(false)
+
+    // Năm 1 — rơi xuống dưới ngưỡng cảnh báo lần đầu, được kể
+    let sau = dongNam(s, DAY)
+    expect(sau.hanhPhuc).toBeLessThan(CONFIG.hanhPhucNguongCanhBao)
+    expect(demKietSuc(sau)).toBe(1)
+    expect(sau.daCanhBaoKietSuc).toBe(true)
+    const chuyen = sau.tongKet!.suKien.find((k) => k.loai === 'kietSuc')!
+    // Sự kiện này chỉ kể chuyện, không đụng vào tiền cũng không đụng vào điểm
+    expect(chuyen.tienThayDoi).toBe(0)
+    expect(chuyen.hanhPhucThayDoi).toBe(0)
+    expect(chuyen.moTa.length).toBeGreaterThan(0)
+
+    // Năm 2 — vẫn nằm dưới đáy, không kể lại
+    s = sangNamMoi(sau)
+    sau = dongNam(s, DAY)
+    expect(sau.hanhPhuc).toBeLessThan(CONFIG.hanhPhucNguongCanhBao)
+    expect(demKietSuc(sau)).toBe(0)
+    expect(sau.daCanhBaoKietSuc).toBe(true)
+
+    // Năm 3 — gượng dậy trên ngưỡng, cờ tắt và cũng không có gì để kể
+    s = sangNamMoi(sau)
+    sau = dongNam(s, CONFIG.hanhPhucTranMem)
+    expect(sau.hanhPhuc).toBeGreaterThanOrEqual(CONFIG.hanhPhucNguongCanhBao)
+    expect(demKietSuc(sau)).toBe(0)
+    expect(sau.daCanhBaoKietSuc).toBe(false)
+
+    // Năm 4 — rơi lần nữa thì câu chuyện quay lại
+    s = sangNamMoi(sau)
+    sau = dongNam(s, DAY)
+    expect(demKietSuc(sau)).toBe(1)
+    expect(sau.daCanhBaoKietSuc).toBe(true)
+  })
+
+  it('kiệt sức xét SAU bước bán tài sản: tụt xuống dưới ngưỡng vì túng thiếu thì phải kể', () => {
+    const goc = vanDuTien(70)
+    // Tiền mặt âm sâu mà trong tay chỉ còn dúm trái phiếu: bán sạch vẫn không đủ,
+    // nên năm này vừa có "Bán tài sản trang trải" vừa lãnh 10 điểm trừ "Túng thiếu".
+    const tungThieu: GameState = {
+      ...duyetHetThe(goc, false),
+      tienMat: -5 * TY,
+      soHuu: { ...goc.soHuu, traiPhieu: 10 },
+      hanhPhuc: 70,
+    }
+    const sau = reducer(tungThieu, { type: 'ketThucNam' })
+    const suKien = sau.tongKet!.suKien
+
+    const banTaiSan = suKien.filter((k) => k.loai === 'banTaiSan')
+    expect(banTaiSan.some((k) => k.tieuDe === 'Bán tài sản trang trải')).toBe(true)
+    expect(banTaiSan.find((k) => k.tieuDe === 'Túng thiếu')!.hanhPhucThayDoi).toBe(-10)
+
+    // Dựng lại mức hạnh phúc ngay TRƯỚC bước 11 bằng cách gỡ ngược mọi khoản của
+    // bước 11 và bước 12 — đó chính là con số mà cách xét sai (đặt ở cuối bước 9)
+    // sẽ đọc nhầm, và nó đang nằm TRÊN ngưỡng cảnh báo.
+    const buoc11Va12 = suKien
+      .filter((k) => k.loai === 'banTaiSan' || k.loai === 'mocTaiSan')
+      .reduce((t, k) => t + k.hanhPhucThayDoi, 0)
+    expect(sau.hanhPhuc - buoc11Va12).toBeGreaterThanOrEqual(
+      CONFIG.hanhPhucNguongCanhBao,
+    )
+    expect(sau.hanhPhuc).toBeLessThan(CONFIG.hanhPhucNguongCanhBao)
+
+    expect(suKien.filter((k) => k.loai === 'kietSuc')).toHaveLength(1)
+    expect(sau.daCanhBaoKietSuc).toBe(true)
+    // Lời khép lại của năm nên nó đứng cuối mảng sự kiện, sau cả lạm phát
+    expect(suKien.at(-1)!.loai).toBe('kietSuc')
+  })
+
+  it('kiệt sức xét SAU cột mốc tài sản: leo lên trên ngưỡng nhờ mốc thì không kể', () => {
+    // 400 triệu vượt đúng mốc đầu của giáo viên (300 triệu) mà chưa tới mốc hai
+    // (700 triệu), nên năm này chạm đúng một cột mốc và được cộng 5 điểm ở bước 12.
+    for (const coBanDau of [false, true]) {
+      const goc = vanDuTien(63)
+      const leoLai: GameState = {
+        ...duyetHetThe(goc, false),
+        tienMat: 400 * TRIEU,
+        hanhPhuc: 63,
+        daCanhBaoKietSuc: coBanDau,
+      }
+      const sau = reducer(leoLai, { type: 'ketThucNam' })
+
+      const moc = sau.tongKet!.suKien.filter((k) => k.loai === 'mocTaiSan')
+      expect(moc).toHaveLength(1)
+      expect(moc[0]!.hanhPhucThayDoi).toBe(CONFIG.mocTaiSan.hanhPhuc)
+
+      // Năm mở ra ở 58 — dưới ngưỡng cảnh báo — rồi khép lại ở 63 nhờ cột mốc
+      expect(sau.hanhPhuc - moc[0]!.hanhPhucThayDoi).toBe(58)
+      expect(sau.hanhPhuc).toBe(63)
+      expect(sau.hanhPhuc).toBeGreaterThanOrEqual(CONFIG.hanhPhucNguongCanhBao)
+
+      expect(sau.tongKet!.suKien.some((k) => k.loai === 'kietSuc')).toBe(false)
+      expect(sau.daCanhBaoKietSuc).toBe(false)
+    }
+  })
+
+  it('năm khép lại ĐÚNG ngưỡng cảnh báo thì không kể kiệt sức, thấp hơn một điểm thì kể', () => {
+    // Biên `hanhPhuc >= hanhPhucNguongCanhBao` ở bước 13 vốn không có ca nào phủ:
+    // các ca sẵn có đóng năm ở 55, 63, 100 và 50, không ca nào khép lại đúng 60.
+    // Đổi dấu `>=` thành `>` mà cả bộ test vẫn xanh nghĩa là một năm kết ở đúng 60
+    // sẽ bị kể kiệt sức oan VÀ bật cờ giảm nửa phí — lỗi kể chuyện hoá lỗi tiền bạc.
+    const goc = vanDuTien(70)
+    // Đánh dấu sẵn mọi cột mốc tài sản: mỗi mốc cộng 5 điểm ở bước 12, tức là sau
+    // khi cờ kiệt sức đã xét xong, nên để nguyên thì không neo được con số cuối năm.
+    const nen: GameState = {
+      ...goc,
+      mocTaiSanDaQua: mocTaiSanCuaNghe(goc.ngheId).map((_, i) => i),
+    }
+
+    // Các khoản hạnh phúc của `chuyenNam` (phạt khát vọng, sự kiện ngẫu nhiên) cộng
+    // vào một hằng số không phụ thuộc mức neo — trần mềm ở 100 nên quanh vùng 60
+    // không có chiết khấu nào, và ba lần chạy đều xuất phát từ cùng `nen` nên con
+    // trỏ ngẫu nhiên giống hệt. Đo hằng số ấy một lần rồi neo ngược cho trúng biên.
+    const NEO_THU = 70
+    const lech = dongNam(nen, NEO_THU).hanhPhuc - NEO_THU
+
+    const dungNguong = dongNam(nen, CONFIG.hanhPhucNguongCanhBao - lech)
+    expect(dungNguong.hanhPhuc).toBe(CONFIG.hanhPhucNguongCanhBao)
+    expect(dungNguong.tongKet!.suKien.some((k) => k.loai === 'kietSuc')).toBe(false)
+    expect(dungNguong.daCanhBaoKietSuc).toBe(false)
+
+    const duoiMotDiem = dongNam(nen, CONFIG.hanhPhucNguongCanhBao - 1 - lech)
+    expect(duoiMotDiem.hanhPhuc).toBe(CONFIG.hanhPhucNguongCanhBao - 1)
+    expect(duoiMotDiem.tongKet!.suKien.some((k) => k.loai === 'kietSuc')).toBe(true)
+    expect(duoiMotDiem.daCanhBaoKietSuc).toBe(true)
+  })
+
+  it('thuê chuyên gia tài chính ở hạnh phúc 44 CÓ cứu được năm đang thua', () => {
+    // 44 + 6 = 50, vừa đúng ngưỡng nên qua được ải. Đây là hành vi CHỦ Ý — chiếc
+    // phao đắt đỏ dùng đúng một lần cả ván — nên cố định lại bằng bài kiểm thử.
+    const DUOI_NGUONG = CONFIG.hanhPhucNguongThua - CG.taiChinh.hanhPhucNgay
+    const goc = vanDuTien(DUOI_NGUONG)
+    const benBoVuc: GameState = { ...duyetHetThe(goc, false), hanhPhuc: DUOI_NGUONG }
+    expect(benBoVuc.hanhPhuc).toBeLessThan(CONFIG.hanhPhucNguongThua)
+
+    // Không làm gì thì năm này khép lại bằng một ván thua
+    expect(reducer(benBoVuc, { type: 'ketThucNam' }).trangThai).toBe('thua')
+
+    const daThue = reducer(benBoVuc, { type: 'thueChuyenGiaTaiChinh' })
+    expect(daThue.hanhPhuc).toBe(CONFIG.hanhPhucNguongThua)
+    const sau = reducer(daThue, { type: 'ketThucNam' })
+    expect(sau.trangThai).toBe('dangChoi')
+    expect(sau.nam).toBe(benBoVuc.nam + 1)
+    expect(daToiUuChiPhi(sau)).toBe(true)
+  })
+
+  it('mua liệu trình lúc đã dưới ngưỡng thua thì không cứu nổi năm đó', () => {
+    const s0 = vanDuTien(CONFIG.hanhPhucNguongThua - 1)
+    const quaMuon: GameState = {
+      ...duyetHetThe(s0, false),
+      hanhPhuc: CONFIG.hanhPhucNguongThua - 1,
+      // Năm trước đã chốt là kiệt sức nên đang được hỗ trợ nửa phí — nhưng phí rẻ
+      // không đổi được kết cục, vì buổi trị liệu diễn ra sau cửa ải thua
+      daCanhBaoKietSuc: true,
+    }
+    expect(phiChuyenGiaTamLy(quaMuon)).toBeLessThan(giaDuTamLy(quaMuon))
+
+    const daThue = reducer(quaMuon, { type: 'thueChuyenGiaTamLy' })
+    expect(dangTriLieu(daThue)).toBe(true)
+    expect(daThue.hanhPhuc).toBe(quaMuon.hanhPhuc)
+
+    // Buổi trị liệu chỉ diễn ra trong chuyenNam, tức là SAU cửa ải thua
+    const sau = reducer(daThue, { type: 'ketThucNam' })
+    expect(sau.trangThai).toBe('thua')
+    expect(sau.phase).toBe('ketThuc')
+    expect(sau.nam).toBe(daThue.nam)
+    expect(sau.tongKet?.suKien.some((k) => k.loai === 'triLieu') ?? false).toBe(false)
   })
 })

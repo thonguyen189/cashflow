@@ -4,11 +4,17 @@ import { timUocNguyen } from '../game/content'
 import {
   dangCoBaoHiem,
   dangCoBaoHiemXe,
+  dangDuocHoTro,
+  dangTriLieu,
+  daToiUuChiPhi,
   giaThucTe,
   giaUocNguyen,
+  hoiPhucTriLieu,
   khoaHocConLai,
   phiBaoHiem,
   phiBaoHiemXe,
+  phiChuyenGiaTaiChinh,
+  soNamTriLieuConLai,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   traNoMoiNam,
@@ -18,6 +24,7 @@ import {
 } from '../game/engine'
 import { dinhDangTien } from '../game/format'
 import type { Action, GameState, LoaiBaoHiemXe } from '../game/types'
+import KhuChuyenGia from './KhuChuyenGia'
 
 interface Props {
   state: GameState
@@ -98,6 +105,24 @@ function TheHanhDong({ state, dispatch }: Props) {
   }
 
   const sapThua = state.hanhPhuc < CONFIG.hanhPhucNguongThua
+  const dangTri = dangTriLieu(state)
+  const trongVungCanhBao = !sapThua && state.hanhPhuc < CONFIG.hanhPhucNguongCanhBao
+  // Vùng 50–59: đã nguy nhưng vẫn qua được cửa ải cuối năm, và đây là cửa sổ duy
+  // nhất mà liệu trình tâm lý còn kịp có tác dụng — buổi trị liệu cộng điểm ở
+  // `chuyenNam`, tức là sau khi năm nay đã khép lại an toàn.
+  //
+  // Phải hỏi thêm `dangTriLieu`: reducer chặn thẳng việc chồng hai liệu trình lên
+  // nhau, và thẻ 🧘 ở mục Chuyên gia đồng hành lúc ấy không còn nút nào để bấm —
+  // giục người chơi đi làm một việc mà game đã khoá là để họ đi tìm một nút không
+  // tồn tại rồi tưởng giao diện hỏng.
+  const nenGapChuyenGia = trongVungCanhBao && !dangTri
+  const dangTriMaVanThap = trongVungCanhBao && dangTri
+  // Ở nhánh này `phase` chắc chắn là 'tuDo' (hai nhánh trên đã nuốt 'chiPhi' và
+  // 'theBai'), mà reducer chỉ chuyển sang 'tuDo' đúng lúc chuỗi thẻ đã rỗng — nên
+  // năm nay không còn tấm thẻ tiêu dùng nào để gỡ điểm. Đường cứu duy nhất còn lại
+  // là gói hoạch định tài chính, vì nó cộng hạnh phúc NGAY trong reducer.
+  const phaoTaiChinh = phiChuyenGiaTaiChinh(state)
+  const conPhaoTaiChinh = !daToiUuChiPhi(state) && state.tienMat >= phaoTaiChinh
   return (
     <div className="the-quyet-dinh">
       <div className="the-bieu-tuong">🗓️</div>
@@ -110,7 +135,48 @@ function TheHanhDong({ state, dispatch }: Props) {
         <div className="canh-bao-tu-choi">
           Hạnh phúc đang ở mức {state.hanhPhuc}, dưới ngưỡng{' '}
           {CONFIG.hanhPhucNguongThua}. Kết thúc năm lúc này là <strong>thua</strong>.
+          <br />
+          🧘 Thuê chuyên gia tâm lý bây giờ cũng không cứu nổi năm nay: buổi trị liệu
+          chỉ cộng điểm sau khi năm đã khép lại, mà cửa ải thua thì xét ngay lúc bạn
+          bấm kết thúc năm.
+          <br />
+          {conPhaoTaiChinh ? (
+            <>
+              🧭 Còn đúng một đường gỡ:{' '}
+              <strong>chuyên gia hoạch định tài chính</strong> ở mục Chuyên gia đồng
+              hành phía dưới cộng thẳng{' '}
+              <strong>+{CONFIG.chuyenGia.taiChinh.hanhPhucNgay} hạnh phúc</strong> ngay
+              lúc thuê, đủ để bạn qua được cửa ải năm nay. Phí{' '}
+              {dinhDangTien(phaoTaiChinh)}, và cả ván chỉ thuê được một lần.
+            </>
+          ) : (
+            <>
+              Năm nay đã không còn cách nào gỡ lại: thẻ tiêu dùng của năm đã dùng hết,
+              còn buổi trị liệu thì diễn ra sau khi năm khép lại.
+            </>
+          )}
         </div>
+      )}
+      {nenGapChuyenGia && (
+        <p className="mo-ta">
+          🧘 Hạnh phúc đang ở mức {state.hanhPhuc}, chỉ còn{' '}
+          <strong>{state.hanhPhuc - CONFIG.hanhPhucNguongThua + 1} điểm</strong> nữa là
+          rơi xuống dưới ngưỡng thua {CONFIG.hanhPhucNguongThua}. Đây đúng là lúc nên
+          gặp chuyên gia tâm lý, khi vẫn còn kịp: năm nay bạn qua được cửa ải, và ngay
+          khi năm khép lại là liệu trình bắt đầu cộng điểm.
+          {/* Chỉ hứa giảm giá khi cờ kiệt sức thật sự đang bật — cờ chốt ở Tổng kết
+              năm trước, nên rơi xuống vùng cảnh báo ngay trong năm nay thì chưa được
+              hỗ trợ, và nói ngược lại là dụ người chơi bấm rồi mất gấp đôi tiền. */}
+          {dangDuocHoTro(state) && ' Phí đang được hỗ trợ một nửa.'}
+        </p>
+      )}
+      {dangTriMaVanThap && (
+        <p className="mo-ta">
+          🧘 Hạnh phúc đang ở mức {state.hanhPhuc}, nhưng bạn đang trong liệu trình nên
+          không cần tìm nút nào nữa: ngay khi năm nay khép lại, buổi trị liệu cộng thêm{' '}
+          <strong>+{hoiPhucTriLieu(state.soLanTriLieu)} hạnh phúc</strong>. Liệu trình
+          còn {soNamTriLieuConLai(state)} năm.
+        </p>
       )}
       <button
         className="nut nut-chinh nut-rong"
@@ -293,7 +359,9 @@ function KhuBaoHiemXe({ state, dispatch }: Props) {
 /* ---------- Tab ---------- */
 export default function TabTrangChu({ state, dispatch }: Props) {
   const coBaoHiem = dangCoBaoHiem(state)
-  const phi = giaThucTe(state, phiBaoHiem(state))
+  // phiBaoHiem tính trên lương và chi phí sinh hoạt của năm nay, hai con số vốn đã
+  // leo theo lạm phát — không bọc thêm giaThucTe, bọc là nhân lạm phát hai lần.
+  const phi = phiBaoHiem(state)
   const khoaHoc = khoaHocConLai(state)
   const uocNguyen = uocNguyenConLai(state)
   const khatVong = timUocNguyen(state.khatVongId)
@@ -324,6 +392,8 @@ export default function TabTrangChu({ state, dispatch }: Props) {
       </div>
 
       <KhuBaoHiemXe state={state} dispatch={dispatch} />
+
+      <KhuChuyenGia state={state} dispatch={dispatch} />
 
       <div className="muc">🎓 Giáo dục — tăng lương vĩnh viễn</div>
       {state.daNghiHuu ? (
