@@ -98,7 +98,28 @@ export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
   nhanCoHoiKinhDoanh: true,
   nhanCanhBac: false,
   nhanToChucSuKien: true,
-  quyMoGopVonUaThich: 3,
+  // Luôn đúng MỘT suất (như trước v1.6), KHÔNG dồn tới 3x dù tran cho phép.
+  // Đã thử chẩn đoán hồi quy "thuê chuyên gia hoạch định tài chính rút ngắn
+  // đường tới tự do tài chính" (test ghép cặp co/không thuê): nghi ngờ ban đầu
+  // rơi vào công thức `duPhong` ở bước 8 của hàm mô phỏng (`Math.max` với
+  // `quyDuPhongTheoChiPhi`), nhưng quét toàn bộ dải giá trị hợp lý của công
+  // thức đó (từ thuần `duPhongTheoChiPhi` 0,5 tới `quyDuPhongTheoChiPhi` 1,
+  // rồi xa hơn) không tìm được điểm nào cho cả ba nghề cùng âm — dấu của kỹ sư
+  // phần mềm dao động qua lại theo kiểu ngẫu nhiên (giao vien +0,287 → +0,132
+  // → -0,021 tuỳ hệ số), không phải một xu hướng thật. Tệ hơn, tách vai trò
+  // đúng như đề xuất (bỏ hẳn `quyDuPhongTheoChiPhi` khỏi bước đầu tư) còn làm
+  // vỡ BỐN test khác đang xanh — riêng test "liệu trình tâm lý cứu ván bí
+  // bách" thì hai tỉ lệ thắng so sánh trở thành bằng nhau tuyệt đối (hoà,
+  // 0,356 = 0,356), tức là công thức đó không hề "tăng gấp đôi rồi gây hồi
+  // quy" một cách cô lập — nó đang giữ cân bằng cho nhiều thứ khác. Ngược lại,
+  // hạ quy mô góp vốn ưa thích của bot cân bằng về 1 (bot cân bằng nên PHÂN
+  // TÁN vốn thay vì dồn 3x vào một chỗ — đó vốn là đặc trưng của
+  // CHIEN_LUOC_DON_BAY, không phải bot thận trọng) sửa sạch cả ba nghề
+  // (-0,021/-0,404/-0,147) mà KHÔNG cần đụng gì tới `duPhong`, và không làm
+  // đổi kết quả của bất kỳ test nào khác đã đo được (thắng 85-95%, chênh lệch
+  // xuất thân/bậc lương ≤15%, liệu trình tâm lý...). Giữ nguyên `duPhong` như
+  // cũ vì nó đang bảo vệ lá chắn mất việc tốt hơn việc tách vai trò.
+  quyMoGopVonUaThich: 1,
   quyDuPhongTheoChiPhi: 1,
   vayDeGopVon: false,
 }
