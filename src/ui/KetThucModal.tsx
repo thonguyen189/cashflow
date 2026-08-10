@@ -107,6 +107,14 @@ export default function KetThucModal({
             <span className="hang-nhan">Hạnh phúc cuối cùng</span>
             <span className="hang-gia-tri">{state.hanhPhuc}</span>
           </div>
+          {state.soLanPhaSan > 0 && (
+            <div className="hang">
+              <span className="hang-nhan">💀 Phá sản</span>
+              <span className="hang-gia-tri am">
+                Đã phá sản {state.soLanPhaSan} lần trên hành trình này
+              </span>
+            </div>
+          )}
         </div>
 
         {thang && tuoiHienTai(state) <= CONFIG.cotTruyen.tuoiVienMan && (

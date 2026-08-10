@@ -19,6 +19,8 @@ import {
   coHoiHopLe,
   daDatKhatVong,
   daToiUuChiPhi,
+  dangCamCoHoi,
+  dangCamVay,
   dangCoBaoHiemXe,
   dangDuocHoTro,
   dangTriLieu,
@@ -1107,7 +1109,10 @@ describe('bán tài sản khi tiền mặt âm', () => {
   })
 
   it('bán sạch vẫn không đủ: thêm sự kiện Túng thiếu, mất 10 hạnh phúc', () => {
-    const s = ketThucVoiTienAm(-5 * TY, 10)
+    // Thiếu hụt phải ở dưới ngưỡng phá sản (v1.6) — quá ngưỡng thì rơi sang nấc 3,
+    // xem describe('v1.6 — ba nấc vỡ nợ') cho ca thiếu hụt nặng. 300 triệu vẫn bị
+    // lương của năm bù bớt lại nhưng còn dư âm dưới ngưỡng phá sản (~110 triệu).
+    const s = ketThucVoiTienAm(-300 * TRIEU, 10)
     const cacSuKienBan = s.tongKet!.suKien.filter((k) => k.loai === 'banTaiSan')
     expect(cacSuKienBan.some((k) => k.tieuDe === 'Túng thiếu')).toBe(true)
     expect(s.soHuu.traiPhieu).toBe(0)
@@ -1792,11 +1797,15 @@ describe('chuyên gia đồng hành', () => {
 
   it('kiệt sức xét SAU bước bán tài sản: tụt xuống dưới ngưỡng vì túng thiếu thì phải kể', () => {
     const goc = vanDuTien(70)
-    // Tiền mặt âm sâu mà trong tay chỉ còn dúm trái phiếu: bán sạch vẫn không đủ,
+    // Tiền mặt âm mà trong tay chỉ còn dúm trái phiếu: bán sạch vẫn không đủ,
     // nên năm này vừa có "Bán tài sản trang trải" vừa lãnh 10 điểm trừ "Túng thiếu".
+    // Thiếu hụt phải ở dưới ngưỡng phá sản (v1.6): lương của năm bù lại một phần
+    // nên cần âm sâu hơn số cũ, nhưng vẫn phải dưới ngưỡng phá sản để không rơi
+    // sang nấc 3 (~110 triệu dư âm sau khi bán hết trái phiếu, xem describe
+    // 'v1.6 — ba nấc vỡ nợ' cho ca thiếu hụt nặng).
     const tungThieu: GameState = {
       ...duyetHetThe(goc, false),
-      tienMat: -5 * TY,
+      tienMat: -300 * TRIEU,
       soHuu: { ...goc.soHuu, traiPhieu: 10 },
       hanhPhuc: 70,
     }
@@ -2531,5 +2540,105 @@ describe('v1.6 — sáu biến cố lớn', () => {
     const tru: BienCoId[] = ['matViec', 'boMeNgaBenh', 'baoLu']
     const s = epBienCo({ ...moiVan(), nam: 2 }, tru)
     expect(() => diTronMotNam(s)).not.toThrow()
+  })
+})
+
+describe('v1.6 — ba nấc vỡ nợ', () => {
+  /** Ván âm tiền nặng: không tiền mặt, nợ lớn phải trả ngay năm nay. */
+  const vanVoNo = (them: Partial<GameState> = {}): GameState => ({
+    ...moiVan(),
+    nam: 12,
+    tienMat: 0,
+    lichBienCo: [],
+    khoanVay: [
+      { id: 'v1', goc: 3 * TY, kyHan: 10, thanhToanMoiNam: 900 * TRIEU, namConLai: 8 },
+    ],
+    ...them,
+  })
+
+  it('thiếu tiền thì bán tài sản đầu tư trước khi đụng tới doanh nghiệp', () => {
+    const s = vanVoNo({
+      soHuu: { ...moiVan().soHuu, traiPhieu: 5000 },
+      doanhNghiep: [
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+      ],
+    })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.doanhNghiep).toHaveLength(1)
+    expect(sau.soHuu.traiPhieu).toBeLessThan(5000)
+  })
+
+  it('thanh lý doanh nghiệp thu về đúng 45% vốn góp theo giá hiện hành', () => {
+    const s = vanVoNo({
+      doanhNghiep: [
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+      ],
+    })
+    const tk = diTronMotNam(s, 0).tongKet!
+    const e = tk.suKien.find((x) => x.loai === 'thanhLyDoanhNghiep')
+    expect(e).toBeDefined()
+    expect(e!.tienThayDoi).toBeGreaterThan(0)
+  })
+
+  it('thanh lý từ doanh nghiệp NHỎ NHẤT lên, giữ nguồn thu lớn nhất càng lâu càng tốt', () => {
+    const s = vanVoNo({
+      tienMat: 0,
+      // Đã kết hôn sẵn: SEED=12345 hẹn đám cưới đúng năm 12, một khoản chi cốt
+      // truyện không liên quan tới phép thử này mà đủ lớn để làm lệch số đo.
+      daKetHon: true,
+      khoanVay: [
+        { id: 'v1', goc: 1 * TY, kyHan: 10, thanhToanMoiNam: 200 * TRIEU, namConLai: 8 },
+      ],
+      doanhNghiep: [
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        { coHoiId: 'xuongMay', ten: 'Góp vốn xưởng may gia công', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 1.5 * TY },
+      ],
+    })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.doanhNghiep.map((d) => d.coHoiId)).toEqual(['xuongMay'])
+  })
+
+  it('thiếu hụt dưới ngưỡng thì chỉ Túng thiếu, không phá sản', () => {
+    const s = vanVoNo({
+      khoanVay: [
+        { id: 'v1', goc: 100 * TRIEU, kyHan: 10, thanhToanMoiNam: 14 * TRIEU, namConLai: 8 },
+      ],
+    })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.soLanPhaSan).toBe(0)
+  })
+
+  it('phá sản xoá sạch nợ, đưa tiền mặt về 0 và giữ nguyên ước nguyện đã mua', () => {
+    const s = vanVoNo({ uocNguyenDaMua: ['xeMay'] })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.soLanPhaSan).toBe(1)
+    expect(sau.khoanVay).toHaveLength(0)
+    expect(sau.tienMat).toBe(0)
+    expect(sau.uocNguyenDaMua).toEqual(['xeMay'])
+  })
+
+  it('phá sản trừ đúng 25 hạnh phúc và cấm vay 5 năm, cấm cơ hội 3 năm', () => {
+    // Đã kết hôn sẵn: SEED=12345 hẹn đám cưới đúng năm 12, một khoản CỘNG hạnh
+    // phúc cốt truyện không liên quan tới phép thử này mà đủ lớn để che mất
+    // đúng 25 điểm bị trừ vì phá sản.
+    const s = vanVoNo({ hanhPhuc: 95, daKetHon: true })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.hanhPhuc).toBeLessThanOrEqual(95 - CONFIG.phaSan.hanhPhuc)
+    expect(dangCamVay(sau)).toBe(true)
+    expect(dangCamCoHoi(sau)).toBe(true)
+    expect(sau.camVayDenNam - sau.nam).toBe(CONFIG.phaSan.soNamCamVay - 1)
+  })
+
+  it('trong thời gian cấm, hành động vay không có tác dụng', () => {
+    const s = vanVoNo()
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    const thu = reducer({ ...sau, phase: 'tuDo' }, { type: 'vay', goc: 100 * TRIEU, kyHan: 5 })
+    expect(thu.khoanVay).toHaveLength(0)
+  })
+
+  it('trong thời gian cấm, không cơ hội kinh doanh nào được rút ra', () => {
+    const s = vanVoNo()
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.coHoiNamNay.filter((c) => c.loai === 'kinhDoanh')).toHaveLength(0)
   })
 })

@@ -207,6 +207,8 @@ export type SuKienLoai =
   | 'suKienKetQua'
   | 'chuKyKinhTe'
   | 'bienCoLon'
+  | 'thanhLyDoanhNghiep'
+  | 'phaSan'
 
 /** Sáu biến cố lớn của đời người (v1.6), mỗi cái có một lá chắn riêng. */
 export type BienCoId =
@@ -366,6 +368,13 @@ export interface GameState {
   bienCoDaQua: BienCoId[]
   /** di chứng lương sau khi mất việc, khởi điểm 1 */
   heSoLuongDiChung: number
+
+  /** ---------- Phá sản (v1.6) ---------- */
+  soLanPhaSan: number
+  /** không được vay tới hết năm này; -1 nghĩa là không bị cấm */
+  camVayDenNam: number
+  /** không được mời cơ hội kinh doanh tới hết năm này; -1 nghĩa là không bị cấm */
+  camCoHoiDenNam: number
 
   tongKet: TongKetNam | null
   lichSu: DongLichSu[]

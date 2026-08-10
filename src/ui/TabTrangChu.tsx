@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CONFIG } from '../game/config'
 import { timUocNguyen } from '../game/content'
 import {
+  dangCamVay,
   dangCoBaoHiem,
   dangCoBaoHiemXe,
   dangDuocHoTro,
@@ -198,6 +199,7 @@ function KhuNganHang({ state, dispatch }: Props) {
   const [goc, setGoc] = useState(0)
   const gocThuc = Math.min(goc, tran)
   const traMoiNam = gocThuc > 0 ? thanhToanMoiNamCuaKhoanVay(gocThuc, kyHan) : 0
+  const biCamVay = dangCamVay(state)
 
   return (
     <div className="the">
@@ -229,47 +231,56 @@ function KhuNganHang({ state, dispatch }: Props) {
         </>
       )}
 
-      <div className="o-so-luong">
-        <span className="hang-nhan">Kỳ hạn</span>
-        {CAC_KY_HAN.map((k) => (
+      {biCamVay ? (
+        <div className="canh-bao-tu-choi" style={{ marginBottom: 0 }}>
+          🚫 Sau phá sản, còn {state.camVayDenNam - state.nam + 1} năm nữa mới vay
+          được.
+        </div>
+      ) : (
+        <>
+          <div className="o-so-luong">
+            <span className="hang-nhan">Kỳ hạn</span>
+            {CAC_KY_HAN.map((k) => (
+              <button
+                key={k}
+                className={`nut${kyHan === k ? ' nut-chinh' : ''}`}
+                style={{ padding: '7px 0', flex: 1, fontSize: 13 }}
+                onClick={() => setKyHan(k)}
+              >
+                {k}
+              </button>
+            ))}
+          </div>
+
+          <div className="o-so-luong">
+            <input
+              type="range"
+              min={0}
+              max={Math.max(tran, 1)}
+              step={Math.max(1, Math.round(tran / 100))}
+              value={gocThuc}
+              onChange={(e) => setGoc(Number(e.target.value))}
+            />
+            <span className="so-luong-chu">{dinhDangTien(gocThuc)}</span>
+          </div>
+
+          <div className="hang">
+            <span className="hang-nhan">Trả mỗi năm trong {kyHan} năm</span>
+            <span className="hang-gia-tri am">{dinhDangTien(traMoiNam)}</span>
+          </div>
+
           <button
-            key={k}
-            className={`nut${kyHan === k ? ' nut-chinh' : ''}`}
-            style={{ padding: '7px 0', flex: 1, fontSize: 13 }}
-            onClick={() => setKyHan(k)}
+            className="nut nut-rong"
+            disabled={gocThuc <= 0}
+            onClick={() => {
+              dispatch({ type: 'vay', goc: gocThuc, kyHan })
+              setGoc(0)
+            }}
           >
-            {k}
+            {tran <= 0 ? 'Đã chạm trần vay' : `Vay ${dinhDangTien(gocThuc)}`}
           </button>
-        ))}
-      </div>
-
-      <div className="o-so-luong">
-        <input
-          type="range"
-          min={0}
-          max={Math.max(tran, 1)}
-          step={Math.max(1, Math.round(tran / 100))}
-          value={gocThuc}
-          onChange={(e) => setGoc(Number(e.target.value))}
-        />
-        <span className="so-luong-chu">{dinhDangTien(gocThuc)}</span>
-      </div>
-
-      <div className="hang">
-        <span className="hang-nhan">Trả mỗi năm trong {kyHan} năm</span>
-        <span className="hang-gia-tri am">{dinhDangTien(traMoiNam)}</span>
-      </div>
-
-      <button
-        className="nut nut-rong"
-        disabled={gocThuc <= 0}
-        onClick={() => {
-          dispatch({ type: 'vay', goc: gocThuc, kyHan })
-          setGoc(0)
-        }}
-      >
-        {tran <= 0 ? 'Đã chạm trần vay' : `Vay ${dinhDangTien(gocThuc)}`}
-      </button>
+        </>
+      )}
     </div>
   )
 }

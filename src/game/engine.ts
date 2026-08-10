@@ -178,6 +178,14 @@ export function tyLeDongTra(tuoi: number): number {
 
 export const dangCoBaoHiem = (s: GameState): boolean => s.baoHiemDenNam >= s.nam
 
+/** ---------- Phá sản (v1.6) ---------- */
+
+/** Đang trong thời gian cấm vay sau phá sản hay không. */
+export const dangCamVay = (s: GameState): boolean => s.camVayDenNam >= s.nam
+
+/** Đang trong thời gian cấm được mời cơ hội kinh doanh sau phá sản hay không. */
+export const dangCamCoHoi = (s: GameState): boolean => s.camCoHoiDenNam >= s.nam
+
 /* ---------- Tự do tài chính ----------
  * Đây là điều kiện thắng của game, thay cho con số tài sản cứng của các bản
  * trước. Vì cả hai vế đều tính theo mặt bằng giá của năm hiện tại, mục tiêu
@@ -592,6 +600,8 @@ interface BoiCanhCoHoi {
   nam: number
   coHoiDaLam: readonly string[]
   taiSanRong: Tien
+  /** đang trong thời gian cấm sau phá sản thì không mời cơ hội kinh doanh */
+  camCoHoi: boolean
 }
 
 function hopLe(c: CoHoi, bc: BoiCanhCoHoi): boolean {
@@ -599,6 +609,7 @@ function hopLe(c: CoHoi, bc: BoiCanhCoHoi): boolean {
   if (c.namToiThieu !== undefined && bc.nam < c.namToiThieu) return false
   if (c.taiSanToiThieu !== undefined && bc.taiSanRong < c.taiSanToiThieu) return false
   if (c.chiMotLan && bc.coHoiDaLam.includes(c.id)) return false
+  if (bc.camCoHoi && c.loai === 'kinhDoanh') return false
   return true
 }
 
@@ -609,6 +620,7 @@ export const coHoiHopLe = (c: CoHoi, s: GameState): boolean =>
     nam: s.nam,
     coHoiDaLam: s.coHoiDaLam,
     taiSanRong: taiSanRong(s),
+    camCoHoi: dangCamCoHoi(s),
   })
 
 /**
@@ -733,6 +745,8 @@ export function taoGameMoi(
     // đầu tư hay nợ nào khác ngoài vốn ban đầu, nên vốn ban đầu chính là tài
     // sản ròng của ván lúc này.
     taiSanRong: vonBanDau,
+    // Ván mới tinh không thể đang trong thời gian cấm sau phá sản.
+    camCoHoi: false,
   })
 
   return {
@@ -790,6 +804,10 @@ export function taoGameMoi(
     lichBienCo,
     bienCoDaQua: [],
     heSoLuongDiChung: 1,
+
+    soLanPhaSan: 0,
+    camVayDenNam: -1,
+    camCoHoiDenNam: -1,
 
     tongKet: null,
     lichSu: [],
@@ -1668,9 +1686,12 @@ function chuyenNam(s: GameState): GameState {
     nghe.chiPhi * chiSoGia * heSoChiPhi * s.heSoToiUuChiPhi,
   )
 
-  /* --- 11. Thiếu tiền mặt thì buộc phải bán tài sản trang trải --- */
+  /* --- 11. Thiếu tiền mặt thì buộc phải trả giá dần theo BA NẤC vỡ nợ (v1.6):
+   *         bán tài sản đầu tư → thanh lý doanh nghiệp → tuyên phá sản. Mỗi nấc
+   *         chỉ vào cuộc khi nấc trước không đủ bù. */
   let soHuu = s.soHuu
   if (tienMat < 0) {
+    /* --- Nấc 1: bán tài sản đầu tư --- */
     soHuu = { ...s.soHuu }
     let tienBanDuoc = 0
     const thuTuBan: AssetId[] = ['traiPhieu', 'vang', 'coPhieu', 'crypto', 'batDongSan']
@@ -1692,16 +1713,83 @@ function chuyenNam(s: GameState): GameState {
         hanhPhucThayDoi: 0,
       })
     }
-    if (tienMat < 0) {
-      const hpTung = apHanhPhuc(-10)
+  }
+
+  let soLanPhaSan = s.soLanPhaSan
+  let camVayDenNam = s.camVayDenNam
+  let camCoHoiDenNam = s.camCoHoiDenNam
+  let khoanVaySauCung = khoanVay
+
+  if (tienMat < 0) {
+    /* --- Nấc 2: thanh lý doanh nghiệp ---
+     * Bán từ NHỎ NHẤT lên để giữ lại nguồn thu nhập lớn nhất càng lâu càng tốt.
+     * Doanh nghiệp là tài sản kém thanh khoản — bán gấp thì mất hơn một nửa giá
+     * trị, đúng như ngoài đời. */
+    const theoVon = [...doanhNghiep].sort(
+      (a, b) => vonDoanhNghiepNamNay(s, a) - vonDoanhNghiepNamNay(s, b),
+    )
+    let thuVe = 0
+    const daBan: string[] = []
+    for (const d of theoVon) {
+      if (tienMat >= 0) break
+      const tien = Math.round(
+        vonDoanhNghiepNamNay(s, d) * CONFIG.phaSan.tyLeThanhLyDoanhNghiep,
+      )
+      tienMat += tien
+      thuVe += tien
+      daBan.push(d.ten)
+      doanhNghiep = doanhNghiep.filter((x) => x !== d)
+    }
+    if (thuVe > 0) {
       suKien.push({
-        loai: 'banTaiSan',
-        tieuDe: 'Túng thiếu',
-        moTa: 'Bán hết tài sản vẫn chưa đủ bù chi tiêu, phải giật gấu vá vai qua ngày.',
-        tienThayDoi: 0,
-        hanhPhucThayDoi: hpTung,
+        loai: 'thanhLyDoanhNghiep',
+        tieuDe: '🏷️ Thanh lý doanh nghiệp',
+        moTa:
+          `Bán hết tài sản đầu tư vẫn chưa đủ, đành sang nhượng gấp ${daBan.join(', ')}.` +
+          ` Bán vội thì chỉ được ${soPhanTram(CONFIG.phaSan.tyLeThanhLyDoanhNghiep)}% vốn đã bỏ ra.`,
+        tienThayDoi: thuVe,
+        hanhPhucThayDoi: 0,
       })
     }
+  }
+
+  if (tienMat < 0 && -tienMat > chiPhiHangNam * CONFIG.phaSan.nguongTheoChiPhi) {
+    /* --- Nấc 3: phá sản ---
+     * Toà xoá sạch nợ nhưng cũng lấy sạch tiền mặt còn âm về 0. Ước nguyện đã
+     * mua không bị đụng tới — luật phá sản chừa lại nhà ở và phương tiện đi lại
+     * thiết yếu. Đổi lại là cấm vay và cấm cơ hội kinh doanh một thời gian: uy
+     * tín cần thời gian dựng lại, không phải một cái nút bấm là xong. */
+    const xoaNo = khoanVaySauCung.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0)
+    khoanVaySauCung = []
+    tienMat = 0
+    soLanPhaSan += 1
+    // Năm SAU mới là năm đầu tiên còn bị cấm — năm nay (s.nam) coi như đã dùng
+    // hết vì hành động của nó đã khép lại trong `chuyenNam`. Cấm 5 năm tính từ
+    // năm sau nghĩa là banned trọn namMoi .. s.nam + soNamCamVay.
+    camVayDenNam = s.nam + CONFIG.phaSan.soNamCamVay
+    camCoHoiDenNam = s.nam + CONFIG.phaSan.soNamCamCoHoi
+    const hpPhaSan = apHanhPhuc(-CONFIG.phaSan.hanhPhuc)
+    suKien.push({
+      loai: 'phaSan',
+      tieuDe: '💀 Phá sản',
+      moTa:
+        'Bán sạch mọi thứ vẫn không trả nổi. Toà tuyên phá sản, ' +
+        `${dinhDangTien(xoaNo)} tiền nợ được xoá nhưng bạn cũng trắng tay. ` +
+        `Nhà cửa và xe cộ thì luật chừa lại. ${CONFIG.phaSan.soNamCamVay} năm tới ` +
+        `không ngân hàng nào cho vay, và ${CONFIG.phaSan.soNamCamCoHoi} năm tới ` +
+        'cũng chẳng ai mời bạn góp vốn — uy tín cần thời gian dựng lại.',
+      tienThayDoi: 0,
+      hanhPhucThayDoi: hpPhaSan,
+    })
+  } else if (tienMat < 0) {
+    const hpTung = apHanhPhuc(-10)
+    suKien.push({
+      loai: 'banTaiSan',
+      tieuDe: 'Túng thiếu',
+      moTa: 'Bán hết tài sản vẫn chưa đủ bù chi tiêu, phải giật gấu vá vai qua ngày.',
+      tienThayDoi: 0,
+      hanhPhucThayDoi: hpTung,
+    })
   }
 
   /* --- 12. Cột mốc tài sản ---
@@ -1777,6 +1865,9 @@ function chuyenNam(s: GameState): GameState {
     taiSanRong:
       tongSauNam -
       khoanVay.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0),
+    // Đang trong thời gian cấm sau phá sản thì không cơ hội kinh doanh nào được
+    // mời — dùng NĂM MỚI vì đây chính là năm mà bộ cơ hội sắp rút sẽ hiện ra.
+    camCoHoi: camCoHoiDenNam >= namMoi,
   })
 
   const sauChuyen: GameState = {
@@ -1803,7 +1894,7 @@ function chuyenNam(s: GameState): GameState {
     // Ba trường chuyên gia còn lại chỉ đổi trong reducer nên đi theo phép trải
     // `...s` là đủ; riêng cờ này do chính `chuyenNam` bật tắt, phải gán tường minh.
     daCanhBaoKietSuc,
-    khoanVay,
+    khoanVay: khoanVaySauCung,
     khoanDangCho: [],
     daKetHon,
     conCai,
@@ -1818,6 +1909,11 @@ function chuyenNam(s: GameState): GameState {
     bienCoDaQua,
     heSoLuongDiChung,
     doanhNghiep,
+    // Ba trường phá sản (v1.6) do chính bước 11 cập nhật, phải gán tường minh —
+    // cùng lý do với ba trường biến cố lớn ở trên.
+    soLanPhaSan,
+    camVayDenNam,
+    camCoHoiDenNam,
   }
 
   const tong = tongTaiSan(sauChuyen)
@@ -2010,6 +2106,7 @@ export function reducer(s: GameState, a: Action): GameState {
 
     case 'vay': {
       if (!choPhepHanhDongTuDo(s)) return s
+      if (dangCamVay(s)) return s
       const kyHan = Math.max(1, Math.min(CONFIG.kyHanVayToiDa, Math.round(a.kyHan)))
       const tran = vayToiDa(s, kyHan)
       const goc = Math.min(a.goc, tran)
