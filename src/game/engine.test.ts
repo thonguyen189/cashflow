@@ -1141,8 +1141,12 @@ describe('cột mốc tài sản', () => {
 
   it('chạm mốc đầu lần đầu có sự kiện mocTaiSan, năm sau không lặp lại', () => {
     let s = duyetHetThe(reducer(moiVan('giaoVien'), { type: 'traChiPhi' }), false)
-    // 400 triệu vượt mốc 1 (300 triệu) nhưng chưa tới mốc 2 (700 triệu)
-    s = { ...s, tienMat: 400 * TRIEU, hanhPhuc: 90 }
+    // 320 triệu vượt mốc 1 (300 triệu) nhưng chưa tới mốc 2 (700 triệu), kể cả sau
+    // khi cộng dồn lương hai năm liên tiếp. v1.6 Task 12: rutLichBienCo rút thêm
+    // ngẫu nhiên lúc tạo ván nên toàn bộ chuỗi rng dịch pha so với trước — mốc
+    // 400 triệu cũ đôi khi cộng lương/thưởng hai năm liền vượt luôn mốc 2, hạ
+    // xuống 320 triệu để chừa biên độ an toàn hơn.
+    s = { ...s, tienMat: 320 * TRIEU, hanhPhuc: 90 }
     s = reducer(s, { type: 'ketThucNam' })
     expect(s.tongKet!.suKien.filter((k) => k.loai === 'mocTaiSan')).toHaveLength(1)
     expect(s.mocTaiSanDaQua).toEqual([0])
@@ -1245,8 +1249,14 @@ describe('bảo hiểm và ốm đau tuổi già', () => {
     // v1.6 Task 7: chuyenNam giờ rút thêm một số ngẫu nhiên mỗi năm cho chu kỳ
     // kinh tế (bước 0), nên toàn bộ chuỗi rng dịch pha so với trước — 5 năm cũ
     // không còn chắc trúng ốm đau với seed cố định này nữa, nới lên 10 năm.
+    // v1.6 Task 12: rutLichBienCo rút thêm ngẫu nhiên lúc TẠO VÁN nên chuỗi rng
+    // lại dịch pha lần nữa. Đồng thời chiPhiHangNam giả lập chỉ có hiệu lực đúng
+    // năm đầu — từ năm sau chuyenNam tính lại theo chi phí thật của nghề, thấp
+    // hơn hẳn 900 triệu — nên phải áp lại override mỗi năm để mỗi năm đều có cơ
+    // hội trúng ốm đau với chi phí đã leo cao, thay vì chỉ trông cậy vào năm đầu.
     let vienPhiLonNhat = 0
     for (let i = 0; i < 10 && veGia.trangThai === 'dangChoi'; i++) {
+      veGia = { ...veGia, luong: 50 * TRIEU, chiPhiHangNam: 900 * TRIEU, baoHiemDenNam: -1 }
       const sau = diTronMotNam(veGia, 5 * TY)
       const om = sau.tongKet!.suKien.find((sk) => sk.loai === 'omDau')
       if (om) vienPhiLonNhat = Math.max(vienPhiLonNhat, -om.tienThayDoi)
@@ -1263,7 +1273,12 @@ describe('thẻ hợp với tuổi và hoàn cảnh', () => {
     expect(coTranTuoi.length).toBeGreaterThan(0)
 
     const s0 = moiVan()
-    let cur: GameState = { ...s0, nam: 75, daNghiHuu: true, hanhPhuc: 100 }
+    // theConLai của s0 được rút cho bối cảnh năm 1 (tuổi 21); nhảy cóc sang năm
+    // 75 mà giữ nguyên bộ thẻ đó thì đang kiểm tra một bối cảnh không có thật
+    // trong luật chơi — theConLai và nam luôn tiến cùng nhau qua chuyenNam, chưa
+    // bao giờ tách rời như phép gán tay này. Xoá trắng để vòng lặp chỉ xét
+    // những bộ thẻ được rút THẬT SỰ cho tuổi già, đúng như game vận hành.
+    let cur: GameState = { ...s0, nam: 75, daNghiHuu: true, hanhPhuc: 100, theConLai: [] }
     for (let i = 0; i < 5; i++) {
       const tuoi = tuoiTaiNam(cur.nam)
       for (const the of cur.theConLai) {
@@ -2366,5 +2381,40 @@ describe('v1.6 — góp vốn theo quy mô', () => {
       expect(tyLe).toBeGreaterThanOrEqual(0.19)
       expect(tyLe).toBeLessThanOrEqual(0.22)
     }
+  })
+})
+
+describe('v1.6 — lịch biến cố lớn', () => {
+  it('mỗi ván có từ 2 tới 4 biến cố, tất định theo seed', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      const a = taoGameMoi('giaoVien', seed)
+      const b = taoGameMoi('giaoVien', seed)
+      expect(a.lichBienCo).toEqual(b.lichBienCo)
+      expect(a.lichBienCo.length).toBeGreaterThanOrEqual(CONFIG.bienCo.soBienCoMin)
+      expect(a.lichBienCo.length).toBeLessThanOrEqual(CONFIG.bienCo.soBienCoMax)
+    }
+  })
+
+  it('các mốc nằm trong khoảng tuổi cho phép và cách nhau tối thiểu 8 năm', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      const lich = taoGameMoi('giaoVien', seed).lichBienCo
+      for (const nam of lich) {
+        expect(tuoiTaiNam(nam)).toBeGreaterThanOrEqual(CONFIG.bienCo.tuoiSomNhat)
+        expect(tuoiTaiNam(nam)).toBeLessThanOrEqual(CONFIG.bienCo.tuoiMuonNhat)
+      }
+      const sapXep = [...lich].sort((x, y) => x - y)
+      expect(sapXep).toEqual(lich)
+      for (let i = 1; i < lich.length; i++) {
+        expect(lich[i]! - lich[i - 1]!).toBeGreaterThanOrEqual(
+          CONFIG.bienCo.cachNhauToiThieu,
+        )
+      }
+    }
+  })
+
+  it('ván mới chưa gặp biến cố nào và chưa có di chứng lương', () => {
+    const s = taoGameMoi('giaoVien', SEED)
+    expect(s.bienCoDaQua).toEqual([])
+    expect(s.heSoLuongDiChung).toBe(1)
   })
 })

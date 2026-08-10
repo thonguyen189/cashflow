@@ -439,6 +439,92 @@ export const CONFIG = {
     nguongCanhBaoTapTrung: 0.4,
   },
 
+  /** ---------- Biến cố lớn ----------
+   * Sự kiện ngẫu nhiên sẵn có — ốm đau, sự cố, va chạm — đều ở mức vài chục phần
+   * trăm chi phí một năm. Chúng là gợn sóng. Đời người thì có sóng lớn, và những
+   * cú đó mới là thứ phân loại người có chuẩn bị và người không.
+   *
+   * ---------- Vì sao hẹn lịch chứ không tung xúc xắc mỗi năm ----------
+   * Cùng khuôn với lịch cưới hỏi và sinh con của cốt truyện trăm năm. Hai lẽ:
+   * mọi ván đều chắc chắn có biến cố nên không ván nào trôi qua nhạt nhoà, và số
+   * lượng nằm trong tầm kiểm soát để cân bằng được.
+   *
+   * ---------- Lá chắn ----------
+   * Mỗi biến cố có MỘT thứ người chơi phải chuẩn bị từ trước mới chặn được. Mọi
+   * khoản tiền tính theo bội số chi phí sinh hoạt của năm xảy ra, nên biến cố lớn
+   * lên cùng người chơi thay vì hoá vô hại về sau. Riêng bão lũ CỐ Ý không có lá
+   * chắn: một trò chơi về tài chính mà giả vờ rằng chuẩn bị đủ kỹ thì miễn nhiễm
+   * với mọi thứ là một trò chơi nói dối. Bù lại nó là cú nhẹ nhất trong sáu cái.
+   */
+  bienCo: {
+    soBienCoMin: 2,
+    soBienCoMax: 4,
+    tuoiSomNhat: 28,
+    tuoiMuonNhat: 85,
+    cachNhauToiThieu: 8,
+
+    /** 🏥 bệnh hiểm nghèo — lá chắn: bảo hiểm y tế */
+    benhHiemNgheo: {
+      tuoiToiThieu: 40,
+      vienPhiTheoChiPhi: 2.5,
+      /** thuốc ngoài danh mục thì bảo hiểm nào cũng không gánh */
+      tuTraToiThieu: 0.12,
+      matHanhPhucCoBaoHiem: 8,
+      matHanhPhucKhongBaoHiem: 20,
+      /** ốm nặng thì phải nghỉ — bảo hiểm chặn viện phí chứ không chặn việc này */
+      heSoLuongNamDo: 0.5,
+    },
+
+    /** 🏭 mất việc — lá chắn: quỹ dự phòng tiền mặt */
+    matViec: {
+      /** tiền mặt phải đạt ngần này lần chi phí sinh hoạt mới coi là có dự phòng */
+      duPhongTheoChiPhi: 1,
+      heSoLuongCoDuPhong: 0.5,
+      heSoLuongKhongDuPhong: 0,
+      matHanhPhucCoDuPhong: 6,
+      matHanhPhucKhongDuPhong: 15,
+      diChungLuong: 0.85,
+      /** mất việc giữa lúc cả thị trường đang sa thải thì đi xin lại thấp hơn nhiều */
+      diChungLuongKhiKhungHoang: 0.75,
+    },
+
+    /** 👴 bố mẹ ngã bệnh — lá chắn: xuất thân có bố mẹ tích luỹ */
+    boMeNgaBenh: {
+      tuoiToiThieu: 35,
+      tuoiToiDa: 70,
+      chiPhiCoTichLuy: 0.5,
+      chiPhiKhongTichLuy: 1.8,
+      matHanhPhucCoTichLuy: 6,
+      matHanhPhucKhongTichLuy: 12,
+    },
+
+    /** 💸 vỡ hụi, bị lừa đảo — lá chắn: chuyên gia hoạch định tài chính */
+    voHui: {
+      tuoiToiThieu: 30,
+      tyLeTienMatCoChuyenGia: 0.08,
+      tyLeTienMatKhongChuyenGia: 0.3,
+      matHanhPhucCoChuyenGia: 5,
+      matHanhPhucKhongChuyenGia: 15,
+    },
+
+    /** 🏚️ doanh nghiệp đóng cửa — lá chắn: không dồn quá nhiều vào một chỗ */
+    doanhNghiepDongCua: {
+      nguongTapTrung: 0.4,
+      /** thanh lý máy móc, hàng tồn, tiền cọc mặt bằng */
+      hoanLaiVon: 0.2,
+      matHanhPhucDuoiNguong: 8,
+      matHanhPhucTrenNguong: 18,
+    },
+
+    /** 🌊 bão lũ tàn phá — không có lá chắn */
+    baoLu: {
+      chiPhiCoNha: 1.8,
+      chiPhiKhongNha: 1.2,
+      matHanhPhucCoNha: 12,
+      matHanhPhucKhongNha: 10,
+    },
+  },
+
   /** ---------- Biểu đồ giá ----------
    * Số điểm giá "quá khứ" sinh sẵn khi tạo ván, để biểu đồ đầu tư
    * có đường giá sống động ngay từ năm đầu tiên.

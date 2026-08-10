@@ -632,6 +632,26 @@ function rutCoHoi(rng: Rng, soLuong: number, bc: BoiCanhCoHoi): CoHoi[] {
 }
 
 /**
+ * Hẹn lịch biến cố lớn ngay khi tạo ván, tất định theo seed. Rút từng mốc một và
+ * bỏ mốc nào quá sát mốc trước — thà ít hơn `soBienCoMax` còn hơn dồn hai cú lớn
+ * vào cùng một quãng đời.
+ */
+function rutLichBienCo(rng: Rng): number[] {
+  const bc = CONFIG.bienCo
+  const namSom = bc.tuoiSomNhat - CONFIG.cotTruyen.tuoiBatDau + 1
+  const namMuon = bc.tuoiMuonNhat - CONFIG.cotTruyen.tuoiBatDau + 1
+  const soLuong = rng.nguyen(bc.soBienCoMin, bc.soBienCoMax)
+  const lich: number[] = []
+  let baoVe = 0
+  while (lich.length < soLuong && baoVe++ < 200) {
+    const nam = rng.nguyen(namSom, namMuon)
+    if (lich.some((n) => Math.abs(n - nam) < bc.cachNhauToiThieu)) continue
+    lich.push(nam)
+  }
+  return lich.sort((a, b) => a - b)
+}
+
+/**
  * Xuất thân mặc định là viên chức tỉnh lẻ — cái duy nhất trung tính ở mọi hệ số,
  * nên mọi lời gọi `taoGameMoi(ngheId, seed)` có từ trước v1.6 giữ nguyên ý nghĩa.
  */
@@ -673,6 +693,10 @@ export function taoGameMoi(
   const namCuoi = rng.nguyen(ct.cuoiTuoiSomNhat, ct.cuoiTuoiMuonNhat) - ct.tuoiBatDau + 1
   const namCon1 = namCuoi + rng.nguyen(ct.conSauCuoiMin, ct.conSauCuoiMax)
   const namCon2 = namCon1 + rng.nguyen(ct.con2SauCon1Min, ct.con2SauCon1Max)
+
+  // Hẹn lịch biến cố lớn ngay khi tạo ván, tất định theo seed — cùng khuôn với
+  // cột mốc đời người ở trên.
+  const lichBienCo = rutLichBienCo(rng)
 
   const giaTaiSan = {} as Record<AssetId, Tien>
   const soHuu = {} as Record<AssetId, number>
@@ -760,6 +784,10 @@ export function taoGameMoi(
 
     theConLai,
     coHoiNamNay,
+
+    lichBienCo,
+    bienCoDaQua: [],
+    heSoLuongDiChung: 1,
 
     tongKet: null,
     lichSu: [],

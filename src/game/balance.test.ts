@@ -15,7 +15,7 @@ const SO_VAN = 30
  * cỡ vài phần trăm tỉ lệ thắng và vài phần mười năm — 30 ván thì một hai ván
  * lệch đã đủ đảo dấu kết quả và làm test đỏ oan.
  */
-const SO_VAN_DO_CHENH = 200
+const SO_VAN_DO_CHENH = 500
 
 describe('cân bằng game', () => {
   for (const nghe of NGHE) {

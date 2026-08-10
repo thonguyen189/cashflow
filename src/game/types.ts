@@ -206,6 +206,16 @@ export type SuKienLoai =
   | 'triLieu'
   | 'suKienKetQua'
   | 'chuKyKinhTe'
+  | 'bienCoLon'
+
+/** Sáu biến cố lớn của đời người (v1.6), mỗi cái có một lá chắn riêng. */
+export type BienCoId =
+  | 'benhHiemNgheo'
+  | 'matViec'
+  | 'boMeNgaBenh'
+  | 'voHui'
+  | 'doanhNghiepDongCua'
+  | 'baoLu'
 
 export interface SuKien {
   loai: SuKienLoai
@@ -348,6 +358,14 @@ export interface GameState {
 
   theConLai: TheTieuDung[]
   coHoiNamNay: CoHoi[]
+
+  /** ---------- Biến cố lớn (v1.6) ---------- */
+  /** các năm đã hẹn sẵn sẽ xảy ra biến cố lớn, tất định theo seed */
+  lichBienCo: number[]
+  /** biến cố đã dùng, để không lặp lại trong một ván */
+  bienCoDaQua: BienCoId[]
+  /** di chứng lương sau khi mất việc, khởi điểm 1 */
+  heSoLuongDiChung: number
 
   tongKet: TongKetNam | null
   lichSu: DongLichSu[]
