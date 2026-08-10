@@ -31,6 +31,7 @@ import type {
   ThietLapNhanVat,
   Tien,
   TongKetNam,
+  TrangThaiThiTruong,
   XuatThan,
 } from './types'
 
@@ -59,7 +60,7 @@ export function taoRng(seed: number, cursor: number) {
     },
   }
 }
-type Rng = ReturnType<typeof taoRng>
+export type Rng = ReturnType<typeof taoRng>
 
 /* ============================================================
  *  Hàm dẫn xuất — đọc trạng thái, không sửa
@@ -719,6 +720,18 @@ export function taoGameMoi(
 /** Phần trăm kiểu Việt Nam dùng trong lời kể sự kiện: 4,3 chứ không phải 4.3 */
 const soPhanTram = (v: number): string => (v * 100).toFixed(1).replace('.', ',')
 
+/** Lời kể khi nền kinh tế đổi chu kỳ — báo chí nói gì, đường phố ra sao. */
+const MO_TA_CHU_KY: Record<TrangThaiThiTruong, string> = {
+  thinhVuong:
+    'Đâu đâu cũng nghe chuyện làm ăn được. Chứng khoán lên từng phiên, đất đai sang tay chóng mặt, người người bàn nhau chuyện đầu tư.',
+  binhThuong:
+    'Mọi thứ trở lại nhịp bình thường. Không ai giàu lên sau một đêm, cũng không ai mất trắng — kinh tế đi đều những bước chậm.',
+  suyThoai:
+    'Đơn hàng thưa dần, vài công ty quanh bạn bắt đầu cắt giảm. Người ta thôi nói chuyện đầu tư mà quay sang giữ tiền.',
+  khungHoang:
+    'Thị trường sụp đổ. Chứng khoán bốc hơi, dự án đắp chiếu, giá cả thì leo thang từng tháng. Chỉ vàng trong két và sổ tiết kiệm là còn nguyên vẹn.',
+}
+
 /** Chuyện đời thường của tuổi già — buồn vui đan xen, không dính tới tiền bạc. */
 const CHUYEN_TUOI_GIA = [
   {
@@ -805,6 +818,33 @@ const CHUYEN_KIET_SUC = [
   },
 ] as const
 
+/**
+ * Rút trạng thái thị trường của năm mới theo ma trận chuyển. Cộng dồn xác suất
+ * rồi so với một số ngẫu nhiên — cùng khuôn mà `rutThe` và `rutCoHoi` đang dùng.
+ */
+export function chuyenTrangThaiThiTruong(
+  rng: Rng,
+  hienTai: TrangThaiThiTruong,
+): TrangThaiThiTruong {
+  const hang = CONFIG.thiTruong.maTranChuyen[hienTai]
+  const r = rng.next()
+  let congDon = 0
+  for (const sang of DANH_SACH_THI_TRUONG) {
+    congDon += hang[sang]
+    if (r < congDon) return sang
+  }
+  return 'binhThuong'
+}
+
+const DANH_SACH_THI_TRUONG: readonly TrangThaiThiTruong[] = [
+  'thinhVuong',
+  'binhThuong',
+  'suyThoai',
+  'khungHoang',
+]
+
+export const tacDongThiTruong = (t: TrangThaiThiTruong) => CONFIG.thiTruong.tacDong[t]
+
 function chuyenNam(s: GameState): GameState {
   const rng = taoRng(s.seed, s.rngCursor)
   const suKien: SuKien[] = []
@@ -821,8 +861,31 @@ function chuyenNam(s: GameState): GameState {
     return hanhPhuc - truoc
   }
 
+  /* --- 0. Chu kỳ kinh tế của năm mới --- */
+  const thiTruongTruoc = s.thiTruong
+  const thiTruongSau = chuyenTrangThaiThiTruong(rng, thiTruongTruoc)
+  // Toàn bộ toán kinh tế của năm NÀY (lợi tức, biến động giá, thu nhập doanh
+  // nghiệp, xác suất thăng chức, tăng lương) phải đọc trạng thái NGƯỜI CHƠI ĐÃ
+  // THẤY suốt năm — chính là `thiTruongTruoc`, cũng là con số đang hiện trên HUD.
+  // `thiTruongSau` chỉ quyết định năm SAU sẽ ra sao, cái người chơi chưa biết
+  // (xem Hud.tsx và TongKetModal.tsx). Đọc nhầm sang `thiTruongSau` ở đây làm
+  // một năm bị "khủng hoảng" ép từ đầu lại chịu tác động của trạng thái ngẫu
+  // nhiên của năm KẾ TIẾP — kiểm chứng bằng `engine.test.ts`.
+  const tacDong = tacDongThiTruong(thiTruongTruoc)
+  if (thiTruongSau !== thiTruongTruoc) {
+    const tt = CONFIG.thiTruong
+    suKien.push({
+      loai: 'chuKyKinhTe',
+      tieuDe: `${tt.icon[thiTruongSau]} Kinh tế chuyển sang ${tt.ten[thiTruongSau].toLowerCase()}`,
+      moTa: MO_TA_CHU_KY[thiTruongSau],
+      tienThayDoi: 0,
+      hanhPhucThayDoi: 0,
+    })
+  }
+
   /* --- 1. Lạm phát của năm --- */
-  const lamPhat = rng.khoang(CONFIG.lamPhatMin, CONFIG.lamPhatMax)
+  const lamPhat =
+    rng.khoang(CONFIG.lamPhatMin, CONFIG.lamPhatMax) + tacDong.lechLamPhat
 
   /* --- 2. Lợi tức tài sản, tính trên giá TRƯỚC khi biến động --- */
   const giaMoi = { ...s.giaTaiSan }
@@ -833,12 +896,19 @@ function chuyenNam(s: GameState): GameState {
     const giaCu = s.giaTaiSan[ts.id]
     const soLuong = s.soHuu[ts.id]
 
-    const tyLeLoiTuc = rng.khoang(ts.loiTucMin, ts.loiTucMax)
+    // Lợi tức chỉ chịu chu kỳ ở kênh có nhayChuKy dương. Trái phiếu đứng ngoài —
+    // lãi tiền gửi không giảm khi kinh tế xấu, thậm chí còn tăng. Vàng có
+    // nhayChuKy âm và vốn không sinh lợi tức nên quy tắc này không đụng tới nó.
+    // Một quy tắc, không cần thêm trường nào.
+    const heSoLoiTuc = ts.nhayChuKy > 0 ? tacDong.heSoLoiTuc : 1
+    const tyLeLoiTuc = rng.khoang(ts.loiTucMin, ts.loiTucMax) * heSoLoiTuc
     const loiTuc = Math.round(soLuong * giaCu * tyLeLoiTuc)
     tienMat += loiTuc
 
     let bienDong = rng.khoang(ts.bienDongMin, ts.bienDongMax)
+    bienDong += tacDong.doLechGia * ts.nhayChuKy
     if (ts.bamLamPhat) bienDong += lamPhat
+    bienDong = Math.max(CONFIG.thiTruong.sanBienDong, bienDong)
     giaMoi[ts.id] = Math.max(1, Math.round(giaCu * (1 + bienDong)))
     lichSuGia[ts.id] = [...(s.lichSuGia[ts.id] ?? []), giaMoi[ts.id]].slice(-15)
 
@@ -868,7 +938,10 @@ function chuyenNam(s: GameState): GameState {
       coHoi?.bienDongThuNhapMin ?? 0,
       coHoi?.bienDongThuNhapMax ?? 0,
     )
-    const soTien = Math.max(0, Math.round(nen * (1 + bienDong)))
+    const soTien = Math.max(
+      0,
+      Math.round(nen * (1 + bienDong) * tacDong.heSoLoiTuc),
+    )
     thuDong += soTien
     thuNhapDoanhNghiep.push({ coHoiId: d.coHoiId, ten: d.ten, soTien, bienDong })
   }
@@ -1039,6 +1112,10 @@ function chuyenNam(s: GameState): GameState {
 
   /* --- 7. Sự kiện ngẫu nhiên --- */
   const sk = CONFIG.suKien
+
+  // Năm khủng hoảng thì cơ hội thăng chức chỉ còn một nửa, và thưởng Tết cũng vậy.
+  const xacSuatThangChuc = CONFIG.suKien.thangChucXacSuat * tacDong.heSoLoiTuc
+  const xacSuatThuongTet = CONFIG.suKien.thuongTetXacSuat * tacDong.heSoLoiTuc
 
   // Ốm đau — tuổi càng cao sau nghỉ hưu càng dễ bệnh
   const xacSuatOmDau = Math.min(
@@ -1225,7 +1302,7 @@ function chuyenNam(s: GameState): GameState {
 
   // Thăng chức — chỉ khi còn đi làm
   let thangChucTang = 0
-  if (!daNghiHuu && rng.next() < sk.thangChucXacSuat) {
+  if (!daNghiHuu && rng.next() < xacSuatThangChuc) {
     thangChucTang = rng.khoang(sk.thangChucTangLuongMin, sk.thangChucTangLuongMax)
     suKien.push({
       loai: 'thangChuc',
@@ -1259,7 +1336,7 @@ function chuyenNam(s: GameState): GameState {
   }
 
   // Thưởng Tết — chỉ khi còn đi làm
-  if (!daNghiHuu && rng.next() < sk.thuongTetXacSuat) {
+  if (!daNghiHuu && rng.next() < xacSuatThuongTet) {
     const thuong = Math.round(s.luong * sk.thuongTetTyLeLuong)
     tienMat += thuong
     suKien.push({
@@ -1288,7 +1365,9 @@ function chuyenNam(s: GameState): GameState {
   } else if (daNghiHuu) {
     luongMoi = Math.round(s.luong * (1 + lamPhat))
   } else {
-    const tangThuc = rng.khoang(CONFIG.tangLuongThucMin, CONFIG.tangLuongThucMax)
+    const tangThuc =
+      rng.khoang(CONFIG.tangLuongThucMin, CONFIG.tangLuongThucMax) *
+      tacDong.heSoTangLuong
     luongMoi = Math.round(
       s.luong * (1 + (CONFIG.luongBamLamPhat ? lamPhat : 0) + tangThuc + thangChucTang),
     )
@@ -1474,6 +1553,10 @@ function chuyenNam(s: GameState): GameState {
     chiPhiHangNam,
     chiSoGia,
     heSoChiPhi,
+    // Phép trải `...s` sẽ mang theo trạng thái thị trường CŨ nếu không gán tường
+    // minh ở đây — đây là trường do chính `chuyenNam` đổi mỗi năm, không phải
+    // trường "đứng yên" mà `...s` xử lý đúng.
+    thiTruong: thiTruongSau,
     daTraChiPhiNamNay: false,
     soHuu,
     giaTaiSan: giaMoi,
@@ -1510,6 +1593,8 @@ function chuyenNam(s: GameState): GameState {
     suKien,
     lamPhat,
     tongTaiSan: tong,
+    thiTruongTruoc,
+    thiTruongSau,
   }
 
   const dongLichSu = {

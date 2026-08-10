@@ -49,7 +49,7 @@ import {
   vayToiDa,
   xeDangCo,
 } from './engine'
-import type { CoHoi, GameState } from './types'
+import type { AssetId, CoHoi, GameState, TongKetNam, TrangThaiThiTruong } from './types'
 
 const SEED = 12345
 const moiVan = (ngheId = 'giaoVien') => taoGameMoi(ngheId, SEED)
@@ -1238,9 +1238,12 @@ describe('bảo hiểm và ốm đau tuổi già', () => {
       baoHiemDenNam: -1,
       hanhPhuc: 90,
     }
-    // Chạy nhiều năm để chắc chắn gặp ít nhất một lần ốm đau
+    // Chạy nhiều năm để chắc chắn gặp ít nhất một lần ốm đau.
+    // v1.6 Task 7: chuyenNam giờ rút thêm một số ngẫu nhiên mỗi năm cho chu kỳ
+    // kinh tế (bước 0), nên toàn bộ chuỗi rng dịch pha so với trước — 5 năm cũ
+    // không còn chắc trúng ốm đau với seed cố định này nữa, nới lên 10 năm.
     let vienPhiLonNhat = 0
-    for (let i = 0; i < 5 && veGia.trangThai === 'dangChoi'; i++) {
+    for (let i = 0; i < 10 && veGia.trangThai === 'dangChoi'; i++) {
       const sau = diTronMotNam(veGia, 5 * TY)
       const om = sau.tongKet!.suKien.find((sk) => sk.loai === 'omDau')
       if (om) vienPhiLonNhat = Math.max(vienPhiLonNhat, -om.tienThayDoi)
@@ -2100,5 +2103,79 @@ describe('v1.6 — cấu hình chu kỳ kinh tế', () => {
 
   it('ván mới bắt đầu ở trạng thái bình thường', () => {
     expect(taoGameMoi('giaoVien', SEED).thiTruong).toBe('binhThuong')
+  })
+})
+
+describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => {
+  /** Ép trạng thái thị trường rồi đi trọn một năm, trả về bảng tổng kết. */
+  const namVoiThiTruong = (t: TrangThaiThiTruong) => {
+    const s = { ...moiVan(), thiTruong: t }
+    return diTronMotNam(s).tongKet!
+  }
+
+  const bienDongCua = (tk: TongKetNam, id: AssetId) =>
+    tk.bienDongTaiSan.find((b) => b.id === id)!.bienDong
+
+  it('khủng hoảng kéo cổ phiếu và tiền mã hoá xuống, đẩy vàng lên', () => {
+    const kh = namVoiThiTruong('khungHoang')
+    const bt = namVoiThiTruong('binhThuong')
+    expect(bienDongCua(kh, 'coPhieu')).toBeLessThan(bienDongCua(bt, 'coPhieu'))
+    expect(bienDongCua(kh, 'crypto')).toBeLessThan(bienDongCua(bt, 'crypto'))
+    expect(bienDongCua(kh, 'vang')).toBeGreaterThan(bienDongCua(bt, 'vang'))
+  })
+
+  it('trái phiếu miễn nhiễm với chu kỳ', () => {
+    const kh = namVoiThiTruong('khungHoang')
+    const tv = namVoiThiTruong('thinhVuong')
+    expect(bienDongCua(kh, 'traiPhieu')).toBeCloseTo(bienDongCua(tv, 'traiPhieu'), 10)
+  })
+
+  it('biến động giá không bao giờ xuống dưới sàn', () => {
+    for (let seed = 0; seed < 60; seed++) {
+      const s = { ...taoGameMoi('giaoVien', seed), thiTruong: 'khungHoang' as const }
+      const tk = diTronMotNam(s).tongKet!
+      for (const b of tk.bienDongTaiSan) {
+        expect(b.bienDong).toBeGreaterThanOrEqual(CONFIG.thiTruong.sanBienDong)
+      }
+    }
+  })
+
+  it('lạm phát năm khủng hoảng cao hơn năm bình thường đúng 5 điểm phần trăm', () => {
+    const kh = namVoiThiTruong('khungHoang')
+    const bt = namVoiThiTruong('binhThuong')
+    expect(kh.lamPhat - bt.lamPhat).toBeCloseTo(0.05, 10)
+  })
+
+  it('thu nhập doanh nghiệp trong khủng hoảng bằng một nửa mức bình thường', () => {
+    const nen = {
+      ...moiVan(),
+      doanhNghiep: [
+        {
+          coHoiId: 'nhaTroCongNhan',
+          ten: 'Dãy nhà trọ cho công nhân thuê',
+          thuNhapNen: 195 * TRIEU,
+          chiSoGiaLucMua: 1,
+        },
+      ],
+    }
+    const bt = diTronMotNam({ ...nen, thiTruong: 'binhThuong' }).tongKet!
+    const kh = diTronMotNam({ ...nen, thiTruong: 'khungHoang' }).tongKet!
+    const tienBT = bt.thuNhapDoanhNghiep[0]!.soTien
+    const tienKH = kh.thuNhapDoanhNghiep[0]!.soTien
+    expect(tienKH / tienBT).toBeCloseTo(0.5, 2)
+  })
+
+  it('lương không tăng thực trong khủng hoảng', () => {
+    const kh = namVoiThiTruong('khungHoang')
+    expect(kh.tangLuong).toBeCloseTo(kh.lamPhat, 3)
+  })
+
+  it('trạng thái chỉ chuyển tới nơi ma trận cho phép', () => {
+    let s = moiVan()
+    for (let i = 0; i < 60 && s.trangThai === 'dangChoi'; i++) {
+      const truoc = s.thiTruong
+      s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
+      expect(CONFIG.thiTruong.maTranChuyen[truoc][s.thiTruong]).toBeGreaterThan(0)
+    }
   })
 })
