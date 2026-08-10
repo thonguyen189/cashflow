@@ -30,6 +30,7 @@ import {
   muaToiDa,
   mucTieuTuDo,
   nghiaVuHangNam,
+  nghiaVuNamDau,
   phiBaoHiem,
   phiBaoHiemXe,
   phiChuyenGiaTaiChinh,
@@ -2048,5 +2049,31 @@ describe('v1.6 — chi phí sống và áp lực công việc', () => {
     const moc = mocTaiSanCuaNghe('giaoVien')
     const s = taoGameMoi('giaoVien', SEED, { xuatThanId: 'vienChuc', heSoLuongKhoiDiem: 1.25 })
     expect(mocTaiSanCuaNghe(s.ngheId)).toEqual(moc)
+  })
+})
+
+describe('v1.6 — mục tiêu tự do đổi theo thiết lập', () => {
+  it('nhà khá giả có đích tự do cao hơn nhà thuần nông cùng nghề', () => {
+    const nghe = timNghe('giaoVien')!
+    const thap = nghiaVuNamDau(nghe, timXuatThan('thuanNong')!, 1)
+    const cao = nghiaVuNamDau(nghe, timXuatThan('khaGia')!, 1)
+    expect(cao).toBeGreaterThan(thap)
+  })
+
+  it('bậc lương cao đẩy đích tự do lên theo', () => {
+    const nghe = timNghe('bacSi')!
+    const x = timXuatThan('vienChuc')!
+    expect(nghiaVuNamDau(nghe, x, 1.25)).toBeGreaterThan(nghiaVuNamDau(nghe, x, 1))
+  })
+
+  it('không tham số thì giữ nguyên kết quả cũ', () => {
+    const nghe = timNghe('kySuPhanMem')!
+    expect(nghiaVuNamDau(nghe)).toBe(nghiaVuNamDau(nghe, timXuatThan('vienChuc')!, 1))
+  })
+
+  it('mucTieuTuDo của ván khá giả cao hơn ván thuần nông', () => {
+    const a = taoGameMoi('giaoVien', SEED, { xuatThanId: 'thuanNong', heSoLuongKhoiDiem: 1 })
+    const b = taoGameMoi('giaoVien', SEED, { xuatThanId: 'khaGia', heSoLuongKhoiDiem: 1 })
+    expect(mucTieuTuDo(b)).toBeGreaterThan(mucTieuTuDo(a))
   })
 })

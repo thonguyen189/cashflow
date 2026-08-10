@@ -365,7 +365,7 @@ export const CONFIG = {
   soDiemGiaQuaKhu: 9,
 
   /** ---------- Lưu ván ---------- */
-  luuKey: 'dong-tien-luu-v1-5',
+  luuKey: 'dong-tien-luu-v1-6',
 } as const
 
 export type Config = typeof CONFIG

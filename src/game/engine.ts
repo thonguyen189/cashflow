@@ -185,15 +185,21 @@ export function tienDoTuDo(s: GameState): number {
 }
 
 /**
- * Nghĩa vụ của năm đầu tiên, tính thẳng từ định nghĩa nghề.
- * Màn chọn nghề cần con số này trước khi có ván nào tồn tại.
+ * Nghĩa vụ của năm đầu tiên, dùng cho màn chọn nghề. Nhận thiết lập nhân vật để
+ * con số "tự do tài chính khi dòng tiền đạt" hiện đúng ngay lúc người chơi còn
+ * đang cân nhắc — đó chính là lúc thông tin ấy có giá trị nhất.
  */
-export function nghiaVuNamDau(nghe: Nghe): Tien {
-  const canCu = Math.max(
-    nghe.luong,
-    nghe.chiPhi * CONFIG.cotTruyen.baoHiemToiThieuTheoChiPhi,
+export function nghiaVuNamDau(
+  nghe: Nghe,
+  xuatThan: XuatThan = XUAT_THAN[1]!,
+  heSoLuongKhoiDiem = 1,
+): Tien {
+  const chiPhi = Math.round(
+    nghe.chiPhi * tinhHeSoChiPhi(false, [], 1, xuatThan, heSoLuongKhoiDiem),
   )
-  return nghe.chiPhi + Math.round(canCu * CONFIG.baoHiemTyLeLuong)
+  const luong = Math.round(nghe.luong * heSoLuongKhoiDiem)
+  const canCu = Math.max(luong, chiPhi * CONFIG.cotTruyen.baoHiemToiThieuTheoChiPhi)
+  return chiPhi + Math.round(canCu * CONFIG.baoHiemTyLeLuong)
 }
 
 /* ---------- Cột mốc tài sản ---------- */

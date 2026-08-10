@@ -528,3 +528,9 @@ table.bang th:first-child {
   font-weight: 600;
   color: var(--chu-mo);
 }
+
+/* ---------- v1.6: bước 2 màn chọn nghề — xuất thân đang chọn ---------- */
+.the-nghe-chon {
+  border-color: var(--vang);
+  box-shadow: 0 0 0 1px var(--vang);
+}

@@ -11,7 +11,7 @@ import {
 } from './game/engine'
 import { dinhDangTien } from './game/format'
 import { luuVan, taiVan, xoaVan } from './game/luu'
-import type { Action, GameState } from './game/types'
+import type { Action, GameState, ThietLapNhanVat } from './game/types'
 import ChonNghe from './ui/ChonNghe'
 import Hud from './ui/Hud'
 import KetThucModal from './ui/KetThucModal'
@@ -42,9 +42,9 @@ export default function App() {
     setState((s) => (s ? reducer(s, a) : s))
   }, [])
 
-  const batDau = (ngheId: string) => {
+  const batDau = (ngheId: string, thietLap: ThietLapNhanVat) => {
     setTab('trangChu')
-    setState(taoGameMoi(ngheId))
+    setState(taoGameMoi(ngheId, undefined, thietLap))
   }
 
   const veManChon = () => {

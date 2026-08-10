@@ -18,6 +18,7 @@ import {
   traNoMoiNam,
   tuoiHienTai,
   xeDangCo,
+  xuatThanHienTai,
 } from '../game/engine'
 import { dinhDangTien, dinhDangPhanTram } from '../game/format'
 import type { GameState, LoaiBaoHiemXe } from '../game/types'
@@ -91,6 +92,28 @@ export default function TabSoSach({ state }: { state: GameState }) {
     </span>
   )
 
+  // Ba hệ số nhân vào chi phí sinh hoạt do thiết lập nhân vật (v1.6) — chỉ hiện
+  // nhãn nào đang thật sự có hiệu lực, cạnh nhãn "đã tối ưu" sẵn có, để người
+  // chơi tra được vì sao chi phí của mình khác con số gốc của nghề.
+  const xuatThan = xuatThanHienTai(state)
+  const dangPhungDuong =
+    xuatThan.tyLePhungDuong > 0 && tuoiHienTai(state) <= xuatThan.phungDuongDenTuoi
+  const heSoBacLuong =
+    1 + (state.heSoLuongKhoiDiem - 1) * CONFIG.xuatThan.loiSongTheoLuong
+  const nhanHeSoChiPhi = (
+    <>
+      {xuatThan.heSoChiPhiSong !== 1 && (
+        <span> · 🏠 lối sống ×{xuatThan.heSoChiPhiSong.toFixed(2).replace('.', ',')}</span>
+      )}
+      {dangPhungDuong && (
+        <span> · 👨‍👩‍👦 phụng dưỡng +{Math.round(xuatThan.tyLePhungDuong * 100)}%</span>
+      )}
+      {state.heSoLuongKhoiDiem !== 1 && (
+        <span> · 💼 bậc lương ×{heSoBacLuong.toFixed(2).replace('.', ',')}</span>
+      )}
+    </>
+  )
+
   return (
     <>
       <div className="muc">💵 Dòng tiền một năm</div>
@@ -120,7 +143,9 @@ export default function TabSoSach({ state }: { state: GameState }) {
           </div>
         )}
         <div className="hang">
-          <span className="hang-nhan">Chi phí sinh hoạt{ghiChuToiUuChiPhi}</span>
+          <span className="hang-nhan">
+            Chi phí sinh hoạt{nhanHeSoChiPhi}{ghiChuToiUuChiPhi}
+          </span>
           <span className="hang-gia-tri am">−{dinhDangTien(state.chiPhiHangNam)}</span>
         </div>
         <div className="hang">
@@ -163,7 +188,9 @@ export default function TabSoSach({ state }: { state: GameState }) {
           <span className="hang-gia-tri duong">{dinhDangTien(dongTien)}</span>
         </div>
         <div className="hang">
-          <span className="hang-nhan">Chi phí sinh hoạt{ghiChuToiUuChiPhi}</span>
+          <span className="hang-nhan">
+            Chi phí sinh hoạt{nhanHeSoChiPhi}{ghiChuToiUuChiPhi}
+          </span>
           <span className="hang-gia-tri am">−{dinhDangTien(state.chiPhiHangNam)}</span>
         </div>
         <div className="hang">

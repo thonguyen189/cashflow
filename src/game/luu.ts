@@ -8,6 +8,7 @@ const KHOA_LUU_CU = [
   'dong-tien-luu-v1-2',
   'dong-tien-luu-v1-3',
   'dong-tien-luu-v1-4',
+  'dong-tien-luu-v1-5',
 ]
 
 /** Tự động lưu ván đang chơi vào localStorage. */
@@ -38,6 +39,10 @@ export function taiVan(): GameState | null {
     // Thiếu cờ này thì `daToiUuChiPhi` trả `undefined`, giới hạn "cả ván một lần"
     // của gói hoạch định tài chính biến mất mà không có dấu hiệu gì trên màn hình
     if (typeof s.daThueChuyenGiaTaiChinh !== 'boolean') return null
+    // trường của bản v1.6: ván v1.5 không có `heSoLuongKhoiDiem` nên mọi phép
+    // nhân chi phí và áp lực hạnh phúc sẽ ra NaN ngay năm đầu tiên
+    if (typeof s.heSoLuongKhoiDiem !== 'number') return null
+    if (!s.xuatThanId) return null
     return s
   } catch {
     return null
