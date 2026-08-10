@@ -235,47 +235,42 @@ describe('cân bằng game', () => {
   })
 
   /**
-   * KHÔNG ĐẠT ở lần đo thật, kể cả sau hai vòng nới (xem phase-5-report.md,
-   * mục "Phá sản không bao giờ xảy ra"):
+   * ---------- Vì sao KHÔNG có test tỉ lệ phá sản của bot đòn bẩy ----------
+   * Từng có một test ở đây khẳng định bot dùng đòn bẩy (`CHIEN_LUOC_DON_BAY`)
+   * phá sản nhiều hơn bot cân bằng. Bị bỏ ở vòng điều tra thứ ba (v1.6) sau
+   * khi đo ra 0% ở cả hai chiến lược suốt hai vòng nới số trước đó (xem
+   * phase-5-report.md và docs/06-thiet-ke-v1-6.md mục F cho toàn bộ diễn
+   * biến). Lý do bỏ là giới hạn CẤU TRÚC của chính bộ mô phỏng, không phải
+   * một tham số cân bằng có thể vặn:
    *
-   * Vòng 1 — nới `CONFIG.tyLeThanhToanToiDa` từ 0,5 lên 0,65 (khớp trần cho
-   * vay thế chấp thực tế của ngân hàng Việt Nam). Bot đòn bẩy vẫn vay thật
-   * (đã kiểm chứng riêng, dư nợ đỉnh điểm trung bình 9–10 tỷ/ván cho kỹ sư
-   * phần mềm) nhưng tỉ lệ phá sản đo được VẪN ra 0%.
+   * Dò vết mọi ván mô phỏng (n=1000/tổ hợp, cả thắng lẫn thua, cả hai chiến
+   * lược) cho thấy KHÔNG VÁN NÀO sống quá năm thứ 35 (tuổi 55) — ván thắng
+   * kết thúc sau 11–21 năm vì đạt tự do tài chính, ván thua chết vì hạnh phúc
+   * trong 11 năm đầu. Tuổi nghỉ hưu là 60 (năm thứ 40) nên mô phỏng KHÔNG BAO
+   * GIỜ chạm tới giai đoạn lương hưu — con đường phá sản tự nhiên nhất (vay
+   * lúc lương còn cao, trả nợ lúc lương chỉ còn 45%). `soLanPhaSan` vì vậy đo
+   * ra 0% ở CẢ HAI chiến lược, kể cả bot vay tối đa để góp vốn quy mô 12×.
    *
-   * Vòng 2 — giả thuyết "bot bỏ lỡ cái bẫy lương hưu" (vay kỳ hạn 10 năm lúc
-   * còn đi làm, trả nợ tính theo lương cũ, nhưng nghỉ hưu ở tuổi 60 thì lương
-   * chỉ còn 45%) hoá ra không kiểm được: dò vết mọi ván THUA của cả hai chiến
-   * lược, cả ba nghề (n=300/tổ hợp) cho thấy 100% ván thua kết thúc vì HẠNH
-   * PHÚC tụt dưới ngưỡng, và luôn xảy ra trong 11 năm đầu (tuổi tối đa từng
-   * chạm được khi thua chỉ 29–32). Dò thêm mẫu n=1000/tổ hợp bao gồm CẢ ván
-   * thắng: số năm chơi được nhiều nhất từng đo được là 35 năm (tuổi 55, bot
-   * cân bằng nghề giáo viên) — KHÔNG VÁN NÀO, dù thắng hay thua, từng chạm
-   * tới năm thứ 40 (tuổi nghỉ hưu 60). Nghĩa là cái bẫy lương hưu không phải
-   * do bot "bỏ lỡ" cơ hội vay ở giai đoạn đó — mà vì giai đoạn đó CHƯA TỪNG
-   * xảy ra trong bất kỳ mô phỏng nào: ván luôn kết thúc (thắng sớm hoặc thua
-   * vì hạnh phúc) từ rất lâu trước khi nhân vật kịp già. Đây là một sự kiện
-   * cấu trúc của cả hệ mô phỏng (không phân biệt chiến lược), không phải một
-   * tham số vay có thể vặn để sửa — đúng như dặn dò, dừng lại ở đây và báo
-   * cáo thay vì vặn tiếp.
+   * Trước khi bỏ hẳn, đã thử thay tỉ lệ phá sản trực tiếp bằng các thước đo
+   * QUAN SÁT ĐƯỢC khác — tỉ lệ ván thua, phương sai tài sản cuối ván, tài sản
+   * còn lại và tiến độ tới tự do tài chính khi thua (n=500/nghề, cả ba nghề).
+   * KHÔNG thước đo nào cho tương phản đúng hướng: tỉ lệ thua của bot đòn bẩy
+   * không cao hơn bot cân bằng (xấp xỉ hoặc còn thấp hơn), và khi bot đòn bẩy
+   * có thua thì tài sản còn lại cùng tiến độ tới tự do tài chính đều CAO HƠN
+   * bot cân bằng — vì nấc 1 (bán tài sản đầu tư) đủ sức san phẳng mọi khoản
+   * thiếu hụt từng gặp trong các ván đã quan sát, không ván nào rơi tới nấc
+   * 3. Nói cách khác: trong khung thời gian mà mô phỏng từng chạm tới, đòn
+   * bẩy chưa từng phải trả giá — cái giá đó nằm ở nửa sau cuộc đời mà mô
+   * phỏng không bao giờ đi tới.
    *
-   * Ngưỡng đổi từ "≥10%" (một con số cụ thể tự đặt bẫy) thành "> 0% và cao
-   * hơn bot cân bằng": bất kỳ tỉ lệ dương nào cũng đủ chứng minh cơ chế hoạt
-   * động. Hiện tại cả hai vẫn đo ra 0% nên test này cố ý còn đỏ.
+   * Cơ chế ba nấc vỡ nợ TỰ NÓ không hỏng: nó được kiểm trực tiếp bằng cách ép
+   * trạng thái nợ/tiền mặt âm, không cần chờ mô phỏng ngẫu nhiên chạm tới —
+   * xem describe('v1.6 — ba nấc vỡ nợ') trong engine.test.ts (bán tài sản
+   * đầu tư → thanh lý doanh nghiệp → tuyên phá sản, đúng thứ tự, đúng tỉ lệ
+   * thu hồi, đúng mức trừ hạnh phúc, đúng thời hạn cấm vay/cấm cơ hội). Test
+   * tỉ lệ phá sản ở tầng mô phỏng vì vậy là thừa: nó sẽ mãi đo ra 0% cho tới
+   * khi có ai đó chủ động kéo dài chân trời mô phỏng qua tuổi nghỉ hưu.
    */
-  it('bot dùng đòn bẩy vay tối đa để góp vốn thì phá sản nhiều hơn hẳn bot cân bằng', () => {
-    const canBang = moPhongNhieuVan('bacSi', 200)
-    const donBay = moPhongNhieuVan('bacSi', 200, CHIEN_LUOC_DON_BAY)
-    const tyCanBang = canBang.ketQua.filter((k) => k.soLanPhaSan > 0).length / canBang.soVan
-    const tyDonBay = donBay.ketQua.filter((k) => k.soLanPhaSan > 0).length / donBay.soVan
-    // eslint-disable-next-line no-console
-    console.log(
-      `bacSi — cân bằng phá sản ${(tyCanBang * 100).toFixed(1)}%` +
-        ` · đòn bẩy phá sản ${(tyDonBay * 100).toFixed(1)}%`,
-    )
-    expect(tyDonBay).toBeGreaterThan(0)
-    expect(tyDonBay).toBeGreaterThan(tyCanBang)
-  })
 
   it('bot đòn bẩy khi thắng thì về đích sớm hơn bot cân bằng — canh bạc có lãi kỳ vọng', () => {
     for (const nghe of NGHE) {

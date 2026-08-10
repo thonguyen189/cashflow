@@ -506,8 +506,36 @@ nghiệp còn 45%) rồi còn vượt ngưỡng phá sản, TRONG CHẶNG NĂM M
 TỚI (0–35 năm). Đổi cách tính `vayToiDa` sâu hơn nữa, hay rút ngắn chặng đường thắng để
 mô phỏng sống đủ lâu chạm tuổi hưu, là những thay đổi ảnh hưởng tới mọi người chơi chứ
 không riêng gì bot đòn bẩy — quyết định tiếp theo cần người thiết kế chọn, không tự ý
-vặn thêm. Bài test tương ứng trong `balance.test.ts` cố ý còn đỏ, ngưỡng đã đổi từ
-"≥10%" sang "> 0% và cao hơn bot cân bằng" để không tự đặt bẫy vào một con số cụ thể.
+vặn thêm.
+
+**Vòng thứ ba** (việc cuối của v1.6): dừng cố vặn số, ghi nhận đây là giới hạn thật thay
+vì tiếp tục nới tham số. Nguyên nhân gốc không nằm ở một tham số vay mà ở chính cấu trúc
+thu nhập: lương là nguồn thu KHÔNG BAO GIỜ sụp trong lúc còn đi làm — `tangLuongThucMin`
+là 0, và ngay cả ở trạng thái khủng hoảng của chu kỳ kinh tế, lương chỉ ngừng tăng thực
+(`heSoTangLuong` về 0) chứ không giảm, vẫn bám đủ lạm phát. Trong khi đó trần trả nợ mỗi
+năm (`vayToiDa`) lại tính thẳng theo lương hiện tại. Nghĩa là hễ còn đi làm là còn trả
+được nợ, bất kể khủng hoảng nặng tới đâu — phá sản chỉ thật sự rình rập ở giai đoạn LƯƠNG
+HƯU (lương đột ngột còn 45%) và ở người chơi dùng đòn bẩy nặng đi đường dài, hai điều
+kiện không cùng lúc xảy ra được vì mô phỏng chưa từng sống tới đó. Cơ chế ba nấc vỡ nợ
+(bán tài sản đầu tư → thanh lý doanh nghiệp → xoá nợ) đã được kiểm đúng bằng test cấp
+engine (`describe('v1.6 — ba nấc vỡ nợ')` trong `engine.test.ts`), ép thẳng trạng thái
+nợ/tiền mặt âm thay vì chờ mô phỏng ngẫu nhiên chạm tới — cơ chế không hỏng, chỉ là chưa
+từng bị bot mô phỏng kích hoạt.
+
+Giới hạn thật của phép đo: bộ mô phỏng không bao giờ chạm tới nửa sau cuộc đời. Mọi ván —
+thắng lẫn thua, cả hai chiến lược, n=1000/tổ hợp — kết thúc trước năm thứ 35 (tuổi 55),
+trong khi tuổi nghỉ hưu là 60 (năm thứ 40) và hành trình nhân vật kéo dài tới tuổi 100
+(năm thứ 80). Nghĩa là MỌI kết luận cân bằng của v1.6 — kể cả bảng chỉ tiêu ở trên — chỉ
+thật sự nói về chặng đầu đời của nhân vật; nửa sau (lương hưu, bảo hiểm tuổi già, phá sản
+khi không còn lương để cứu) CHƯA TỪNG được đo một lần nào. Bài test tương ứng trong
+`balance.test.ts` vì vậy không còn khẳng định một tỉ lệ phá sản dương ở tầng mô phỏng —
+điều đó không đạt được, và ép nó xanh bằng cách vặn số chỉ là tự lừa mình. Test đã đổi
+thành một ghi chú giải thích tại chỗ, trỏ tới các test cơ chế phá sản cấp engine.
+
+Việc cần làm ở bản sau: **ván thắng quá sớm** (11–21 năm, tức người chơi tự do tài chính
+ngay từ tuổi 32–42) mới là vấn đề cân bằng lớn nhất còn lại — và chính nó che khuất toàn
+bộ nửa sau của game, không cho bất kỳ mô phỏng nào cơ hội sống tới giai đoạn lương hưu để
+kiểm chứng phá sản thật.
 
 Về tỉ lệ thắng: dù đã nâng số biến cố lớn từ 2–4 lên 3–6 (đòn bẩy DUY NHẤT được phép
 thử), tỉ lệ thắng của bot cân bằng vẫn quanh 90% cho cả ba nghề. Bot cân bằng chơi
