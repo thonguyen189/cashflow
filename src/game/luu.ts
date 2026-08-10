@@ -43,6 +43,14 @@ export function taiVan(): GameState | null {
     // nhân chi phí và áp lực hạnh phúc sẽ ra NaN ngay năm đầu tiên
     if (typeof s.heSoLuongKhoiDiem !== 'number') return null
     if (!s.xuatThanId) return null
+    // trường của bản v1.6: ván cũ thiếu chúng thì chu kỳ thị trường, lịch biến cố
+    // và bộ đếm phá sản đều là undefined — game vỡ ngay năm đầu tiên
+    if (!s.thiTruong || !Array.isArray(s.lichBienCo)) return null
+    // Thiếu trường này thì `bienCoDaQua.includes(id)` ở bước 7b ném lỗi ngay khi
+    // tới năm đã hẹn biến cố lớn — vỡ giữa chừng chứ không phải ngay lúc nạp.
+    if (!Array.isArray(s.bienCoDaQua)) return null
+    if (typeof s.soLanPhaSan !== 'number') return null
+    if (typeof s.heSoLuongDiChung !== 'number') return null
     return s
   } catch {
     return null

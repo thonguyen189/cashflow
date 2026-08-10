@@ -52,6 +52,7 @@ import {
   tuoiTaiNam,
   tyLeDongTra,
   vayToiDa,
+  vonDoanhNghiepNamNay,
   xeDangCo,
 } from './engine'
 import type {
@@ -2548,15 +2549,21 @@ describe('v1.6 — sáu biến cố lớn', () => {
 
   it('doanh nghiệp đóng cửa nhắm vào cái có vốn góp lớn nhất và hoàn 20% vốn', () => {
     const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'voHui', 'baoLu']
+    const quanCaPhe = { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU }
     const s: GameState = {
       ...moiVan(),
       nam: 15,
       doanhNghiep: [
         { coHoiId: 'choThueXe', ten: 'Đội xe máy cho thuê', thuNhapNen: 40 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 200 * TRIEU },
-        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        quanCaPhe,
       ],
     }
-    const sau = reducer(diTronMotNam(epBienCo(s, tru), 1 * TY), { type: 'dongTongKet' })
+    const truoc = diTronMotNam(epBienCo(s, tru), 1 * TY)
+    const hoanLaiKyVong = Math.round(
+      vonDoanhNghiepNamNay(s, quanCaPhe) * CONFIG.bienCo.doanhNghiepDongCua.hoanLaiVon,
+    )
+    expect(timBienCo(truoc.tongKet!)!.tienThayDoi).toBe(hoanLaiKyVong)
+    const sau = reducer(truoc, { type: 'dongTongKet' })
     expect(sau.doanhNghiep.map((d) => d.coHoiId)).toEqual(['choThueXe'])
   })
 
