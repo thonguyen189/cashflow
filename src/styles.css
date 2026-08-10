@@ -109,6 +109,10 @@ body {
 .hang-nut {
   display: flex;
   gap: 10px;
+  /* Hàng nút bậc lương ở ChonNghe.tsx có tới năm nút — không co dãn được nữa
+   * thì xuống dòng thay vì tràn ngang trên màn hẹp. Vô hại với các hàng hai
+   * nút (Bỏ qua/Tham gia...) vì chúng luôn đủ chỗ, không bao giờ thật sự wrap. */
+  flex-wrap: wrap;
 }
 .hang-nut > * {
   flex: 1;

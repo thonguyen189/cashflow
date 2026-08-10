@@ -3,6 +3,7 @@ import { CONFIG } from '../game/config'
 import { timCoHoi, timNghe } from '../game/content'
 import {
   bienDoThuNhapThuDong,
+  dangCamCoHoi,
   giaThucTe,
   quyMoToiDa,
   taiSanRong,
@@ -60,9 +61,16 @@ export default function TabKinhDoanh({
       <div className="muc">💼 Cơ hội năm nay</div>
       {state.coHoiNamNay.length === 0 && (
         <div className="the">
-          <p className="mo-ta" style={{ margin: 0 }}>
-            Năm nay không còn cơ hội nào. Sang năm sẽ có lời mời mới.
-          </p>
+          {dangCamCoHoi(state) ? (
+            <div className="canh-bao-tu-choi" style={{ margin: 0 }}>
+              🚫 Sau phá sản, còn {state.camCoHoiDenNam - state.nam + 1} năm nữa
+              mới có cơ hội kinh doanh mới.
+            </div>
+          ) : (
+            <p className="mo-ta" style={{ margin: 0 }}>
+              Năm nay không còn cơ hội nào. Sang năm sẽ có lời mời mới.
+            </p>
+          )}
         </div>
       )}
 
@@ -78,7 +86,11 @@ export default function TabKinhDoanh({
         const bacChoPhep = laCanhBac
           ? []
           : CONFIG.quyMoGopVon.bac.filter((b) => b <= tran)
-        const quyMo = laCanhBac ? 1 : (quyMoDaChon[c.id] ?? 1)
+        // Kẹp bậc đã chọn về trần HIỆN TẠI: nhận một thẻ khác trong cùng năm có
+        // thể làm tiền mặt giảm và trần của thẻ này co lại theo — nếu không kẹp
+        // ở đây thì quy mô cũ (ví dụ 12×) vẫn đứng yên trong khi trần đã tụt
+        // xuống 1×, nút hiện "Không đủ vốn" dù người chơi thừa sức mua 1 suất.
+        const quyMo = laCanhBac ? 1 : Math.min(quyMoDaChon[c.id] ?? 1, tran)
         const von = gia * quyMo
         const thuNhapTheoQuyMo = giaThucTe(state, c.thuNhapMoiNam ?? 0) * quyMo
         const taiSanRongHienTai = taiSanRong(state)
@@ -109,7 +121,7 @@ export default function TabKinhDoanh({
             )}
 
             <div className="hang">
-              <span className="hang-nhan">Vốn bỏ ra</span>
+              <span className="hang-nhan">Vốn một suất</span>
               <span className="hang-gia-tri am">{dinhDangTien(gia)}</span>
             </div>
 
@@ -140,7 +152,7 @@ export default function TabKinhDoanh({
             {c.loai === 'kinhDoanh' && (
               <>
                 <div className="hang">
-                  <span className="hang-nhan">Thu nhập mỗi năm</span>
+                  <span className="hang-nhan">Thu nhập một suất mỗi năm</span>
                   <span className="hang-gia-tri-dai duong">
                     {dinhDangTien(giaThucTe(state, c.thuNhapMoiNam ?? 0))}{' '}
                     <span className="chu-phu">
@@ -205,12 +217,12 @@ export default function TabKinhDoanh({
                   ))}
                 </div>
                 <div className="hang">
-                  <span className="hang-nhan">💰 Vốn phải bỏ</span>
+                  <span className="hang-nhan">💰 Tổng vốn phải bỏ</span>
                   <span className="hang-gia-tri am">{dinhDangTien(von)}</span>
                 </div>
                 {c.loai === 'kinhDoanh' && (
                   <div className="hang">
-                    <span className="hang-nhan">📈 Thu nhập mỗi năm</span>
+                    <span className="hang-nhan">📈 Tổng thu nhập mỗi năm</span>
                     <span className="hang-gia-tri duong">
                       {dinhDangTien(thuNhapTheoQuyMo)}
                     </span>

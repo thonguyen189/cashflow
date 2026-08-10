@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { CONFIG } from '../game/config'
 import { NGHE, XUAT_THAN, timNghe, timUocNguyen, timXuatThan } from '../game/content'
-import { mocTaiSanCuaNghe, nghiaVuNamDau, tinhHeSoChiPhi } from '../game/engine'
+import {
+  apLucTheoBacLuong,
+  mocTaiSanCuaNghe,
+  nghiaVuNamDau,
+  tinhHeSoChiPhi,
+} from '../game/engine'
 import { dinhDangTien } from '../game/format'
 import type { ThietLapNhanVat, XuatThanId } from '../game/types'
 
@@ -97,7 +102,7 @@ export default function ChonNghe({
   const xuatThan = timXuatThan(xuatThanId)!
   const luong = Math.round(nghe.luong * bacLuong)
   const chiPhi = Math.round(nghe.chiPhi * tinhHeSoChiPhi(false, [], 1, xuatThan, bacLuong))
-  const apLuc = Math.round((1 - bacLuong) * CONFIG.xuatThan.apLucTheoLuong)
+  const apLuc = apLucTheoBacLuong(bacLuong)
   const dauApLuc = apLuc > 0 ? '+' : apLuc < 0 ? '−' : ''
   const dichTuDo = nghiaVuNamDau(nghe, xuatThan, bacLuong)
 
@@ -156,16 +161,31 @@ export default function ChonNghe({
                 </span>
               </div>
             )}
+            {x.hanhPhucBanDau > 0 && (
+              <div className="hang">
+                <span className="hang-nhan">😊 Hạnh phúc khởi đầu</span>
+                <span className="hang-gia-tri duong">+{x.hanhPhucBanDau} điểm</span>
+              </div>
+            )}
+            <div className="hang">
+              <span className="hang-nhan">👴 Bố mẹ có tích luỹ</span>
+              <span className={`hang-gia-tri${x.boMeCoTichLuy ? ' duong' : ''}`}>
+                {x.boMeCoTichLuy
+                  ? 'Có — đỡ hơn hẳn nếu bố mẹ ngã bệnh'
+                  : 'Không — bố mẹ ngã bệnh sẽ tốn kém hơn nhiều'}
+              </span>
+            </div>
           </button>
         )
       })}
 
       <div className="muc">💼 Bậc lương</div>
-      <div className="hang-nut">
+      <div className="hang-nut" style={{ flexWrap: 'wrap' }}>
         {CONFIG.xuatThan.bacLuong.map((bac) => (
           <button
             key={bac}
             className={`nut${bacLuong === bac ? ' nut-chinh' : ''}`}
+            style={{ padding: '7px 0', flex: 1, fontSize: 13 }}
             onClick={() => setBacLuong(bac)}
           >
             ×{String(bac).replace('.', ',')}
@@ -183,7 +203,12 @@ export default function ChonNghe({
           <span className="hang-gia-tri am">{dinhDangTien(chiPhi)}</span>
         </div>
         <div className="hang">
-          <span className="hang-nhan">😰 Áp lực mỗi năm</span>
+          {/* Nhãn phải đổi theo DẤU: âm là áp lực thật (lương cao), dương là
+           * nhẹ nhõm (lương thấp) — gán cứng "Áp lực" cho cả hai chiều từng
+           * làm mặt lo lắng + chữ "áp lực" + số dương màu xanh chỏi nhau. */}
+          <span className="hang-nhan">
+            {apLuc < 0 ? '😰 Áp lực mỗi năm' : '😌 Thong thả mỗi năm'}
+          </span>
           <span className={`hang-gia-tri${apLuc > 0 ? ' duong' : apLuc < 0 ? ' am' : ''}`}>
             {dauApLuc}
             {Math.abs(apLuc)} hạnh phúc

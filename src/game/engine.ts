@@ -571,11 +571,22 @@ export const xuatThanHienTai = (s: GameState): XuatThan =>
 
 /**
  * Điểm hạnh phúc mỗi năm do bậc lương — âm khi chọn lương cao, dương khi chọn
+ * lương thấp. Tách khỏi `apLucCongViec` để màn chọn nghề (`ChonNghe.tsx`) gọi
+ * được công thức này TRỰC TIẾP thay vì chép lại — nó chưa có `GameState` (nhân
+ * vật chưa tạo) nên không gọi thẳng `apLucCongViec` được, cùng lý do khiến
+ * `tinhHeSoChiPhi` nhận tham số rời thay vì cả state.
+ */
+export function apLucTheoBacLuong(heSoLuongKhoiDiem: number): number {
+  return Math.round((1 - heSoLuongKhoiDiem) * CONFIG.xuatThan.apLucTheoLuong)
+}
+
+/**
+ * Điểm hạnh phúc mỗi năm do bậc lương — âm khi chọn lương cao, dương khi chọn
  * lương thấp. Tắt hẳn sau khi nghỉ hưu: không còn đi làm thì không còn áp lực.
  */
 export function apLucCongViec(s: GameState): number {
   if (s.daNghiHuu) return 0
-  return Math.round((1 - s.heSoLuongKhoiDiem) * CONFIG.xuatThan.apLucTheoLuong)
+  return apLucTheoBacLuong(s.heSoLuongKhoiDiem)
 }
 
 /* ============================================================
