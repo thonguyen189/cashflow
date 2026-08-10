@@ -128,6 +128,20 @@ Ván bắt đầu ở **bình thường**. Hai tính chất được cài có ch
 giờ nhảy thẳng về thịnh vượng (phải đi qua suy thoái — kinh tế hồi phục dần chứ không
 bật dậy), và suy thoái là cửa ngõ chính vào khủng hoảng.
 
+### Trạng thái nào chi phối năm nào
+
+Năm được giải quyết bằng **trạng thái người chơi đã nhìn thấy suốt năm đó**, không phải
+trạng thái mới bốc ra lúc chuyển năm. Trong `chuyenNam`, mọi phép tính của năm dùng
+`thiTruongTruoc` (tức `s.thiTruong` khi bước vào hàm); lượt rút chỉ quyết định trạng
+thái mà người chơi sẽ sống trong năm **kế tiếp**.
+
+Đây là điều kiện để mục "Người chơi nhìn thấy gì" ở cuối phần B có nghĩa. Nếu năm được
+giải quyết bằng trạng thái mới bốc, thì con số hiện trên thanh chỉ số suốt năm chẳng
+liên quan gì tới kết quả năm ấy: người chơi thấy 💥 Khủng hoảng, bán sạch cổ phiếu, rồi
+năm lại được tính bằng một trạng thái khác hẳn. Công khai một thông tin không dùng được
+để ra quyết định thì tệ hơn là giấu nó đi — nó mời người chơi hành động rồi phạt họ vì
+đã hành động.
+
 Ma trận này cho ra, tính trên một ván trọn 79 năm:
 
 | Chỉ số | Giá trị |
@@ -375,9 +389,22 @@ vốn theo bậc: **1× · 2× · 3× · 5× · 8× · 12×**.
 - Thu nhập nền = `giaThucTe(thuNhapMoiNam) × hệ số quy mô`
 - Lợi nhuận của khoản tổ chức sự kiện tính trên số vốn thật đã bỏ ra
 
-Trần quy mô là bậc lớn nhất thoả **cả hai** điều kiện: giá không vượt tiền mặt đang có,
-và giá không vượt **60% tài sản ròng**. Trần thứ hai chặn nước đi tất tay đúng nghĩa —
-ngoài đời cũng không ai bán sạch nhà cửa để góp vốn một chỗ.
+Trần quy mô có hai tầng, và ranh giới giữa chúng là điều dễ làm sai nhất của cả phần này:
+
+- **Suất gốc 1× chỉ phụ thuộc tiền mặt.** Đủ tiền thì nhận được, dù nó có ngốn gần hết
+  tài sản ròng.
+- **Từ bậc 2 trở lên mới xét tỉ trọng**, và không được vượt **60% tài sản ròng**.
+
+Đem trần 60% áp cả cho suất gốc là chặn nhầm mục tiêu. Nó biến một luật chống tất tay
+thành luật cấm người nghèo làm ăn: người có 500 triệu tài sản ròng sẽ không được nhận cơ
+hội 400 triệu, tức là bị khoá cửa vào con đường thu nhập thụ động — thứ duy nhất dẫn tới
+điều kiện thắng. Ngoài đời thì ngược lại hẳn: dồn gần hết vốn liếng vào một cửa hàng
+chính là cách tuyệt đại đa số người Việt Nam bắt đầu làm ăn.
+
+Việc dồn hết vào một chỗ **vẫn bị trừng phạt**, nhưng bằng rủi ro chứ không bằng lệnh
+cấm: biến cố 🏚️ doanh nghiệp đóng cửa nhắm đúng cái lớn nhất, khủng hoảng cắt một nửa
+thu nhập, thanh lý gấp chỉ thu về 45%. Đó mới là chỗ dạy được bài học tập trung vốn.
+Cấm thì không dạy được gì.
 
 **Canh bạc giữ nguyên một suất.** Không phải vì cân bằng mà vì lời kể: canh bạc là suất
 người ta mời bạn, không phải hàng bày bán để mua thêm.
