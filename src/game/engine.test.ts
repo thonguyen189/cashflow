@@ -2596,6 +2596,20 @@ describe('v1.6 — sáu biến cố lớn', () => {
     expect(s.heSoLuongDiChung).toBeCloseTo(CONFIG.bienCo.matViec.diChungLuong, 10)
   })
 
+  it('tongKet.tangLuong phản ánh đúng mức lương thật đổi, kể cả năm bị di chứng mất việc', () => {
+    const tru: BienCoId[] = ['benhHiemNgheo', 'boMeNgaBenh', 'voHui', 'doanhNghiepDongCua', 'baoLu']
+    const s = epBienCo({ ...moiVan(), nam: 10 }, tru)
+    // Không quỹ dự phòng (tienMat = 0 khi vào bước 7b) nên mất việc để lại di
+    // chứng — lương thật SAU di chứng phải thấp hơn lương cũ, và tangLuong
+    // hiển thị trên bảng tổng kết phải kể đúng chuyện đó, không phải con số
+    // trước khi di chứng bị nhân vào (lỗi cũ khoe "+7,3%" xanh trong khi lương
+    // thực giảm).
+    const sau = diTronMotNam(s, 0)
+    const tk = sau.tongKet!
+    expect(tk.tangLuong).toBeCloseTo(tk.luong / s.luong - 1, 6)
+    expect(tk.tangLuong).toBeLessThan(0)
+  })
+
   it('vỡ hụi chỉ trừ tiền mặt, không đụng danh mục đầu tư', () => {
     const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'doanhNghiepDongCua', 'baoLu']
     const s: GameState = {

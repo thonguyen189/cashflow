@@ -1645,7 +1645,6 @@ function chuyenNam(s: GameState): GameState {
       s.luong * (1 + (CONFIG.luongBamLamPhat ? lamPhat : 0) + tangThuc + thangChucTang),
     )
   }
-  const tangLuong = s.luong > 0 ? luongMoi / s.luong - 1 : 0
   // Di chứng mất việc chỉ áp đúng MỘT LẦN, năm ngay sau năm xảy ra biến cố —
   // dùng biến cục bộ `diChungApNamNay`, KHÔNG dùng `heSoLuongDiChung` của
   // GameState. `heSoLuongDiChung` vẫn được lưu lại ở bước 7b để ghi nhận, nhưng
@@ -1653,6 +1652,13 @@ function chuyenNam(s: GameState): GameState {
   // lần sẽ biến thành lương tiệm cận 0 theo cấp số nhân (xem test "di chứng
   // lương mất việc chỉ áp một lần, không nhân chồng mỗi năm").
   luongMoi = Math.round(luongMoi * diChungApNamNay)
+  // `tangLuong` PHẢI chốt SAU khi nhân di chứng, không phải trước — nó là mức
+  // đổi thật của lương mang sang năm sau, và `tongKet.luong`/`sauChuyen.luong`
+  // (dùng cho bảng tổng kết và HUD năm sau) đều là `luongMoi` SAU dòng trên.
+  // Chốt trước di chứng (lỗi cũ) làm bảng tổng kết khoe "+7,3%" xanh đúng năm
+  // lương thực chất giảm 8,7% vì mất việc không quỹ dự phòng — mâu thuẫn thẳng
+  // với câu sự kiện ngay bên dưới ("lương khi đi làm lại chỉ còn 85,0% mức cũ").
+  const tangLuong = s.luong > 0 ? luongMoi / s.luong - 1 : 0
   // hệ số cắt lương của biến cố chỉ có hiệu lực đúng năm đó nên KHÔNG lưu vào
   // GameState — nó là biến cục bộ, năm sau lương quay lại mức bình thường
   const luongThucNhan = Math.round(luongMoi * heSoLuongBienCo)
