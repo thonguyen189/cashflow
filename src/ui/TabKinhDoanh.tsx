@@ -1,5 +1,13 @@
+import { useState } from 'react'
+import { CONFIG } from '../game/config'
 import { timCoHoi, timNghe } from '../game/content'
-import { bienDoThuNhapThuDong, giaThucTe, thuNhapThuDong } from '../game/engine'
+import {
+  bienDoThuNhapThuDong,
+  giaThucTe,
+  quyMoToiDa,
+  taiSanRong,
+  thuNhapThuDong,
+} from '../game/engine'
 import { dinhDangPhanTram, dinhDangTien } from '../game/format'
 import type { Action, GameState } from '../game/types'
 
@@ -15,6 +23,11 @@ export default function TabKinhDoanh({
   state: GameState
   dispatch: (a: Action) => void
 }) {
+  /** Bậc quy mô đang chọn cho từng cơ hội, ánh xạ theo id; mặc định 1 suất. */
+  const [quyMoDaChon, setQuyMoDaChon] = useState<Record<string, number>>({})
+  const datQuyMo = (coHoiId: string, bac: number) =>
+    setQuyMoDaChon((truoc) => ({ ...truoc, [coHoiId]: bac }))
+
   /** Gộp các doanh nghiệp trùng cơ hội: hiển thị "Tên ×N" + tổng thu nhập nhóm.
    * Thu nhập nền năm nay bám theo lạm phát kể từ năm góp vốn. */
   const nhomDoanhNghiep: {
@@ -55,9 +68,23 @@ export default function TabKinhDoanh({
 
       {state.coHoiNamNay.map((c) => {
         const gia = giaThucTe(state, c.gia)
-        const duTien = state.tienMat >= gia
         const nghe = c.ngheId ? timNghe(c.ngheId) : undefined
         const laSuKien = c.loai === 'toChucSuKien'
+        const laCanhBac = c.loai === 'canhBac'
+
+        // Canh bạc giữ nguyên một suất — thanh trượt quy mô chỉ có ý nghĩa với
+        // cơ hội kinh doanh và tổ chức sự kiện, nơi người chơi thật sự bỏ vốn.
+        const tran = laCanhBac ? 1 : quyMoToiDa(state, c)
+        const bacChoPhep = laCanhBac
+          ? []
+          : CONFIG.quyMoGopVon.bac.filter((b) => b <= tran)
+        const quyMo = laCanhBac ? 1 : (quyMoDaChon[c.id] ?? 1)
+        const von = gia * quyMo
+        const thuNhapTheoQuyMo = giaThucTe(state, c.thuNhapMoiNam ?? 0) * quyMo
+        const taiSanRongHienTai = taiSanRong(state)
+        const tyTrong = taiSanRongHienTai > 0 ? von / taiSanRongHienTai : 1
+        const tapTrungCao = tyTrong > CONFIG.quyMoGopVon.nguongCanhBaoTapTrung
+        const duTien = tran > 0 && state.tienMat >= von
         return (
           <div className="the-quyet-dinh" key={c.id}>
             <div style={{ fontSize: 34, marginBottom: 6 }}>{c.emoji}</div>
@@ -152,6 +179,48 @@ export default function TabKinhDoanh({
               </>
             )}
 
+            {!laCanhBac && tran === 0 && (
+              <div className="canh-bao-tu-choi" style={{ marginTop: 12 }}>
+                💸 Chưa đủ tiền cho một suất.
+              </div>
+            )}
+
+            {bacChoPhep.length > 1 && (
+              <div className="quy-mo">
+                <div className="quy-mo-nhan">📐 Quy mô góp vốn</div>
+                <div className="quy-mo-bac">
+                  {bacChoPhep.map((b) => (
+                    <button
+                      key={b}
+                      className={`nut-bac${quyMo === b ? ' hoat-dong' : ''}`}
+                      onClick={() => datQuyMo(c.id, b)}
+                    >
+                      {b}×
+                    </button>
+                  ))}
+                </div>
+                <div className="hang">
+                  <span className="hang-nhan">💰 Vốn phải bỏ</span>
+                  <span className="hang-gia-tri am">{dinhDangTien(von)}</span>
+                </div>
+                {c.loai === 'kinhDoanh' && (
+                  <div className="hang">
+                    <span className="hang-nhan">📈 Thu nhập mỗi năm</span>
+                    <span className="hang-gia-tri duong">
+                      {dinhDangTien(thuNhapTheoQuyMo)}
+                    </span>
+                  </div>
+                )}
+                <div className="hang">
+                  <span className="hang-nhan">🧮 Tỉ trọng trên tài sản ròng</span>
+                  <span className={`hang-gia-tri${tapTrungCao ? ' am' : ''}`}>
+                    {(tyTrong * 100).toFixed(0)}%
+                    {tapTrungCao && ' ⚠️ tập trung cao'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div style={{ height: 16 }} />
             <div className="hang-nut">
               <button
@@ -166,7 +235,12 @@ export default function TabKinhDoanh({
                 className="nut nut-nhan"
                 disabled={!duTien}
                 onClick={() =>
-                  dispatch({ type: 'quyetDinhCoHoi', coHoiId: c.id, nhan: true })
+                  dispatch({
+                    type: 'quyetDinhCoHoi',
+                    coHoiId: c.id,
+                    nhan: true,
+                    heSoQuyMo: quyMo,
+                  })
                 }
               >
                 {!duTien ? 'Không đủ vốn' : laSuKien ? 'Nhận tổ chức' : 'Tham gia'}

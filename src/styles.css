@@ -292,6 +292,47 @@ body {
   color: var(--do);
 }
 
+/* ---------- Thanh trượt quy mô góp vốn ---------- */
+.quy-mo {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--vien);
+}
+.quy-mo-nhan {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 6px;
+}
+.quy-mo-bac {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.nut-bac {
+  flex: 1;
+  min-width: 44px;
+  padding: 6px 0;
+  border-radius: 8px;
+  appearance: none;
+  border: 1px solid var(--vien);
+  background: var(--the);
+  color: var(--chu);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+.nut-bac:hover {
+  filter: brightness(1.15);
+}
+.nut-bac.hoat-dong {
+  background: var(--vang);
+  border-color: var(--vang);
+  color: #1a1a1a;
+}
+
 /* ---------- Danh sách mua ---------- */
 .muc-mua {
   display: flex;
