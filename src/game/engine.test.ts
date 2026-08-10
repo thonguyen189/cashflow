@@ -52,18 +52,7 @@ import {
 import type { CoHoi, GameState } from './types'
 
 const SEED = 12345
-/**
- * Ván mới cho các bài kiểm thử KHÔNG xoay quanh xuất thân. Từ v1.6, vốn ban đầu
- * mặc định (viên chức, 40% lương) đã ít hơn chi phí sinh hoạt năm đầu của cả ba
- * nghề — đúng chủ ý thiết kế "đời thật hơn" (xem describe 'v1.6 — xuất thân' và
- * task-2-brief). Cấp lại đúng một năm lương như mặc định trước v1.6 để các bài
- * kiểm thử cơ chế chung (thẻ tiêu dùng, đầu tư, chuyển năm...) không phải bận
- * tâm tới bài toán vốn khởi điểm — bài toán đó đã có bộ test riêng ở trên.
- */
-const moiVan = (ngheId = 'giaoVien') => {
-  const s = taoGameMoi(ngheId, SEED)
-  return { ...s, tienMat: s.luong }
-}
+const moiVan = (ngheId = 'giaoVien') => taoGameMoi(ngheId, SEED)
 
 /** Chạy hết chuỗi thẻ tiêu dùng, trả lời giống nhau cho mọi thẻ. */
 function duyetHetThe(s: GameState, nhan: boolean): GameState {
@@ -1949,7 +1938,9 @@ describe('chuyên gia đồng hành', () => {
       expect(s.xuatThanId).toBe('vienChuc')
       expect(s.heSoLuongKhoiDiem).toBe(1)
       expect(s.luong).toBe(timNghe('giaoVien')!.luong)
-      expect(s.tienMat).toBe(Math.round(s.luong * 0.4))
+      expect(s.tienMat).toBe(
+        Math.round(s.luong * timXuatThan('vienChuc')!.tyLeVonBanDau),
+      )
       expect(s.khoanVay).toHaveLength(0)
     })
 

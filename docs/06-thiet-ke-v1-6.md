@@ -51,10 +51,10 @@ cân nhau.
 
 | Xuất thân | Vốn ban đầu | Nợ ban đầu | Chi phí sống | Gánh nặng khác |
 |---|---|---|---|---|
-| 🌾 Nhà thuần nông | 0 | 0,4 × lương, vay 10 năm | ×0,92 | Gửi về quê 8% chi phí mỗi năm tới tuổi 55. Hạnh phúc khởi điểm +5 |
-| 🏘️ Viên chức tỉnh lẻ | 0,4 × lương | không | ×1,00 | không |
-| 🏢 Buôn bán ngoài phố | 1,5 × lương | không | ×1,10 | không |
-| 🏛️ Nhà có của ăn của để | 4,0 × lương | không | ×1,25 | không |
+| 🌾 Nhà thuần nông | 0,85 × lương | 0,4 × lương, vay 10 năm | ×0,92 | Gửi về quê 8% chi phí mỗi năm tới tuổi 55. Hạnh phúc khởi điểm +5 |
+| 🏘️ Viên chức tỉnh lẻ | 1,0 × lương | không | ×1,00 | không |
+| 🏢 Buôn bán ngoài phố | 2,0 × lương | không | ×1,10 | không |
+| 🏛️ Nhà có của ăn của để | 3,5 × lương | không | ×1,25 | không |
 
 Đánh đổi chạy đều một chiều: **vốn càng nhiều thì chi phí sống càng cao, và vì
 `nghiaVuHangNam` lấy chi phí sinh hoạt làm thành phần chính, cái đích tự do tài chính
@@ -71,6 +71,20 @@ nhưng thói quen tằn tiện là tài sản của đoạn sau.
 Khoản nợ học phí là một `KhoanVay` bình thường, nên nó chiếm chỗ trong hạn mức vay
 (`tyLeThanhToanToiDa` = 50% lương) và đội `nghiaVuHangNam` trong mười năm đầu — cũng
 lại đúng như đời thật.
+
+**Vì sao vốn ban đầu không thể xuống quá thấp.** Đây không phải một lựa chọn thiết
+kế tự do — nó là ràng buộc của chính cỗ máy mô phỏng. Mỗi năm, chi phí sinh hoạt bị
+trừ thẳng từ tiền mặt đang có ở ĐẦU năm, còn lương chỉ được cộng vào ở CUỐI năm (xem
+`chuyenNam` trong `engine.ts`). Nghĩa là năm đầu tiên phải sống trọn vẹn bằng vốn
+ban đầu — lương năm 1 chưa kịp về túi. Nếu vốn ban đầu thấp hơn chi phí sinh hoạt
+năm đầu của bất kỳ nghề nào, nhân vật thua ngay trong năm 1 gần như chắc chắn: tiền
+mặt âm khiến mọi thẻ tiêu dùng bị buộc từ chối, hạnh phúc rơi tự do xuống dưới ngưỡng
+thua chỉ trong một năm — bất kể người chơi giỏi hay dở, bất kể may rủi con bài. Đó là
+một khởi đầu KHÔNG THỂ vượt qua bằng lối chơi khôn ngoan, chứ không phải một khởi đầu
+khó khăn thông thường. Vì vậy `tyLeVonBanDau` của mọi xuất thân phải vượt tỉ lệ chi
+phí/lương của nghề khắt khe nhất (kỹ sư phần mềm: `435/600 × 0,92 ≈ 0,667`), cộng
+thêm đệm cho khoản trả nợ học phí và các sự kiện phát sinh sớm — đó là lý do vốn của
+nhà thuần nông dừng ở 0,85 chứ không xuống thấp hơn.
 
 ### Bậc lương khởi điểm
 

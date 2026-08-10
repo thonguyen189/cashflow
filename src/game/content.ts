@@ -45,33 +45,54 @@ export const NGHE: Nghe[] = [
  * cả ba nghề đều cân nhau.
  *
  * Nhà thuần nông là trường hợp đáng chú ý nhất: trong những năm còn phụng dưỡng,
- * hai hệ số gần như triệt tiêu nhau — gánh nặng rơi đúng vào quãng đời cần vốn
- * nhất rồi biến mất sau tuổi 55, để lại lợi thế chi phí thấp cho phần đời còn
- * lại. Ngoài đời cũng thế: người xuất thân khó khăn bị níu ở đoạn đầu, nhưng
- * thói quen tằn tiện là tài sản của đoạn sau.
+ * hai hệ số triệt tiêu nhau gần hết (0,92 × 1,08 ≈ 0,99) — gánh nặng rơi đúng
+ * vào quãng đời cần vốn nhất rồi biến mất sau tuổi 55, để lại lợi thế chi phí
+ * thấp cho phần đời còn lại. Ngoài đời cũng thế: người xuất thân khó khăn bị níu
+ * ở đoạn đầu, nhưng thói quen tằn tiện là tài sản của đoạn sau.
  *
- * ---------- Cân bằng phase 1 (balance.test.ts) ----------
- * `heSoChiPhiSong` của buônBán và khaGia bị đẩy lên cao hơn hẳn mức "chỉ đắt hơn
- * một chút" ban đầu (1,1 và 1,25). Lý do: vốn ban đầu quá lớn của hai xuất thân
- * này (1,5 và 4 lần lương) cho phép dồn tiền vào tài sản sinh lời ngay từ năm 1,
- * kéo tỉ lệ thắng của bot cân bằng lên 97–98% trong khi viên chức (mặc định)
- * chỉ 2,5% — chênh cả trăm điểm phần trăm. Mô phỏng (`moPhongNhieuVan`) cho thấy
- * chi phí sống phải leo gần gấp đôi tới gấp ba mới đủ bào mòn lợi thế vốn đó.
- * Xem `heSoChiPhiSong` của thuanNong: hạ nhẹ so với bản gốc để bù phần thiệt
- * vốn 0 đồng — dù vậy trần chi phí sống không kéo được tỉ lệ thắng của nhóm
- * nghèo lên cao, vì vốn bằng 0 vẫn phải trả chi phí sinh hoạt dương ngay năm
- * đầu. Đây là giới hạn của đòn bẩy `heSoChiPhiSong`; xem `tyLeVonBanDau` cho lý
- * do vì sao đòn bẩy đó KHÔNG được đụng tới ở đây.
+ * ---------- Cân bằng phase 1, fix round 1 ----------
+ * Bản đầu của Task 5 đặt `vienChuc.tyLeVonBanDau = 0,4` (chỉ 40% một năm lương)
+ * trong khi v1.5 khởi đầu bằng nguyên một năm lương (1,0×) — cắt 60% vốn của
+ * chính ván MẶC ĐỊNH. Đó là lỗi đặc tả, không phải lỗi cân bằng thật: nó vừa làm
+ * hai test cân bằng cũ (`balance.test.ts`) đỏ vì bot cân bằng vỡ nợ ngay năm
+ * đầu, vừa buộc phải vặn `heSoChiPhiSong` lên rất cao (buônBán 1,8, khaGia 2,6)
+ * để ép chênh lệch tỉ lệ thắng giữa bốn xuất thân về dưới ngưỡng — phá cả câu
+ * chuyện thiết kế (chi phí sống ×2,6 không còn giống "chỉ đắt hơn một chút")
+ * lẫn mục tiêu tỉ lệ thắng chung của game.
+ *
+ * Sửa đúng gốc: đưa `vienChuc.tyLeVonBanDau` về lại 1,0 (khôi phục đúng số vốn
+ * khởi đầu của v1.5 cho ván mặc định), rồi giãn ba xuất thân còn lại theo cùng
+ * tỉ lệ tương đối quanh mốc đó (thuần nông tạm đặt 0,25, buônBán 2, khaGia 3,5).
+ * `heSoChiPhiSong` trả lại nguyên bản đặc tả ban đầu (0,92 / 1 / 1,1 / 1,25).
+ *
+ * ---------- Cân bằng phase 1, fix round 2 ----------
+ * Vòng round 1 để lộ ra thuần nông vẫn thua gần như tuyệt đối (5% thắng, chênh
+ * 92,5 điểm phần trăm so với ba xuất thân kia) dù `heSoChiPhiSong` đã hạ hết cỡ
+ * xuống sàn cho phép 0,85. Lý do là RÀNG BUỘC CỦA CỖ MÁY chứ không phải một khởi
+ * đầu khó khăn thông thường: chi phí sinh hoạt bị trừ ở ĐẦU năm từ tiền mặt
+ * đang có, còn lương chỉ về túi ở CUỐI năm (xem `chuyenNam` trong `engine.ts`).
+ * Vì vậy `tyLeVonBanDau` phải vượt quá tỉ lệ chi phí/lương của nghề khắt khe
+ * nhất, nếu không nhân vật thua ngay năm 1 trước khi kịp làm bất cứ điều gì —
+ * không phải một bất lợi có thể bù bằng lối chơi khôn ngoan.
+ *
+ * Ngưỡng hoà vốn năm 1 theo từng nghề (đã nhân `heSoChiPhiSong` 0,92 của thuần
+ * nông): giáo viên 108/180 × 0,92 = 0,552; bác sĩ 240/360 × 0,92 = 0,613; kỹ sư
+ * phần mềm 435/600 × 0,92 = 0,667 — khắt khe nhất. `tyLeVonBanDau` sửa thành
+ * 0,85 để vượt xa mốc 0,667 đó, chừa đệm cho khoản trả nợ học phí năm đầu và
+ * các sự kiện phát sinh sớm. Đo lại: thuần nông 92%, viên chức 94%, buôn bán
+ * 97%, khá giả 98% — chênh 6 điểm phần trăm, trong ngưỡng 15. Không đụng tới
+ * `tyLeVonBanDau`/`heSoChiPhiSong` của ba xuất thân còn lại. Xem `balance.test.ts`
+ * và báo cáo `task-2-4-5-fix-report.md` (mục fix round 2) cho số đo đầy đủ.
  */
 export const XUAT_THAN: XuatThan[] = [
   {
     id: 'thuanNong',
     ten: 'Nhà thuần nông',
     emoji: '🌾',
-    moTa: 'Bố mẹ làm ruộng, nuôi bạn ăn học bằng những mùa lúa. Ra trường với hai bàn tay trắng và một khoản nợ học phí, nhưng bạn quen sống tằn tiện và biết đủ.',
-    tyLeVonBanDau: 0,
+    moTa: 'Bố mẹ làm ruộng, bán cả lứa lợn và vay mượn thêm họ hàng mới dồn được cho bạn một khoản nhỏ phòng thân. Đổi lại là khoản nợ học phí phải trả dần và trách nhiệm gửi tiền về quê đỡ đần bố mẹ mỗi tháng, nhưng thói quen tằn tiện thì bạn mang theo suốt đời.',
+    tyLeVonBanDau: 0.85,
     tyLeNoBanDau: 0.4,
-    heSoChiPhiSong: 0.6,
+    heSoChiPhiSong: 0.92,
     hanhPhucBanDau: 5,
     tyLePhungDuong: 0.08,
     phungDuongDenTuoi: 55,
@@ -82,7 +103,7 @@ export const XUAT_THAN: XuatThan[] = [
     ten: 'Viên chức tỉnh lẻ',
     emoji: '🏘️',
     moTa: 'Bố mẹ là công chức nhà nước, đủ ăn đủ mặc. Cho bạn một khoản nhỏ làm vốn rồi để bạn tự lo phần còn lại.',
-    tyLeVonBanDau: 0.4,
+    tyLeVonBanDau: 1,
     tyLeNoBanDau: 0,
     heSoChiPhiSong: 1,
     hanhPhucBanDau: 0,
@@ -95,9 +116,9 @@ export const XUAT_THAN: XuatThan[] = [
     ten: 'Buôn bán ngoài phố',
     emoji: '🏢',
     moTa: 'Nhà mặt phố có cửa hàng, bố mẹ dúi cho một khoản kha khá làm vốn. Đổi lại, bạn lớn lên với mức sống mà giờ khó lòng hạ xuống.',
-    tyLeVonBanDau: 1.5,
+    tyLeVonBanDau: 2,
     tyLeNoBanDau: 0,
-    heSoChiPhiSong: 1.8,
+    heSoChiPhiSong: 1.1,
     hanhPhucBanDau: 0,
     tyLePhungDuong: 0,
     phungDuongDenTuoi: 0,
@@ -108,9 +129,9 @@ export const XUAT_THAN: XuatThan[] = [
     ten: 'Nhà có của ăn của để',
     emoji: '🏛️',
     moTa: 'Xuất phát trước người ta cả một quãng dài. Nhưng nếp sống sang trọng đi theo bạn suốt đời, và cái đích tự do vì thế cũng lùi xa hơn.',
-    tyLeVonBanDau: 4,
+    tyLeVonBanDau: 3.5,
     tyLeNoBanDau: 0,
-    heSoChiPhiSong: 2.6,
+    heSoChiPhiSong: 1.25,
     hanhPhucBanDau: 0,
     tyLePhungDuong: 0,
     phungDuongDenTuoi: 0,
