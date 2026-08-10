@@ -2068,3 +2068,37 @@ describe('v1.6 — mục tiêu tự do đổi theo thiết lập', () => {
     expect(mucTieuTuDo(b)).toBeGreaterThan(mucTieuTuDo(a))
   })
 })
+
+describe('v1.6 — cấu hình chu kỳ kinh tế', () => {
+  const TRANG_THAI = ['thinhVuong', 'binhThuong', 'suyThoai', 'khungHoang'] as const
+
+  it('mỗi hàng của ma trận chuyển cộng lại đúng bằng 1', () => {
+    for (const tu of TRANG_THAI) {
+      const hang = CONFIG.thiTruong.maTranChuyen[tu]
+      const tong = TRANG_THAI.reduce((t, sang) => t + hang[sang], 0)
+      expect(tong).toBeCloseTo(1, 10)
+    }
+  })
+
+  it('khủng hoảng không bao giờ nhảy thẳng lên thịnh vượng', () => {
+    expect(CONFIG.thiTruong.maTranChuyen.khungHoang.thinhVuong).toBe(0)
+  })
+
+  it('độ lệch giá giảm dần từ thịnh vượng xuống khủng hoảng', () => {
+    const lech = TRANG_THAI.map((t) => CONFIG.thiTruong.tacDong[t].doLechGia)
+    for (let i = 1; i < lech.length; i++) {
+      expect(lech[i]!).toBeLessThan(lech[i - 1]!)
+    }
+  })
+
+  it('chỉ vàng nghịch chu kỳ, chỉ trái phiếu miễn nhiễm', () => {
+    const am = TAI_SAN.filter((t) => t.nhayChuKy < 0).map((t) => t.id)
+    expect(am).toEqual(['vang'])
+    const khong = TAI_SAN.filter((t) => t.nhayChuKy === 0).map((t) => t.id)
+    expect(khong).toEqual(['traiPhieu'])
+  })
+
+  it('ván mới bắt đầu ở trạng thái bình thường', () => {
+    expect(taoGameMoi('giaoVien', SEED).thiTruong).toBe('binhThuong')
+  })
+})

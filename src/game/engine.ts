@@ -670,6 +670,7 @@ export function taoGameMoi(
     chiPhiHangNam: Math.round(nghe.chiPhi * heSoChiPhiBanDau),
     chiSoGia: 1,
     heSoChiPhi: 1,
+    thiTruong: CONFIG.thiTruong.banDau,
     daTraChiPhiNamNay: false,
 
     soHuu,

@@ -212,6 +212,8 @@ export const TAI_SAN: TaiSan[] = [
     loiTucMin: 0.05,
     loiTucMax: 0.07,
     bamLamPhat: false,
+    /** miễn nhiễm — đây là lý do tồn tại của nó */
+    nhayChuKy: 0,
   },
   {
     id: 'coPhieu',
@@ -225,6 +227,8 @@ export const TAI_SAN: TaiSan[] = [
     loiTucMin: 0,
     loiTucMax: 0.06,
     bamLamPhat: false,
+    /** nhạy hơn nền kinh tế, đúng như chỉ số chứng khoán */
+    nhayChuKy: 1.4,
   },
   {
     id: 'vang',
@@ -238,6 +242,8 @@ export const TAI_SAN: TaiSan[] = [
     loiTucMin: 0,
     loiTucMax: 0,
     bamLamPhat: true,
+    /** NGHỊCH chu kỳ — càng hoảng loạn càng đắt */
+    nhayChuKy: -0.5,
   },
   {
     id: 'crypto',
@@ -254,6 +260,8 @@ export const TAI_SAN: TaiSan[] = [
     loiTucMin: 0,
     loiTucMax: 0,
     bamLamPhat: false,
+    /** khuếch đại mạnh nhất theo cả hai chiều */
+    nhayChuKy: 2.0,
   },
   {
     id: 'batDongSan',
@@ -267,6 +275,8 @@ export const TAI_SAN: TaiSan[] = [
     loiTucMin: 0.04,
     loiTucMax: 0.07,
     bamLamPhat: true,
+    /** đi cùng nền kinh tế, thêm quán tính từ lạm phát */
+    nhayChuKy: 1.0,
   },
 ]
 

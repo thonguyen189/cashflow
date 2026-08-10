@@ -6,6 +6,8 @@
  * Sau khi sửa, chạy `npm test` để kiểm tra các bất biến vẫn đúng.
  */
 
+import type { TrangThaiThiTruong } from './types'
+
 export const TRIEU = 1_000_000
 export const TY = 1_000_000_000
 
@@ -222,6 +224,61 @@ export const CONFIG = {
     phatXacSuat: 0.2,
     phatTyLe: 0.01,
     phatMatHanhPhuc: 3,
+  },
+
+  /** ---------- Chu kỳ kinh tế ----------
+   * Trước v1.6 mỗi kênh rút biến động độc lập, nên danh mục dàn đều luôn êm ru
+   * và "đa dạng hoá" chỉ là khẩu hiệu chứ không phải quyết định. Khủng hoảng
+   * thật thì cổ phiếu, bất động sản và tiền mã hoá cùng rơi một lượt, doanh
+   * nghiệp hụt thu, lạm phát vọt lên — và chỉ vàng với trái phiếu còn đứng vững.
+   *
+   * ---------- Ma trận này cho ra nhịp nào ----------
+   * Tính trên một ván trọn 79 năm (mô phỏng 20.000 ván):
+   *   tỉ lệ số năm  thịnh vượng 24,1% · bình thường 43,5% · suy thoái 22,6%
+   *                 · khủng hoảng 9,9%
+   *   5,8 đợt khủng hoảng mỗi ván — trung bình MỘT ĐỢT MỖI 13,6 NĂM
+   *   mỗi đợt kéo dài 1,33 năm
+   * Đó là nhịp mà một người Việt Nam đi làm từ đầu thập niên 1990 tới nay đã
+   * thật sự sống qua.
+   *
+   * Hai tính chất cài có chủ ý: khủng hoảng không bao giờ nhảy thẳng về thịnh
+   * vượng (kinh tế hồi phục dần chứ không bật dậy), và suy thoái là cửa ngõ
+   * chính vào khủng hoảng.
+   */
+  thiTruong: {
+    banDau: 'binhThuong' as TrangThaiThiTruong,
+    maTranChuyen: {
+      thinhVuong: { thinhVuong: 0.52, binhThuong: 0.34, suyThoai: 0.11, khungHoang: 0.03 },
+      binhThuong: { thinhVuong: 0.24, binhThuong: 0.54, suyThoai: 0.18, khungHoang: 0.04 },
+      suyThoai: { thinhVuong: 0.05, binhThuong: 0.4, suyThoai: 0.33, khungHoang: 0.22 },
+      khungHoang: { thinhVuong: 0, binhThuong: 0.28, suyThoai: 0.47, khungHoang: 0.25 },
+    },
+    /**
+     * `doLechGia` cộng vào biến động giá sau khi nhân `nhayChuKy` của từng kênh.
+     * `heSoLoiTuc` nhân vào cổ tức, tiền thuê, thu nhập doanh nghiệp, xác suất
+     * thăng chức và thưởng Tết. `lechLamPhat` cộng thẳng vào lạm phát của năm —
+     * khủng hoảng đẩy lạm phát từ 6% lên 11%, đúng cảnh đình lạm năm 2008.
+     */
+    tacDong: {
+      thinhVuong: { doLechGia: 0.1, heSoLoiTuc: 1.15, lechLamPhat: 0, heSoTangLuong: 1.3 },
+      binhThuong: { doLechGia: 0, heSoLoiTuc: 1, lechLamPhat: 0, heSoTangLuong: 1 },
+      suyThoai: { doLechGia: -0.1, heSoLoiTuc: 0.8, lechLamPhat: 0.01, heSoTangLuong: 0.3 },
+      khungHoang: { doLechGia: -0.3, heSoLoiTuc: 0.5, lechLamPhat: 0.05, heSoTangLuong: 0 },
+    },
+    /** giá có thể sập chín phần mười nhưng không về không */
+    sanBienDong: -0.9,
+    ten: {
+      thinhVuong: 'Thịnh vượng',
+      binhThuong: 'Bình thường',
+      suyThoai: 'Suy thoái',
+      khungHoang: 'Khủng hoảng',
+    },
+    icon: {
+      thinhVuong: '📈',
+      binhThuong: '😐',
+      suyThoai: '📉',
+      khungHoang: '💥',
+    },
   },
 
   /** ---------- Xuất thân và bậc lương khởi điểm ----------

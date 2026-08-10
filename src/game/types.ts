@@ -3,6 +3,12 @@ export type Tien = number
 
 export type AssetId = 'traiPhieu' | 'coPhieu' | 'vang' | 'crypto' | 'batDongSan'
 
+export type TrangThaiThiTruong =
+  | 'thinhVuong'
+  | 'binhThuong'
+  | 'suyThoai'
+  | 'khungHoang'
+
 export type Phase =
   | 'chonNghe' // chọn nghề, chưa vào game
   | 'chiPhi' // phải thanh toán chi phí hàng năm
@@ -106,6 +112,13 @@ export interface TaiSan {
   loiTucMax: number
   /** true nếu giá bám theo lạm phát (vàng, bất động sản) */
   bamLamPhat: boolean
+  /**
+   * Độ nhạy với chu kỳ kinh tế. Biến động mỗi năm cộng thêm
+   * `doLechGia × nhayChuKy`. Số âm nghĩa là NGHỊCH chu kỳ — càng hoảng loạn
+   * càng đắt, đó là vàng. Số 0 nghĩa là miễn nhiễm, đó là trái phiếu và cũng
+   * chính là lý do tồn tại của nó.
+   */
+  nhayChuKy: number
 }
 
 export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien'
@@ -183,6 +196,7 @@ export type SuKienLoai =
   | 'kietSuc'
   | 'triLieu'
   | 'suKienKetQua'
+  | 'chuKyKinhTe'
 
 export interface SuKien {
   loai: SuKienLoai
@@ -232,6 +246,9 @@ export interface TongKetNam {
   suKien: SuKien[]
   lamPhat: number
   tongTaiSan: Tien
+  /** trạng thái thị trường trước và sau khi chuyển năm, để kể được chuyện đổi chu kỳ */
+  thiTruongTruoc: TrangThaiThiTruong
+  thiTruongSau: TrangThaiThiTruong
 }
 
 export interface GameState {
@@ -255,6 +272,8 @@ export interface GameState {
   chiSoGia: number
   /** hệ số chi phí cố định do sự kiện đời sống (sinh con), khởi điểm 1 */
   heSoChiPhi: number
+  /** trạng thái chu kỳ kinh tế của năm hiện tại */
+  thiTruong: TrangThaiThiTruong
   daTraChiPhiNamNay: boolean
 
   soHuu: Record<AssetId, number>
