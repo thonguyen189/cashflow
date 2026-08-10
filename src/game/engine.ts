@@ -85,13 +85,31 @@ export function tongTaiSan(s: GameState): Tien {
  * Tài sản ròng — mẫu số của cả trần quy mô góp vốn lẫn ngưỡng tập trung của biến
  * cố doanh nghiệp đóng cửa, nên phải có MỘT định nghĩa duy nhất.
  *
+ * PHẢI cộng cả vốn doanh nghiệp (theo giá năm nay) — nếu không thì góp vốn biến
+ * tài sản ĐƯỢC ĐẾM (tiền mặt) thành tài sản KHÔNG ĐƯỢC ĐẾM, làm tài sản ròng tụt
+ * đúng bằng số vốn vừa góp. Hai hệ quả của thiếu sót đó: (1) giao diện đo tỉ
+ * trọng TRƯỚC khi tiền rời tay còn engine đo ngưỡng tập trung của biến cố doanh
+ * nghiệp đóng cửa SAU khi tiền đã thành vốn — hai con số không bao giờ khớp và
+ * luôn lệch về phía hại người chơi; (2) `taiSanToiThieu` của cơ hội tầm lớn đo
+ * trên con số không có doanh nghiệp, nên mua một cơ sở lớn có thể tự khoá lại
+ * chính bậc giàu vừa mở ra. Cộng vốn doanh nghiệp vào đây làm phép góp vốn trở
+ * nên TRUNG TÍNH với tài sản ròng (tiền mặt giảm bao nhiêu thì vốn doanh nghiệp
+ * tăng bấy nhiêu), sửa cả hai hệ quả cùng lúc.
+ *
  * Trừ đi tổng số tiền CÒN PHẢI TRẢ chứ không phải dư nợ gốc: `KhoanVay` không
  * lưu gốc còn lại, và với người chơi thì con số đáng sợ đúng là số tiền phải móc
  * ra từ đây tới lúc hết nợ.
+ *
+ * CHỈ đụng hàm này — `tongTaiSan` đứng yên vì cột mốc tài sản và `KetQuaSim` đang
+ * dùng nó, đổi định nghĩa của nó sẽ dịch toàn bộ mốc huy hiệu.
  */
 export function taiSanRong(s: GameState): Tien {
   const conNo = s.khoanVay.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0)
-  return tongTaiSan(s) - conNo
+  const vonDoanhNghiep = s.doanhNghiep.reduce(
+    (t, d) => t + vonDoanhNghiepNamNay(s, d),
+    0,
+  )
+  return tongTaiSan(s) + vonDoanhNghiep - conNo
 }
 
 /** Vốn góp của một doanh nghiệp quy về mặt bằng giá năm nay. */
@@ -1876,10 +1894,17 @@ function chuyenNam(s: GameState): GameState {
     nam: namMoi,
     coHoiDaLam: s.coHoiDaLam,
     // `sauChuyen` chưa dựng tới đây nên không gọi thẳng taiSanRong(sauChuyen)
-    // được; dùng lại tổng tài sản sau năm (tongSauNam, bước 12) trừ đi nợ CÒN
-    // PHẢI TRẢ của `khoanVay` đã cập nhật ở bước 4 — đúng công thức taiSanRong.
+    // được; dựng lại đúng công thức taiSanRong bằng các mảnh đã có: tổng tài sản
+    // sau năm (tongSauNam, bước 12) cộng vốn doanh nghiệp CÒN LẠI (mảng
+    // `doanhNghiep` cục bộ, đã trừ những cái vừa thanh lý ở nấc 2) quy về mặt
+    // bằng giá NĂM MỚI (`chiSoGia` cục bộ của bước 10, không phải s.chiSoGia của
+    // năm cũ), trừ nợ CÒN PHẢI TRẢ của `khoanVay` đã cập nhật ở bước 4.
     taiSanRong:
-      tongSauNam -
+      tongSauNam +
+      doanhNghiep.reduce(
+        (t, d) => t + Math.round(d.vonGoc * (chiSoGia / d.chiSoGiaLucMua)),
+        0,
+      ) -
       khoanVay.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0),
     // Đang trong thời gian cấm sau phá sản thì không cơ hội kinh doanh nào được
     // mời — dùng NĂM MỚI vì đây chính là năm mà bộ cơ hội sắp rút sẽ hiện ra.

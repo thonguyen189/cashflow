@@ -82,8 +82,13 @@ export default function TabKinhDoanh({
         const von = gia * quyMo
         const thuNhapTheoQuyMo = giaThucTe(state, c.thuNhapMoiNam ?? 0) * quyMo
         const taiSanRongHienTai = taiSanRong(state)
-        const tyTrong = taiSanRongHienTai > 0 ? von / taiSanRongHienTai : 1
-        const tapTrungCao = tyTrong > CONFIG.quyMoGopVon.nguongCanhBaoTapTrung
+        // Tài sản ròng không dương thì tỉ lệ von/taiSanRong không còn nghĩa —
+        // đừng bịa ra một con số (bản cũ gán cứng 1 = "100%"). Đúng như engine
+        // đọc (`taiSanRong(s)` được kẹp về tối thiểu 1 trong biến cố doanh
+        // nghiệp đóng cửa), đây luôn là ca rủi ro tập trung cao nhất.
+        const tyTrong = taiSanRongHienTai > 0 ? von / taiSanRongHienTai : null
+        const tapTrungCao =
+          tyTrong === null || tyTrong > CONFIG.quyMoGopVon.nguongCanhBaoTapTrung
         const duTien = tran > 0 && state.tienMat >= von
         return (
           <div className="the-quyet-dinh" key={c.id}>
@@ -185,7 +190,7 @@ export default function TabKinhDoanh({
               </div>
             )}
 
-            {bacChoPhep.length > 1 && (
+            {bacChoPhep.length > 0 && (
               <div className="quy-mo">
                 <div className="quy-mo-nhan">📐 Quy mô góp vốn</div>
                 <div className="quy-mo-bac">
@@ -214,8 +219,9 @@ export default function TabKinhDoanh({
                 <div className="hang">
                   <span className="hang-nhan">🧮 Tỉ trọng trên tài sản ròng</span>
                   <span className={`hang-gia-tri${tapTrungCao ? ' am' : ''}`}>
-                    {(tyTrong * 100).toFixed(0)}%
-                    {tapTrungCao && ' ⚠️ tập trung cao'}
+                    {tyTrong === null
+                      ? '⚠️ Tài sản ròng không dương — rủi ro tập trung cao nhất'
+                      : `${(tyTrong * 100).toFixed(0)}%${tapTrungCao ? ' ⚠️ tập trung cao' : ''}`}
                   </span>
                 </div>
               </div>

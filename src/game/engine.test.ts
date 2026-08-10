@@ -2309,6 +2309,71 @@ describe('v1.6 — tài sản ròng và trần quy mô góp vốn', () => {
     expect(bac[0]).toBe(1)
     for (let i = 1; i < bac.length; i++) expect(bac[i]!).toBeGreaterThan(bac[i - 1]!)
   })
+
+  it('tài sản ròng cộng cả vốn doanh nghiệp theo giá năm nay', () => {
+    const s: GameState = {
+      ...moiVan(),
+      tienMat: 1 * TY,
+      khoanVay: [],
+      doanhNghiep: [
+        { coHoiId: 'quanCaPhe', ten: 'Quán cà phê', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+      ],
+    }
+    expect(taiSanRong(s)).toBe(tongTaiSan(s) + 400 * TRIEU)
+  })
+
+  it('góp vốn vào cơ hội kinh doanh không làm đổi tài sản ròng (sai số làm tròn cho phép)', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = {
+      ...moiVan(),
+      tienMat: 2 * TY,
+      khoanVay: [],
+      phase: 'tuDo' as const,
+      coHoiNamNay: [coHoi],
+    }
+    const truoc = taiSanRong(s)
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: coHoi.id,
+      nhan: true,
+      heSoQuyMo: 2,
+    })
+    // Tiền mặt giảm bao nhiêu thì vốn doanh nghiệp tăng bấy nhiêu — tài sản ròng
+    // trung tính với phép góp vốn, chỉ chừa sai số làm tròn của Math.round.
+    expect(Math.abs(taiSanRong(sau) - truoc)).toBeLessThanOrEqual(2)
+  })
+
+  it('tỉ trọng giao diện tính TRƯỚC khi mua khớp với tỉ trọng engine tính SAU khi mua', () => {
+    // Đây chính là ca của bug Critical: màn hình đọc tỉ trọng trên tiền mặt sắp
+    // rời tay, còn biến cố doanh nghiệp đóng cửa đọc tỉ trọng trên vốn đã nằm
+    // trong doanh nghiệp — trước khi sửa `taiSanRong`, hai con số này lệch nhau
+    // (66,7% so với 40%) dù chưa có gì khác xảy ra ngoài việc góp vốn.
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = {
+      ...moiVan(),
+      tienMat: 2 * TY,
+      khoanVay: [],
+      phase: 'tuDo' as const,
+      coHoiNamNay: [coHoi],
+    }
+    const gia = giaThucTe(s, coHoi.gia)
+    const quyMo = 2
+    const von = gia * quyMo
+    // Công thức y hệt TabKinhDoanh.tsx tính TRƯỚC khi bấm "Tham gia".
+    const tyTrongTruoc = von / taiSanRong(s)
+
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: coHoi.id,
+      nhan: true,
+      heSoQuyMo: quyMo,
+    })
+    const dn = sau.doanhNghiep.at(-1)!
+    // Công thức y hệt engine tính trong biến cố doanh nghiệp đóng cửa (bước 7b).
+    const tyTrongSau = vonDoanhNghiepNamNay(sau, dn) / taiSanRong(sau)
+
+    expect(tyTrongSau).toBeCloseTo(tyTrongTruoc, 6)
+  })
 })
 
 describe('v1.6 — góp vốn theo quy mô', () => {
