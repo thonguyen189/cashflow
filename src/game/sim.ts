@@ -1,6 +1,7 @@
 import { CONFIG } from './config'
 import { TAI_SAN, timUocNguyen } from './content'
 import {
+  THIET_LAP_MAC_DINH,
   daToiUuChiPhi,
   dangCoBaoHiem,
   dangCoBaoHiemXe,
@@ -20,7 +21,7 @@ import {
   tongTaiSan,
   xeDangCo,
 } from './engine'
-import type { LoaiBaoHiemXe } from './types'
+import type { LoaiBaoHiemXe, ThietLapNhanVat } from './types'
 
 export interface KetQuaSim {
   thang: boolean
@@ -96,8 +97,9 @@ export function moPhongMotVan(
   ngheId: string,
   seed: number,
   cl: ChienLuoc = CHIEN_LUOC_CAN_BANG,
+  thietLap: ThietLapNhanVat = THIET_LAP_MAC_DINH,
 ): KetQuaSim {
-  let s = taoGameMoi(ngheId, seed)
+  let s = taoGameMoi(ngheId, seed, thietLap)
   let baoVe = 0
 
   while (s.trangThai === 'dangChoi' && baoVe++ < 4000) {
@@ -281,10 +283,15 @@ export function moPhongMotVan(
   }
 }
 
-export function moPhongNhieuVan(ngheId: string, soVan: number, cl?: ChienLuoc) {
+export function moPhongNhieuVan(
+  ngheId: string,
+  soVan: number,
+  cl?: ChienLuoc,
+  thietLap?: ThietLapNhanVat,
+) {
   const kq: KetQuaSim[] = []
   for (let i = 0; i < soVan; i++) {
-    kq.push(moPhongMotVan(ngheId, 1000 + i * 7919, cl))
+    kq.push(moPhongMotVan(ngheId, 1000 + i * 7919, cl, thietLap))
   }
   const thang = kq.filter((k) => k.thang)
   const thua = kq.filter((k) => !k.thang)

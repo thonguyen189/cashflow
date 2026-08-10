@@ -45,10 +45,23 @@ export const NGHE: Nghe[] = [
  * cả ba nghề đều cân nhau.
  *
  * Nhà thuần nông là trường hợp đáng chú ý nhất: trong những năm còn phụng dưỡng,
- * hai hệ số triệt tiêu nhau gần hết (0,92 × 1,08 ≈ 0,99) — gánh nặng rơi đúng
- * vào quãng đời cần vốn nhất rồi biến mất sau tuổi 55, để lại lợi thế chi phí
- * thấp cho phần đời còn lại. Ngoài đời cũng thế: người xuất thân khó khăn bị níu
- * ở đoạn đầu, nhưng thói quen tằn tiện là tài sản của đoạn sau.
+ * hai hệ số gần như triệt tiêu nhau — gánh nặng rơi đúng vào quãng đời cần vốn
+ * nhất rồi biến mất sau tuổi 55, để lại lợi thế chi phí thấp cho phần đời còn
+ * lại. Ngoài đời cũng thế: người xuất thân khó khăn bị níu ở đoạn đầu, nhưng
+ * thói quen tằn tiện là tài sản của đoạn sau.
+ *
+ * ---------- Cân bằng phase 1 (balance.test.ts) ----------
+ * `heSoChiPhiSong` của buônBán và khaGia bị đẩy lên cao hơn hẳn mức "chỉ đắt hơn
+ * một chút" ban đầu (1,1 và 1,25). Lý do: vốn ban đầu quá lớn của hai xuất thân
+ * này (1,5 và 4 lần lương) cho phép dồn tiền vào tài sản sinh lời ngay từ năm 1,
+ * kéo tỉ lệ thắng của bot cân bằng lên 97–98% trong khi viên chức (mặc định)
+ * chỉ 2,5% — chênh cả trăm điểm phần trăm. Mô phỏng (`moPhongNhieuVan`) cho thấy
+ * chi phí sống phải leo gần gấp đôi tới gấp ba mới đủ bào mòn lợi thế vốn đó.
+ * Xem `heSoChiPhiSong` của thuanNong: hạ nhẹ so với bản gốc để bù phần thiệt
+ * vốn 0 đồng — dù vậy trần chi phí sống không kéo được tỉ lệ thắng của nhóm
+ * nghèo lên cao, vì vốn bằng 0 vẫn phải trả chi phí sinh hoạt dương ngay năm
+ * đầu. Đây là giới hạn của đòn bẩy `heSoChiPhiSong`; xem `tyLeVonBanDau` cho lý
+ * do vì sao đòn bẩy đó KHÔNG được đụng tới ở đây.
  */
 export const XUAT_THAN: XuatThan[] = [
   {
@@ -58,7 +71,7 @@ export const XUAT_THAN: XuatThan[] = [
     moTa: 'Bố mẹ làm ruộng, nuôi bạn ăn học bằng những mùa lúa. Ra trường với hai bàn tay trắng và một khoản nợ học phí, nhưng bạn quen sống tằn tiện và biết đủ.',
     tyLeVonBanDau: 0,
     tyLeNoBanDau: 0.4,
-    heSoChiPhiSong: 0.92,
+    heSoChiPhiSong: 0.6,
     hanhPhucBanDau: 5,
     tyLePhungDuong: 0.08,
     phungDuongDenTuoi: 55,
@@ -84,7 +97,7 @@ export const XUAT_THAN: XuatThan[] = [
     moTa: 'Nhà mặt phố có cửa hàng, bố mẹ dúi cho một khoản kha khá làm vốn. Đổi lại, bạn lớn lên với mức sống mà giờ khó lòng hạ xuống.',
     tyLeVonBanDau: 1.5,
     tyLeNoBanDau: 0,
-    heSoChiPhiSong: 1.1,
+    heSoChiPhiSong: 1.8,
     hanhPhucBanDau: 0,
     tyLePhungDuong: 0,
     phungDuongDenTuoi: 0,
@@ -97,7 +110,7 @@ export const XUAT_THAN: XuatThan[] = [
     moTa: 'Xuất phát trước người ta cả một quãng dài. Nhưng nếp sống sang trọng đi theo bạn suốt đời, và cái đích tự do vì thế cũng lùi xa hơn.',
     tyLeVonBanDau: 4,
     tyLeNoBanDau: 0,
-    heSoChiPhiSong: 1.25,
+    heSoChiPhiSong: 2.6,
     hanhPhucBanDau: 0,
     tyLePhungDuong: 0,
     phungDuongDenTuoi: 0,

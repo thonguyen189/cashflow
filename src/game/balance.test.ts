@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { NGHE } from './content'
+import { CONFIG } from './config'
+import { NGHE, XUAT_THAN } from './content'
 import { CHIEN_LUOC_CAN_BANG, moPhongNhieuVan } from './sim'
 
 /**
@@ -166,5 +167,33 @@ describe('cân bằng game', () => {
       // nơi hiệu ứng là vài điểm phần trăm thật.
       expect(chenhLech).toBeLessThan(0)
     }
+  })
+
+  it('bốn xuất thân không chênh nhau quá 15 điểm phần trăm tỉ lệ thắng', () => {
+    const ty: number[] = []
+    for (const x of XUAT_THAN) {
+      const r = moPhongNhieuVan('giaoVien', 120, CHIEN_LUOC_CAN_BANG, {
+        xuatThanId: x.id,
+        heSoLuongKhoiDiem: 1,
+      })
+      ty.push(r.tyLeThang)
+      // eslint-disable-next-line no-console
+      console.log(`${x.ten.padEnd(24)} thắng ${(r.tyLeThang * 100).toFixed(0)}%`)
+    }
+    expect(Math.max(...ty) - Math.min(...ty)).toBeLessThanOrEqual(0.15)
+  })
+
+  it('năm bậc lương không chênh nhau quá 15 điểm phần trăm tỉ lệ thắng', () => {
+    const ty: number[] = []
+    for (const bac of CONFIG.xuatThan.bacLuong) {
+      const r = moPhongNhieuVan('bacSi', 120, CHIEN_LUOC_CAN_BANG, {
+        xuatThanId: 'vienChuc',
+        heSoLuongKhoiDiem: bac,
+      })
+      ty.push(r.tyLeThang)
+      // eslint-disable-next-line no-console
+      console.log(`bậc lương ${bac}  thắng ${(r.tyLeThang * 100).toFixed(0)}%`)
+    }
+    expect(Math.max(...ty) - Math.min(...ty)).toBeLessThanOrEqual(0.15)
   })
 })
