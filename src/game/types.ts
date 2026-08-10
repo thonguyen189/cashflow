@@ -139,6 +139,8 @@ export interface CoHoi {
   namToiThieu?: number
   /** cả ván chỉ tham gia được một lần */
   chiMotLan?: boolean
+  /** chỉ xuất hiện khi tài sản ròng đã đạt mức này — cơ hội tầm lớn */
+  taiSanToiThieu?: Tien
 
   /** kinhDoanh: thu nhập nền mỗi năm, trước khi áp biến động */
   thuNhapMoiNam?: Tien
@@ -170,6 +172,13 @@ export interface DoanhNghiep {
   thuNhapNen: Tien
   /** chỉ số giá của năm góp vốn, để thu nhập bám theo lạm phát về sau */
   chiSoGiaLucMua: number
+  /**
+   * Số tiền THẬT đã bỏ ra khi góp vốn, đã gồm hệ số quy mô. Cần cho cả việc
+   * thanh lý khi phá sản lẫn việc xác định doanh nghiệp lớn nhất trong biến cố
+   * đóng cửa. Suy ngược từ `timCoHoi(coHoiId).gia` là không đủ vì nó không biết
+   * quy mô đã chọn.
+   */
+  vonGoc: Tien
 }
 
 export type SuKienLoai =
@@ -366,7 +375,13 @@ export type Action =
   | { type: 'dauTu'; assetId: AssetId; soDonVi: number }
   | { type: 'ban'; assetId: AssetId; soDonVi: number }
   | { type: 'vay'; goc: Tien; kyHan: number }
-  | { type: 'quyetDinhCoHoi'; coHoiId: string; nhan: boolean }
+  | {
+      type: 'quyetDinhCoHoi'
+      coHoiId: string
+      nhan: boolean
+      /** bậc quy mô góp vốn; thiếu thì hiểu là 1 suất */
+      heSoQuyMo?: number
+    }
   | { type: 'ketThucNam' }
   | { type: 'dongTongKet' }
   /** thắng rồi vẫn tiếp tục sống trọn hành trình tới tuổi 100 */

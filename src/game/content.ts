@@ -102,7 +102,7 @@ export const XUAT_THAN: XuatThan[] = [
     id: 'vienChuc',
     ten: 'Viên chức tỉnh lẻ',
     emoji: '🏘️',
-    moTa: 'Bố mẹ là công chức nhà nước, đủ ăn đủ mặc. Cho bạn một khoản nhỏ làm vốn rồi để bạn tự lo phần còn lại.',
+    moTa: 'Bố mẹ là công chức nhà nước, đủ ăn đủ mặc. Cho bạn trọn một năm lương làm vốn rồi để bạn tự lo phần còn lại.',
     tyLeVonBanDau: 1,
     tyLeNoBanDau: 0,
     heSoChiPhiSong: 1,

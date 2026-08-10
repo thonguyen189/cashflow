@@ -35,8 +35,10 @@ import {
   phiBaoHiemXe,
   phiChuyenGiaTaiChinh,
   phiChuyenGiaTamLy,
+  quyMoToiDa,
   reducer,
   soNamTriLieuConLai,
+  taiSanRong,
   taoGameMoi,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
@@ -2155,6 +2157,7 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
           ten: 'Dãy nhà trọ cho công nhân thuê',
           thuNhapNen: 195 * TRIEU,
           chiSoGiaLucMua: 1,
+          vonGoc: timCoHoi('nhaTroCongNhan')!.gia,
         },
       ],
     }
@@ -2177,5 +2180,66 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
       s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
       expect(CONFIG.thiTruong.maTranChuyen[truoc][s.thiTruong]).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('v1.6 — tài sản ròng và trần quy mô góp vốn', () => {
+  it('tài sản ròng trừ đi tổng số tiền còn phải trả của mọi khoản vay', () => {
+    const s: GameState = {
+      ...moiVan(),
+      tienMat: 1 * TY,
+      khoanVay: [
+        { id: 'a', goc: 500 * TRIEU, kyHan: 10, thanhToanMoiNam: 70 * TRIEU, namConLai: 4 },
+      ],
+    }
+    expect(taiSanRong(s)).toBe(tongTaiSan(s) - 280 * TRIEU)
+  })
+
+  it('không nợ thì tài sản ròng bằng tổng tài sản', () => {
+    const s = { ...moiVan(), tienMat: 2 * TY, khoanVay: [] }
+    expect(taiSanRong(s)).toBe(tongTaiSan(s))
+  })
+
+  it('trần quy mô không cho một cơ hội vượt 60% tài sản ròng', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = { ...moiVan(), tienMat: 100 * TY, khoanVay: [] }
+    const bac = quyMoToiDa(s, coHoi)
+    expect(giaThucTe(s, coHoi.gia) * bac).toBeLessThanOrEqual(
+      taiSanRong(s) * CONFIG.quyMoGopVon.tyLeToiDaTheoTaiSan,
+    )
+    expect(bac).toBe(Math.max(...CONFIG.quyMoGopVon.bac))
+  })
+
+  it('trần quy mô không cho vượt tiền mặt đang có', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const base = moiVan()
+    // Cần một danh mục đầu tư đứng ngoài tiền mặt để trần 60% tài sản ròng
+    // không phải là rào cản chặt hơn: với tiền mặt là TOÀN BỘ tài sản ròng (như
+    // vốn dĩ một ván mới không có khoản đầu tư nào), 60% của chính nó luôn nhỏ
+    // hơn 100% của nó, nên trần tài sản ròng sẽ luôn bó chặt hơn trần tiền mặt
+    // và test này không bao giờ cô lập được đúng cái nó muốn đo. Thêm 700 phần
+    // trái phiếu (700 triệu) đẩy tài sản ròng lên 1,6 tỷ — 60% của nó là 960
+    // triệu, lớn hơn 900 triệu tiền mặt — nên tiền mặt mới thật sự là rào cản.
+    const s = {
+      ...base,
+      tienMat: 900 * TRIEU,
+      khoanVay: [],
+      soHuu: { ...base.soHuu, traiPhieu: 700 },
+    }
+    const bac = quyMoToiDa(s, coHoi)
+    expect(giaThucTe(s, coHoi.gia) * bac).toBeLessThanOrEqual(s.tienMat)
+    expect(bac).toBe(2)
+  })
+
+  it('không đủ tiền cho một suất thì trần bằng 0', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = { ...moiVan(), tienMat: 10 * TRIEU, khoanVay: [] }
+    expect(quyMoToiDa(s, coHoi)).toBe(0)
+  })
+
+  it('các bậc quy mô tăng dần và bắt đầu từ 1', () => {
+    const bac = CONFIG.quyMoGopVon.bac
+    expect(bac[0]).toBe(1)
+    for (let i = 1; i < bac.length; i++) expect(bac[i]!).toBeGreaterThan(bac[i - 1]!)
   })
 })

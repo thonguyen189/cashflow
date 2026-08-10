@@ -415,6 +415,30 @@ export const CONFIG = {
    */
   soCoHoiMoiNam: 2,
 
+  /** ---------- Quy mô góp vốn ----------
+   * Trước v1.6 giá cơ hội chỉ nhân chỉ số giá, cơ hội đắt nhất là 2 tỷ. Khi tài
+   * sản đã lên vài chục tỷ, mọi lời mời góp vốn đều thành tiền lẻ — người chơi
+   * bấm nhận mà không phải nghĩ, và nửa sau ván chơi mất hết sức nặng.
+   *
+   * ---------- Vì sao rót to không phải lựa chọn hiển nhiên ----------
+   * Cơ hội kinh doanh sinh lời 19–22% mỗi năm, cao hơn mọi kênh đầu tư. Ba đối
+   * trọng giữ cho việc rót tối đa không phải nước đi đương nhiên đúng:
+   *   1. Biến cố "doanh nghiệp đóng cửa" nhắm vào CÁI LỚN NHẤT, chỉ trả lại 20%.
+   *   2. Khủng hoảng cắt một nửa thu nhập doanh nghiệp, mà nợ vay không giảm theo.
+   *   3. Thanh lý gấp chỉ thu về 45% — tiền nằm trong doanh nghiệp không phải
+   *      tiền lỏng.
+   *
+   * Canh bạc giữ nguyên một suất. Không phải vì cân bằng mà vì lời kể: canh bạc
+   * là suất người ta mời bạn, không phải hàng bày bán để mua thêm.
+   */
+  quyMoGopVon: {
+    bac: [1, 2, 3, 5, 8, 12],
+    /** một cơ hội không được chiếm quá tỉ lệ này của tài sản ròng */
+    tyLeToiDaTheoTaiSan: 0.6,
+    /** vượt tỉ lệ này thì giao diện đổi màu cảnh báo tập trung vốn */
+    nguongCanhBaoTapTrung: 0.4,
+  },
+
   /** ---------- Biểu đồ giá ----------
    * Số điểm giá "quá khứ" sinh sẵn khi tạo ván, để biểu đồ đầu tư
    * có đường giá sống động ngay từ năm đầu tiên.

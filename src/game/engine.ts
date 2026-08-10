@@ -80,6 +80,43 @@ export function tongTaiSan(s: GameState): Tien {
 }
 
 /**
+ * Tài sản ròng — mẫu số của cả trần quy mô góp vốn lẫn ngưỡng tập trung của biến
+ * cố doanh nghiệp đóng cửa, nên phải có MỘT định nghĩa duy nhất.
+ *
+ * Trừ đi tổng số tiền CÒN PHẢI TRẢ chứ không phải dư nợ gốc: `KhoanVay` không
+ * lưu gốc còn lại, và với người chơi thì con số đáng sợ đúng là số tiền phải móc
+ * ra từ đây tới lúc hết nợ.
+ */
+export function taiSanRong(s: GameState): Tien {
+  const conNo = s.khoanVay.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0)
+  return tongTaiSan(s) - conNo
+}
+
+/** Vốn góp của một doanh nghiệp quy về mặt bằng giá năm nay. */
+export function vonDoanhNghiepNamNay(s: GameState, d: DoanhNghiep): Tien {
+  return Math.round(d.vonGoc * (s.chiSoGia / d.chiSoGiaLucMua))
+}
+
+/**
+ * Bậc quy mô lớn nhất người chơi được phép chọn cho một cơ hội. Trả 0 khi không
+ * đủ tiền cho nổi một suất. Trần theo tài sản ròng chặn nước đi tất tay đúng
+ * nghĩa — ngoài đời cũng không ai bán sạch nhà cửa để góp vốn một chỗ.
+ */
+export function quyMoToiDa(s: GameState, coHoi: CoHoi): number {
+  if (coHoi.loai === 'canhBac') return 1
+  const gia = giaThucTe(s, coHoi.gia)
+  if (gia <= 0) return 1
+  const tranTien = s.tienMat
+  const tranTaiSan = taiSanRong(s) * CONFIG.quyMoGopVon.tyLeToiDaTheoTaiSan
+  const tran = Math.min(tranTien, tranTaiSan)
+  let ketQua = 0
+  for (const bac of CONFIG.quyMoGopVon.bac) {
+    if (gia * bac <= tran) ketQua = bac
+  }
+  return ketQua
+}
+
+/**
  * Mức thu nhập NỀN của một doanh nghiệp trong năm nay.
  * Thu nhập bám theo lạm phát kể từ năm góp vốn, nếu không thì sau vài chục năm
  * một doanh nghiệp từng đáng giá sẽ teo lại thành tiền lẻ.
@@ -1814,6 +1851,7 @@ export function reducer(s: GameState, a: Action): GameState {
               ten: coHoi.ten,
               thuNhapNen: giaThucTe(s, coHoi.thuNhapMoiNam ?? 0),
               chiSoGiaLucMua: s.chiSoGia,
+              vonGoc: gia,
             },
           ],
         }
