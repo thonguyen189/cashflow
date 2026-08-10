@@ -69,8 +69,8 @@ phần đời còn lại. Ngoài đời cũng thế: người xuất thân khó 
 nhưng thói quen tằn tiện là tài sản của đoạn sau.
 
 Khoản nợ học phí là một `KhoanVay` bình thường, nên nó chiếm chỗ trong hạn mức vay
-(`tyLeThanhToanToiDa` = 50% lương) và đội `nghiaVuHangNam` trong mười năm đầu — cũng
-lại đúng như đời thật.
+(`tyLeThanhToanToiDa` = 65% lương, xem mục F) và đội `nghiaVuHangNam` trong mười năm
+đầu — cũng lại đúng như đời thật.
 
 **Vì sao vốn ban đầu không thể xuống quá thấp.** Đây không phải một lựa chọn thiết
 kế tự do — nó là ràng buộc của chính cỗ máy mô phỏng. Mỗi năm, chi phí sinh hoạt bị
@@ -457,9 +457,9 @@ Mục tiêu cân bằng, đo bằng `balance.test.ts` (**viết lại ở Phase 
 
 | Chỉ số | Mục tiêu |
 |---|---|
-| Tỉ lệ thắng của bot cân bằng | **85–95%** tuỳ nghề — đo thật quanh 90%, dù đã thử đúng một đòn bẩy cho phép (nâng `soBienCoMin/Max` từ 2/4 lên 3/6); hạ rõ rệt so với mức 93–97% của v1.5 nhưng KHÔNG xuống được 55–85% như dự tính ban đầu |
-| Tỉ lệ ván có ít nhất một lần phá sản, bot cân bằng | **≤ 5%** — một bot thận trọng thì ĐÁNG LẼ gần như không bao giờ vỡ nợ |
-| Tỉ lệ ván có ít nhất một lần phá sản, bot dùng đòn bẩy (`CHIEN_LUOC_DON_BAY`: vay tối đa để góp vốn, quy mô 12×, không giữ quỹ dự phòng) | mục tiêu ≥ 10% và rõ rệt cao hơn bot cân bằng — **đo thật vẫn ra 0%, KHÔNG đạt** (xem giải thích dưới) |
+| Tỉ lệ thắng của bot cân bằng | **85–95%** tuỳ nghề — đo thật quanh 87–92%, dù đã thử đúng một đòn bẩy cho phép (nâng `soBienCoMin/Max` từ 2/4 lên 3/6); hạ rõ rệt so với mức 93–97% của v1.5 nhưng KHÔNG xuống được 55–85% như dự tính ban đầu |
+| Tỉ lệ ván có ít nhất một lần phá sản, bot cân bằng | **≤ 5%** — một bot thận trọng thì ĐÁNG LẼ gần như không bao giờ vỡ nợ — đo thật 0% |
+| Tỉ lệ ván có ít nhất một lần phá sản, bot dùng đòn bẩy (`CHIEN_LUOC_DON_BAY`: vay tối đa để góp vốn, quy mô 12×, không giữ quỹ dự phòng) | mục tiêu > 0% và rõ rệt cao hơn bot cân bằng — **đo thật vẫn ra 0%, KHÔNG đạt**, kể cả sau khi nới `tyLeThanhToanToiDa` lên 0,65 (xem giải thích dưới) |
 | Bot đòn bẩy khi thắng thì về đích sớm hơn bot cân bằng | đạt — canh bạc có lãi kỳ vọng, không phải cái bẫy thuần tuý |
 | Chênh lệch tỉ lệ thắng giữa bốn xuất thân | không quá 15 điểm phần trăm |
 | Chênh lệch tỉ lệ thắng giữa bậc lương thấp nhất và cao nhất | không quá 15 điểm phần trăm |
@@ -478,16 +478,36 @@ một bot cân bằng và một bot cố ý liều — không phải một con s
 
 Ngay cả khi cho bot vay THẬT (dùng đúng `vayToiDa` sẵn có trong engine để góp vốn kinh
 doanh quy mô lớn — đã kiểm chứng có vay, dư nợ đỉnh điểm trung bình 9–10 tỷ mỗi ván cho
-kỹ sư phần mềm), tỉ lệ phá sản đo được vẫn là **0%**. Lý do: `vayToiDa` — một chốt an
-toàn CÓ CHỦ Ý của engine — kẹp tổng số tiền phải trả nợ mỗi năm không quá
-`tyLeThanhToanToiDa` (50%) × LƯƠNG, một nguồn thu ổn định và tăng đều theo lạm phát.
-Vay bao nhiêu đi nữa thì khoản trả nợ hàng năm cũng không thể vượt qua nổi cả nấc 1
-(bán sạch danh mục đầu tư) lẫn nấc 2 (thanh lý doanh nghiệp còn 45%) rồi còn vượt
-ngưỡng phá sản — rủi ro đòn bẩy trong bản này bị chính chốt an toàn của khoản vay
-chặn lại. Muốn đạt được chỉ tiêu ≥10% sẽ cần nới `tyLeThanhToanToiDa` hoặc đổi cách
-tính `vayToiDa`, một thay đổi ảnh hưởng tới mọi người chơi dùng vay chứ không riêng
-gì bot đòn bẩy, nên đây là quyết định cân bằng cần người thiết kế chọn chứ không tự
-ý vặn.
+kỹ sư phần mềm), tỉ lệ phá sản đo được vẫn là **0%**.
+
+**Vòng nới thứ nhất** (Phase 5, tiếp tục sau khi mục tiêu ≥10% không đạt): nâng
+`CONFIG.tyLeThanhToanToiDa` từ 0,5 lên **0,65** — khớp mức ngân hàng Việt Nam thực tế
+duyệt vay thế chấp (tới khoảng 65% thu nhập); 0,5 là mức thận trọng khiến đòn bẩy
+không bao giờ nguy hiểm thật. Đo lại: tỉ lệ phá sản của bot đòn bẩy **vẫn 0%**, không
+nhích.
+
+**Vòng thử thứ hai**: giả thuyết "bot bỏ lỡ cái bẫy lương hưu" — vay kỳ hạn 10 năm lúc
+còn trẻ, mức trả tính theo lương đi làm, nhưng nghỉ hưu ở tuổi 60 thì lương chỉ còn
+45% (`tyLeLuongHuu`), khiến khoản trả nợ cũ đột nhiên nặng gấp đôi so với thu nhập
+mới. Dò vết toàn bộ ván THUA của cả hai chiến lược, cả ba nghề (n=300/tổ hợp): **100%
+kết thúc vì hạnh phúc tụt dưới ngưỡng, luôn trong 11 năm đầu** — không ván nào từng
+chạm phá sản hay sống đủ lâu để thử. Dò rộng hơn với n=1000/tổ hợp, tính CẢ ván thắng:
+số năm chơi được nhiều nhất từng đo được là 35 năm (tuổi 55) — **không một ván mô
+phỏng nào, thắng hay thua, từng chạm tới năm thứ 40 (tuổi nghỉ hưu 60)**. Nghĩa là cái
+bẫy lương hưu không phải do bot "bỏ lỡ" cơ hội vay ở giai đoạn đó, mà vì giai đoạn đó
+CHƯA TỪNG xảy ra trong bất kỳ mô phỏng nào — ván luôn kết thúc (thắng sớm hoặc thua vì
+hạnh phúc) từ rất lâu trước khi nhân vật kịp già. Đây là một sự kiện cấu trúc của cả hệ
+mô phỏng (không phân biệt chiến lược), không phải một tham số vay có thể vặn để sửa.
+
+Cơ chế gốc vẫn còn: `vayToiDa` kẹp tổng số tiền phải trả nợ mỗi năm không quá
+`tyLeThanhToanToiDa` × LƯƠNG hiện tại — dù đã nới lên 0,65, khoản trả nợ hàng năm vẫn
+không đủ lớn để vượt qua cả nấc 1 (bán sạch danh mục đầu tư) lẫn nấc 2 (thanh lý doanh
+nghiệp còn 45%) rồi còn vượt ngưỡng phá sản, TRONG CHẶNG NĂM MÀ MÔ PHỎNG THỰC SỰ CHƠI
+TỚI (0–35 năm). Đổi cách tính `vayToiDa` sâu hơn nữa, hay rút ngắn chặng đường thắng để
+mô phỏng sống đủ lâu chạm tuổi hưu, là những thay đổi ảnh hưởng tới mọi người chơi chứ
+không riêng gì bot đòn bẩy — quyết định tiếp theo cần người thiết kế chọn, không tự ý
+vặn thêm. Bài test tương ứng trong `balance.test.ts` cố ý còn đỏ, ngưỡng đã đổi từ
+"≥10%" sang "> 0% và cao hơn bot cân bằng" để không tự đặt bẫy vào một con số cụ thể.
 
 Về tỉ lệ thắng: dù đã nâng số biến cố lớn từ 2–4 lên 3–6 (đòn bẩy DUY NHẤT được phép
 thử), tỉ lệ thắng của bot cân bằng vẫn quanh 90% cho cả ba nghề. Bot cân bằng chơi

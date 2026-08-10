@@ -159,8 +159,15 @@ export const CONFIG = {
    */
   laiSuatVay: 0.08,
   kyHanVayToiDa: 10,
-  /** tổng thanh toán nợ hàng năm không vượt quá tỉ lệ này của lương */
-  tyLeThanhToanToiDa: 0.5,
+  /**
+   * Tổng thanh toán nợ hàng năm không vượt quá tỉ lệ này của lương. Ngân hàng
+   * Việt Nam cho vay thế chấp thực tế duyệt tới khoảng 65% thu nhập — 0,5 (mức
+   * cũ) thận trọng hơn thực tế nhiều, khiến đòn bẩy không bao giờ nguy hiểm
+   * thật (trả nợ luôn kịp vì lương là nguồn thu không sập, kể cả trong khủng
+   * hoảng), mà đòn bẩy không nguy hiểm thì bài học về phá sản không tồn tại
+   * (v1.6 Phase 5, vấn đề "phá sản không bao giờ xảy ra").
+   */
+  tyLeThanhToanToiDa: 0.65,
 
   /** ---------- Bảo hiểm y tế ---------- */
   /** phí bảo hiểm mỗi năm = tỉ lệ này × lương hiện tại */
