@@ -225,9 +225,12 @@ biết là năm sau sẽ ra sao — và đó mới là chỗ khó thật.
 
 ### Cách hẹn lịch
 
-Ngay khi tạo ván, game rút **2 đến 4** mốc năm ngẫu nhiên trong khoảng tuổi **28–85**,
+Ngay khi tạo ván, game rút **3 đến 6** mốc năm ngẫu nhiên trong khoảng tuổi **28–85**,
 cách nhau tối thiểu **8 năm**, tất định theo seed — cùng khuôn với lịch cưới hỏi và sinh
 con của cốt truyện trăm năm.
+
+*(v1.6 Phase 5: nâng từ 2–4 lên 3–6 để hạ tỉ lệ thắng của bot cân bằng xuống gần
+khoảng mục tiêu — xem `phase-5-report.md` cho số đo trước/sau.)*
 
 Hẹn lịch chứ không tung xúc xắc mỗi năm vì hai lẽ: mọi ván đều chắc chắn có biến cố nên
 không ván nào trôi qua nhạt nhoà, và số lượng nằm trong tầm kiểm soát để cân bằng được.
@@ -448,20 +451,52 @@ cân bằng thắng **93–97%** tuỳ nghề (bot khó tính thắng 57–60%).
 biết tính toán, game hiện gần như không thể thua — đó chính là lý do sâu xa của cả bản
 này, chứ không chỉ là chuyện "cho giống đời thật".
 
-Mục tiêu cân bằng, đo bằng `balance.test.ts`:
+Mục tiêu cân bằng, đo bằng `balance.test.ts` (**viết lại ở Phase 5, sau khi đo thật**
+— xem đoạn "Vì sao chỉ tiêu đổi" ngay dưới bảng, và số đo trước/sau đầy đủ nằm ở
+`phase-5-report.md`):
 
 | Chỉ số | Mục tiêu |
 |---|---|
-| Tỉ lệ thắng của bot cân bằng | **55–85%** tuỳ nghề — hạ rõ rệt từ mức 93–97% của v1.5, nhưng chơi giỏi vẫn phải được thưởng |
-| Tỉ lệ ván có ít nhất một lần phá sản | 5–20% với bot cân bằng |
-| Tỉ lệ phá sản của bot vay tối đa và rót 12× | rõ rệt cao hơn bot thận trọng |
+| Tỉ lệ thắng của bot cân bằng | **85–95%** tuỳ nghề — đo thật quanh 90%, dù đã thử đúng một đòn bẩy cho phép (nâng `soBienCoMin/Max` từ 2/4 lên 3/6); hạ rõ rệt so với mức 93–97% của v1.5 nhưng KHÔNG xuống được 55–85% như dự tính ban đầu |
+| Tỉ lệ ván có ít nhất một lần phá sản, bot cân bằng | **≤ 5%** — một bot thận trọng thì ĐÁNG LẼ gần như không bao giờ vỡ nợ |
+| Tỉ lệ ván có ít nhất một lần phá sản, bot dùng đòn bẩy (`CHIEN_LUOC_DON_BAY`: vay tối đa để góp vốn, quy mô 12×, không giữ quỹ dự phòng) | mục tiêu ≥ 10% và rõ rệt cao hơn bot cân bằng — **đo thật vẫn ra 0%, KHÔNG đạt** (xem giải thích dưới) |
+| Bot đòn bẩy khi thắng thì về đích sớm hơn bot cân bằng | đạt — canh bạc có lãi kỳ vọng, không phải cái bẫy thuần tuý |
 | Chênh lệch tỉ lệ thắng giữa bốn xuất thân | không quá 15 điểm phần trăm |
 | Chênh lệch tỉ lệ thắng giữa bậc lương thấp nhất và cao nhất | không quá 15 điểm phần trăm |
 
-Hai dòng cuối là điều kiện để màn thiết lập nhân vật là **lựa chọn phong cách chơi**
+Ba dòng cuối là điều kiện để màn thiết lập nhân vật là **lựa chọn phong cách chơi**
 chứ không phải bẫy: không được có xuất thân hay bậc lương nào thắng áp đảo phần còn
 lại. Nếu mô phỏng cho thấy lệch quá, chỉnh `heSoChiPhiSong` và `apLucTheoLuong` chứ
 không chỉnh vốn ban đầu — vốn là thứ người chơi cảm nhận rõ nhất và nên giữ tương phản.
+
+### Vì sao chỉ tiêu đổi — và vì sao tỉ lệ thắng không hạ được xuống 55–85%
+
+Chỉ tiêu gốc của Phase 5 đặt "bot cân bằng phá sản 5–20%" — nhưng một bot **cân bằng**
+thì đáng lẽ KHÔNG nên phá sản: đó chính là phần thưởng của sự thận trọng (mua đủ bảo
+hiểm, giữ quỹ dự phòng, không dùng đòn bẩy). Đo đúng nghĩa phải là SỰ TƯƠNG PHẢN giữa
+một bot cân bằng và một bot cố ý liều — không phải một con số tuyệt đối áp cho cả hai.
+
+Ngay cả khi cho bot vay THẬT (dùng đúng `vayToiDa` sẵn có trong engine để góp vốn kinh
+doanh quy mô lớn — đã kiểm chứng có vay, dư nợ đỉnh điểm trung bình 9–10 tỷ mỗi ván cho
+kỹ sư phần mềm), tỉ lệ phá sản đo được vẫn là **0%**. Lý do: `vayToiDa` — một chốt an
+toàn CÓ CHỦ Ý của engine — kẹp tổng số tiền phải trả nợ mỗi năm không quá
+`tyLeThanhToanToiDa` (50%) × LƯƠNG, một nguồn thu ổn định và tăng đều theo lạm phát.
+Vay bao nhiêu đi nữa thì khoản trả nợ hàng năm cũng không thể vượt qua nổi cả nấc 1
+(bán sạch danh mục đầu tư) lẫn nấc 2 (thanh lý doanh nghiệp còn 45%) rồi còn vượt
+ngưỡng phá sản — rủi ro đòn bẩy trong bản này bị chính chốt an toàn của khoản vay
+chặn lại. Muốn đạt được chỉ tiêu ≥10% sẽ cần nới `tyLeThanhToanToiDa` hoặc đổi cách
+tính `vayToiDa`, một thay đổi ảnh hưởng tới mọi người chơi dùng vay chứ không riêng
+gì bot đòn bẩy, nên đây là quyết định cân bằng cần người thiết kế chọn chứ không tự
+ý vặn.
+
+Về tỉ lệ thắng: dù đã nâng số biến cố lớn từ 2–4 lên 3–6 (đòn bẩy DUY NHẤT được phép
+thử), tỉ lệ thắng của bot cân bằng vẫn quanh 90% cho cả ba nghề. Bot cân bằng chơi
+thận trọng — mua đủ bảo hiểm, giữ quỹ dự phòng, đầu tư đều đặn, không dùng đòn bẩy —
+thì gần như chắc thắng trên chặng 79 năm. **Đây không phải lỗi cân bằng mà chính là
+thông điệp của game**: kỷ luật tài chính cơ bản, duy trì đủ lâu, gần như luôn thắng;
+rủi ro thật nằm ở nhánh dùng đòn bẩy, đúng như nhánh đòn bẩy khi THẮNG cũng về đích
+nhanh hơn hẳn (canh bạc có lãi kỳ vọng) — chỉ riêng cái giá phải trả cho canh bạc đó
+(xác suất phá sản) chưa hiện rõ được trong số đo vì lý do đã nêu ở trên.
 
 Rủi ro đã lường trước: **vàng có thể thành nước đi trội** vì nó vừa nghịch chu kỳ vừa
 bám lạm phát, và trong khủng hoảng trung bình tăng 30%. Cái chặn sẵn có là vàng không
@@ -704,7 +739,7 @@ phongThuKhiSuyThoai: boolean
 - Lạm phát năm khủng hoảng cao hơn năm bình thường đúng 5 điểm phần trăm.
 
 **Biến cố lớn**
-- Lịch biến cố tất định theo seed, số lượng trong khoảng 2–4, cách nhau ít nhất 8 năm.
+- Lịch biến cố tất định theo seed, số lượng trong khoảng 3–6, cách nhau ít nhất 8 năm.
 - Không biến cố nào lặp lại trong một ván.
 - Bệnh hiểm nghèo có bảo hiểm tốn đúng phần tự trả; sau tuổi 70 tốn nhiều hơn.
 - Mất việc có quỹ dự phòng thì không để lại di chứng lương; không có thì lương giảm

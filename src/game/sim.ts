@@ -16,9 +16,11 @@ import {
   phiBaoHiemXe,
   phiChuyenGiaTaiChinh,
   phiChuyenGiaTamLy,
+  quyMoToiDa,
   reducer,
   taoGameMoi,
   tongTaiSan,
+  vayToiDa,
   xeDangCo,
 } from './engine'
 import type { LoaiBaoHiemXe, ThietLapNhanVat } from './types'
@@ -32,6 +34,10 @@ export interface KetQuaSim {
   nghiaVu: number
   hanhPhucCuoi: number
   lyDo: string
+  /** số lần vỡ nợ tới nấc phá sản trong cả ván (v1.6) */
+  soLanPhaSan: number
+  /** số biến cố lớn đã gặp trong cả ván (v1.6) */
+  soBienCoGap: number
 }
 
 export interface ChienLuoc {
@@ -59,6 +65,22 @@ export interface ChienLuoc {
   nhanCanhBac: boolean
   /** nhận cơ hội tổ chức sự kiện — kỳ vọng dương, mở kết quả ngay cuối năm */
   nhanToChucSuKien: boolean
+  /** bậc quy mô góp vốn ưa thích; bot tự kẹp lại theo trần cho phép */
+  quyMoGopVonUaThich: number
+  /**
+   * Giữ tiền mặt tối thiểu bằng ngần này lần chi phí sinh hoạt. Khác
+   * `duPhongTheoChiPhi` ở chỗ nó là sàn CỨNG áp cho cả việc nhận cơ hội, không
+   * chỉ cho việc đầu tư — nó chính là lá chắn của biến cố mất việc.
+   */
+  quyDuPhongTheoChiPhi: number
+  /**
+   * Vay tối đa để góp vốn kinh doanh khi tiền mặt không đủ cho quy mô mong
+   * muốn — chiến thuật đòn bẩy, dùng để đo rủi ro phá sản. Bot cân bằng
+   * KHÔNG bao giờ vay: một bot thận trọng thì đáng lẽ gần như không bao giờ
+   * vỡ nợ, đó chính là phần thưởng của sự thận trọng. Rủi ro thật nằm ở
+   * nhánh dùng đòn bẩy này.
+   */
+  vayDeGopVon: boolean
 }
 
 export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
@@ -76,6 +98,25 @@ export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
   nhanCoHoiKinhDoanh: true,
   nhanCanhBac: false,
   nhanToChucSuKien: true,
+  quyMoGopVonUaThich: 3,
+  quyDuPhongTheoChiPhi: 1,
+  vayDeGopVon: false,
+}
+
+/**
+ * Bot dùng đòn bẩy: vay tối đa để góp vốn kinh doanh quy mô lớn, gần như
+ * không giữ quỹ dự phòng. Không phải một cách chơi "cân bằng" khác — đây là
+ * canh bạc CỐ Ý liều lĩnh, dựng lên để đo tương phản rủi ro phá sản với bot
+ * cân bằng: một chiến thuật vay tối đa để rót vốn lớn phải vỡ nợ nhiều hơn
+ * hẳn, nhưng khi thắng thì cũng phải về đích nhanh hơn — nếu không phải vậy
+ * thì đòn bẩy chỉ là một cái bẫy thuần tuý, không phải một canh bạc có lãi
+ * kỳ vọng.
+ */
+export const CHIEN_LUOC_DON_BAY: ChienLuoc = {
+  ...CHIEN_LUOC_CAN_BANG,
+  vayDeGopVon: true,
+  quyMoGopVonUaThich: 12,
+  quyDuPhongTheoChiPhi: 0,
 }
 
 /**
@@ -234,20 +275,51 @@ export function moPhongMotVan(
     // 7. cơ hội: xử lý từng cái một, vòng lặp sẽ quay lại lo cái tiếp theo
     const coHoi = s.coHoiNamNay[0]
     if (coHoi) {
-      const gia = giaThucTe(s, coHoi.gia)
       const chapNhanLoai =
         coHoi.loai === 'kinhDoanh'
           ? cl.nhanCoHoiKinhDoanh
           : coHoi.loai === 'toChucSuKien'
             ? cl.nhanToChucSuKien
             : cl.nhanCanhBac
-      const muon = chapNhanLoai && s.tienMat > gia * 1.3
-      s = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: muon })
+
+      // Đòn bẩy: `quyMoToiDa` tự kẹp theo tiền mặt ĐANG CÓ nên tính thẳng từ đó
+      // sẽ không bao giờ thấy thiếu tiền để vay bù — phải tính giá cho ĐÚNG quy
+      // mô MONG MUỐN trước (không kẹp), thấy thiếu thì vay bù, RỒI mới hỏi lại
+      // `quyMoToiDa` (đọc trên trạng thái đã vay) để chốt quy mô THẬT sẽ góp.
+      // Đây chính là con đường dẫn tới phá sản mà `CONFIG.phaSan` mô tả ("vay
+      // tối đa để góp vốn quy mô lớn → khủng hoảng ập tới..."). Bot cân bằng có
+      // `vayDeGopVon: false` nên nhánh này không bao giờ chạy — giữ nguyên hành
+      // vi cũ.
+      if (cl.vayDeGopVon && coHoi.loai === 'kinhDoanh' && chapNhanLoai && cl.quyMoGopVonUaThich >= 1) {
+        const giaMongMuon = giaThucTe(s, coHoi.gia) * cl.quyMoGopVonUaThich
+        const thieu = giaMongMuon - s.tienMat
+        if (thieu > 0) {
+          const kyHan = CONFIG.kyHanVayToiDa
+          const vay = Math.min(thieu, vayToiDa(s, kyHan))
+          if (vay > 0) {
+            s = reducer(s, { type: 'vay', goc: vay, kyHan })
+          }
+        }
+      }
+
+      const tran = quyMoToiDa(s, coHoi)
+      const quyMo = Math.min(cl.quyMoGopVonUaThich, tran)
+      const gia = giaThucTe(s, coHoi.gia) * Math.max(1, quyMo)
+      // Giữ nguyên quỹ dự phòng sau khi góp vốn — đó là lá chắn của biến cố mất việc
+      const sanTienMat = s.chiPhiHangNam * cl.quyDuPhongTheoChiPhi
+      const muon = chapNhanLoai && quyMo >= 1 && s.tienMat - gia >= sanTienMat
+      s = reducer(s, {
+        type: 'quyetDinhCoHoi',
+        coHoiId: coHoi.id,
+        nhan: muon,
+        heSoQuyMo: quyMo,
+      })
       continue
     }
 
     // 8. đem phần dư đi đầu tư
-    const duPhong = s.chiPhiHangNam * cl.duPhongTheoChiPhi
+    const duPhong =
+      s.chiPhiHangNam * Math.max(cl.duPhongTheoChiPhi, cl.quyDuPhongTheoChiPhi)
     const coTheDung = s.tienMat - duPhong
     if (coTheDung > 0) {
       let daMua = false
@@ -280,6 +352,8 @@ export function moPhongMotVan(
     nghiaVu: mucTieuTuDo(s),
     hanhPhucCuoi: s.hanhPhuc,
     lyDo: s.lyDoKetThuc ?? 'hết lượt mô phỏng',
+    soLanPhaSan: s.soLanPhaSan,
+    soBienCoGap: s.bienCoDaQua.length,
   }
 }
 

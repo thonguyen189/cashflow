@@ -457,8 +457,8 @@ export const CONFIG = {
    * với mọi thứ là một trò chơi nói dối. Bù lại nó là cú nhẹ nhất trong sáu cái.
    */
   bienCo: {
-    soBienCoMin: 2,
-    soBienCoMax: 4,
+    soBienCoMin: 3,
+    soBienCoMax: 6,
     tuoiSomNhat: 28,
     tuoiMuonNhat: 85,
     cachNhauToiThieu: 8,

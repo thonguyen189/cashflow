@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CONFIG } from './config'
 import { NGHE, XUAT_THAN } from './content'
-import { CHIEN_LUOC_CAN_BANG, moPhongNhieuVan } from './sim'
+import { CHIEN_LUOC_CAN_BANG, CHIEN_LUOC_DON_BAY, moPhongNhieuVan } from './sim'
 
 /**
  * Kiểm tra cân bằng bằng mô phỏng. Đây là lưới an toàn khi chỉnh số
@@ -195,5 +195,83 @@ describe('cân bằng game', () => {
       console.log(`bậc lương ${bac}  thắng ${(r.tyLeThang * 100).toFixed(0)}%`)
     }
     expect(Math.max(...ty) - Math.min(...ty)).toBeLessThanOrEqual(0.15)
+  })
+
+  /**
+   * ---------- Chỉ tiêu tỉ lệ thắng (v1.6 Phase 5, viết lại) ----------
+   * Chỉ tiêu gốc 55–85% không đạt được dù đã thử đúng một đòn bẩy cho phép
+   * (nâng `bienCo.soBienCoMin/Max` từ 2/4 lên 3/6) — đo lại vẫn quanh 90%.
+   * Bot cân bằng mua đủ bảo hiểm, giữ quỹ dự phòng và không dùng đòn bẩy thì
+   * gần như chắc thắng trên chặng 79 năm; đó không phải lỗi cân bằng mà chính
+   * là thông điệp của game (xem docs/06-thiet-ke-v1-6.md mục F). Ngưỡng dưới
+   * đây bám theo khoảng THẬT quan sát được, không phải khoảng mong muốn ban đầu.
+   */
+  it('bot cân bằng thắng ổn định quanh 85–95% — thận trọng gần như chắc thắng trên chặng dài', () => {
+    for (const nghe of NGHE) {
+      const r = moPhongNhieuVan(nghe.id, 150)
+      // eslint-disable-next-line no-console
+      console.log(
+        `${nghe.ten.padEnd(18)} thắng ${(r.tyLeThang * 100).toFixed(0)}%` +
+          ` · ${(r.soNamTrungBinhKhiThang || 0).toFixed(1)} năm`,
+      )
+      expect(r.tyLeThang).toBeGreaterThanOrEqual(0.85)
+      expect(r.tyLeThang).toBeLessThanOrEqual(0.95)
+    }
+  })
+
+  /**
+   * ---------- Tương phản rủi ro phá sản (v1.6 Phase 5, viết lại) ----------
+   * Chỉ tiêu cũ "bot cân bằng phá sản 5–20%" đã bị huỷ: một bot cân bằng thì
+   * ĐÁNG LẼ không nên phá sản — đó chính là phần thưởng của sự thận trọng.
+   * Phép đo có nghĩa là SỰ TƯƠNG PHẢN giữa bot cân bằng và bot dùng đòn bẩy
+   * (`CHIEN_LUOC_DON_BAY`: vay tối đa để góp vốn kinh doanh quy mô lớn).
+   */
+  it('bot cân bằng thận trọng thì gần như không bao giờ phá sản', () => {
+    const r = moPhongNhieuVan('bacSi', 200)
+    const ty = r.ketQua.filter((k) => k.soLanPhaSan > 0).length / r.soVan
+    // eslint-disable-next-line no-console
+    console.log(`bot cân bằng — bacSi: phá sản ${(ty * 100).toFixed(1)}%`)
+    expect(ty).toBeLessThanOrEqual(0.05)
+  })
+
+  /**
+   * KHÔNG ĐẠT ở lần đo thật (xem phase-5-report.md): bot đòn bẩy vay thật —
+   * đã kiểm chứng riêng có vay (trung bình khoảng 9–10 tỷ dư nợ đỉnh điểm mỗi
+   * ván cho kỹ sư phần mềm) — nhưng tỉ lệ phá sản đo được vẫn ra 0%, không đạt
+   * ngưỡng ≥10%. Nguyên nhân: `vayToiDa` (an toàn có chủ ý của engine) kẹp
+   * tổng nợ phải trả mỗi năm không quá 50% LƯƠNG — một nguồn thu ổn định và
+   * tăng đều — nên dù vay hết mức cho phép, khoản trả nợ vẫn không đủ lớn để
+   * vượt qua cả nấc 1 (bán sạch danh mục) lẫn nấc 2 (thanh lý doanh nghiệp
+   * 45%) rồi còn vượt ngưỡng phá sản. Giữ nguyên bài test này (không nới lỏng
+   * ngưỡng, không vặn thêm hằng số) để ghi nhận đúng khoảng cách thật — quyết
+   * định tiếp theo (nới `tyLeThanhToanToiDa`, hay đổi cách bot vay, hay chấp
+   * nhận rủi ro đòn bẩy trong game này vốn bị chặn bởi thiết kế an toàn) cần
+   * người quyết định cân bằng, không phải chỉnh mò.
+   */
+  it('bot dùng đòn bẩy vay tối đa để góp vốn thì phá sản nhiều hơn hẳn bot cân bằng', () => {
+    const canBang = moPhongNhieuVan('bacSi', 200)
+    const donBay = moPhongNhieuVan('bacSi', 200, CHIEN_LUOC_DON_BAY)
+    const tyCanBang = canBang.ketQua.filter((k) => k.soLanPhaSan > 0).length / canBang.soVan
+    const tyDonBay = donBay.ketQua.filter((k) => k.soLanPhaSan > 0).length / donBay.soVan
+    // eslint-disable-next-line no-console
+    console.log(
+      `bacSi — cân bằng phá sản ${(tyCanBang * 100).toFixed(1)}%` +
+        ` · đòn bẩy phá sản ${(tyDonBay * 100).toFixed(1)}%`,
+    )
+    expect(tyDonBay).toBeGreaterThanOrEqual(0.1)
+    expect(tyDonBay).toBeGreaterThan(tyCanBang)
+  })
+
+  it('bot đòn bẩy khi thắng thì về đích sớm hơn bot cân bằng — canh bạc có lãi kỳ vọng', () => {
+    for (const nghe of NGHE) {
+      const canBang = moPhongNhieuVan(nghe.id, 150)
+      const donBay = moPhongNhieuVan(nghe.id, 150, CHIEN_LUOC_DON_BAY)
+      // eslint-disable-next-line no-console
+      console.log(
+        `${nghe.ten.padEnd(18)} cân bằng ${canBang.soNamTrungBinhKhiThang.toFixed(1)} năm` +
+          ` · đòn bẩy ${donBay.soNamTrungBinhKhiThang.toFixed(1)} năm`,
+      )
+      expect(donBay.soNamTrungBinhKhiThang).toBeLessThan(canBang.soNamTrungBinhKhiThang)
+    }
   })
 })

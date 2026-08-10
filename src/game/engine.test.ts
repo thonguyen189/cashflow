@@ -967,7 +967,10 @@ describe('thu nhập doanh nghiệp biến động từng năm', () => {
   })
 
   it('mức nền bám lạm phát nên vài chục năm sau vẫn còn giá trị thật', () => {
-    let s = gopVon('nhaTroCongNhan')
+    // Không hẹn biến cố lớn nào — bài này đo độ bám lạm phát của thu nhập
+    // doanh nghiệp, không phải phép thử cho "doanh nghiệp đóng cửa" (biến cố
+    // đó xoá thẳng doanh nghiệp và có bài kiểm riêng của nó).
+    let s: GameState = { ...gopVon('nhaTroCongNhan'), lichBienCo: [] }
     const nenLucGopVon = thuNhapThuDong(s)
     for (let i = 0; i < 20 && s.trangThai === 'dangChoi'; i++) {
       s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
@@ -1837,12 +1840,15 @@ describe('chuyên gia đồng hành', () => {
   it('kiệt sức xét SAU cột mốc tài sản: leo lên trên ngưỡng nhờ mốc thì không kể', () => {
     // 400 triệu vượt đúng mốc đầu của giáo viên (300 triệu) mà chưa tới mốc hai
     // (700 triệu), nên năm này chạm đúng một cột mốc và được cộng 5 điểm ở bước 12.
+    // Điểm khởi đầu 66 (không phải 63) để chừa chỗ cho một "sự cố đời sống"
+    // (−3 hạnh phúc) mà seed này còn rút phải ở bước 7, ngoài khoản phạt khát
+    // vọng (−5) — mở ra ở 58, dưới ngưỡng cảnh báo, đúng ý test.
     for (const coBanDau of [false, true]) {
-      const goc = vanDuTien(63)
+      const goc = vanDuTien(66)
       const leoLai: GameState = {
         ...duyetHetThe(goc, false),
         tienMat: 400 * TRIEU,
-        hanhPhuc: 63,
+        hanhPhuc: 66,
         daCanhBaoKietSuc: coBanDau,
       }
       const sau = reducer(leoLai, { type: 'ketThucNam' })
@@ -2402,7 +2408,7 @@ describe('v1.6 — góp vốn theo quy mô', () => {
 })
 
 describe('v1.6 — lịch biến cố lớn', () => {
-  it('mỗi ván có từ 2 tới 4 biến cố, tất định theo seed', () => {
+  it('mỗi ván có từ soBienCoMin tới soBienCoMax biến cố, tất định theo seed', () => {
     for (let seed = 0; seed < 40; seed++) {
       const a = taoGameMoi('giaoVien', seed)
       const b = taoGameMoi('giaoVien', seed)
