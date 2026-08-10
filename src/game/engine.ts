@@ -106,12 +106,19 @@ export function quyMoToiDa(s: GameState, coHoi: CoHoi): number {
   if (coHoi.loai === 'canhBac') return 1
   const gia = giaThucTe(s, coHoi.gia)
   if (gia <= 0) return 1
-  const tranTien = s.tienMat
-  const tranTaiSan = taiSanRong(s) * CONFIG.quyMoGopVon.tyLeToiDaTheoTaiSan
-  const tran = Math.min(tranTien, tranTaiSan)
-  let ketQua = 0
+  // Không đủ tiền mặt cho nổi một suất thì thôi hẳn.
+  if (gia > s.tienMat) return 0
+  // Suất gốc luôn được phép: dồn gần hết vốn liếng vào một cửa hàng chính là cách
+  // tuyệt đại đa số người ta bắt đầu làm ăn. Việc tập trung vốn bị trừng phạt bằng
+  // RỦI RO — biến cố doanh nghiệp đóng cửa nhắm đúng cái lớn nhất, khủng hoảng cắt
+  // một nửa thu nhập, thanh lý gấp chỉ thu về 45% — chứ không bằng lệnh cấm.
+  const tran = Math.min(
+    s.tienMat,
+    taiSanRong(s) * CONFIG.quyMoGopVon.tyLeToiDaTheoTaiSan,
+  )
+  let ketQua = 1
   for (const bac of CONFIG.quyMoGopVon.bac) {
-    if (gia * bac <= tran) ketQua = bac
+    if (bac > 1 && gia * bac <= tran) ketQua = bac
   }
   return ketQua
 }

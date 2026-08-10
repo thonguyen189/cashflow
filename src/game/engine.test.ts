@@ -2238,6 +2238,16 @@ describe('v1.6 — tài sản ròng và trần quy mô góp vốn', () => {
     expect(quyMoToiDa(s, coHoi)).toBe(0)
   })
 
+  it('một cơ hội ngốn phần lớn tài sản ròng vẫn nhận được đúng một suất khi đủ tiền mặt', () => {
+    // quanCaPhe giá 400 triệu. Tài sản ròng ở đây đúng bằng tiền mặt (không đầu
+    // tư, không nợ) nên trần 60% tài sản ròng chỉ còn 300 triệu — thấp hơn giá
+    // một suất. Suất gốc 1x KHÔNG được phép bị chặn bởi trần này, chỉ phụ thuộc
+    // tiền mặt: có 500 triệu, đủ trả 400 triệu, nên phải nhận được đúng 1 suất.
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = { ...moiVan(), tienMat: 500 * TRIEU, khoanVay: [] }
+    expect(quyMoToiDa(s, coHoi)).toBe(1)
+  })
+
   it('các bậc quy mô tăng dần và bắt đầu từ 1', () => {
     const bac = CONFIG.quyMoGopVon.bac
     expect(bac[0]).toBe(1)
