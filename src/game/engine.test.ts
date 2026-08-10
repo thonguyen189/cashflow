@@ -13,6 +13,7 @@ import {
 } from './content'
 import {
   CHUYEN_TRI_LIEU,
+  apLucCongViec,
   bienDoThuNhapThuDong,
   coHoiHopLe,
   daDatKhatVong,
@@ -39,6 +40,7 @@ import {
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   thuNhapThuDong,
+  tinhHeSoChiPhi,
   tongTaiSan,
   traNoMoiNam,
   tuoiTaiNam,
@@ -1928,5 +1930,57 @@ describe('chuyên gia đồng hành', () => {
       expect(bac[2]).toBe(1)
       expect(bac[0]! + bac[4]!).toBeCloseTo(2, 10)
     })
+  })
+})
+
+describe('v1.6 — chi phí sống và áp lực công việc', () => {
+  it('chi phí sinh hoạt nhân hệ số lối sống của xuất thân', () => {
+    const goc = timNghe('giaoVien')!.chiPhi
+    for (const x of XUAT_THAN) {
+      // tuổi 21 ở năm 1 nên nhà thuần nông vẫn đang phụng dưỡng
+      const heSo = tinhHeSoChiPhi(false, [], 1, x, 1)
+      const mongDoi = x.heSoChiPhiSong * (1 + x.tyLePhungDuong)
+      expect(heSo).toBeCloseTo(mongDoi, 10)
+      expect(Math.round(goc * heSo)).toBeGreaterThan(0)
+    }
+  })
+
+  it('phụng dưỡng tắt hẳn sau tuổi 55', () => {
+    const x = timXuatThan('thuanNong')!
+    const namTuoi55 = 55 - CONFIG.cotTruyen.tuoiBatDau + 1
+    expect(tinhHeSoChiPhi(false, [], namTuoi55, x, 1)).toBeCloseTo(
+      x.heSoChiPhiSong * (1 + x.tyLePhungDuong),
+      10,
+    )
+    expect(tinhHeSoChiPhi(false, [], namTuoi55 + 1, x, 1)).toBeCloseTo(
+      x.heSoChiPhiSong,
+      10,
+    )
+  })
+
+  it('bậc lương kéo chi phí sinh hoạt theo đúng 0,6 lần mức lệch', () => {
+    const x = timXuatThan('vienChuc')!
+    expect(tinhHeSoChiPhi(false, [], 1, x, 1.25)).toBeCloseTo(1.15, 10)
+    expect(tinhHeSoChiPhi(false, [], 1, x, 0.75)).toBeCloseTo(0.85, 10)
+  })
+
+  it('bậc lương cao nhất trừ đúng 5 điểm hạnh phúc mỗi năm', () => {
+    // taoGameMoi chưa nhận tham số ThietLapNhanVat thứ ba (việc của Task 2) nên
+    // dựng trạng thái trực tiếp từ moiVan() rồi ghi đè heSoLuongKhoiDiem.
+    const s = { ...moiVan(), heSoLuongKhoiDiem: 1.25 } as GameState
+    expect(apLucCongViec(s)).toBe(-5)
+    expect(apLucCongViec({ ...s, heSoLuongKhoiDiem: 0.75 } as GameState)).toBe(5)
+    expect(apLucCongViec({ ...s, heSoLuongKhoiDiem: 1 } as GameState)).toBe(0)
+  })
+
+  it('áp lực công việc tắt hẳn sau khi nghỉ hưu', () => {
+    const s = { ...moiVan(), heSoLuongKhoiDiem: 1.25 } as GameState
+    expect(apLucCongViec({ ...s, daNghiHuu: true })).toBe(0)
+  })
+
+  it('mocTaiSanCuaNghe không đổi theo xuất thân hay bậc lương', () => {
+    const moc = mocTaiSanCuaNghe('giaoVien')
+    const s = { ...moiVan(), heSoLuongKhoiDiem: 1.25 } as GameState
+    expect(mocTaiSanCuaNghe(s.ngheId)).toEqual(moc)
   })
 })

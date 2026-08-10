@@ -7,11 +7,13 @@ import {
   THE_TIEU_DUNG,
   UOC_NGUYEN,
   XE_UOC_NGUYEN_IDS,
+  XUAT_THAN,
   timCoHoi,
   timKhoaHoc,
   timNghe,
   timTaiSan,
   timUocNguyen,
+  timXuatThan,
 } from './content'
 import { dinhDangTien } from './format'
 import type {
@@ -27,6 +29,7 @@ import type {
   TheTieuDung,
   Tien,
   TongKetNam,
+  XuatThan,
 } from './types'
 
 /* ============================================================
@@ -453,17 +456,55 @@ export function soConDangNuoi(conCai: readonly number[], nam: number): number {
     .length
 }
 
-/** Hệ số chi phí cố định theo hoàn cảnh gia đình ở năm `nam`. */
+/**
+ * Hệ số chi phí cố định ở năm `nam`. Gom TẤT CẢ hệ số nhân vào chi phí sinh hoạt
+ * về một chỗ: hoàn cảnh gia đình, xuất thân, phụng dưỡng bố mẹ và lối sống theo
+ * bậc lương. Rải chúng ra nhiều nơi thì không ai tra được vì sao chi phí của mình
+ * khác con số gốc của nghề.
+ *
+ * Hai tham số cuối để tuỳ chọn: mọi lời gọi ba tham số có từ trước v1.6 vẫn đúng
+ * vì viên chức tỉnh lẻ và bậc lương 1 đều trung tính.
+ */
 export function tinhHeSoChiPhi(
   daKetHon: boolean,
   conCai: readonly number[],
   nam: number,
+  xuatThan: XuatThan = XUAT_THAN[1]!,
+  heSoLuongKhoiDiem = 1,
 ): number {
   const ct = CONFIG.cotTruyen
+  const conPhungDuong =
+    xuatThan.tyLePhungDuong > 0 && tuoiTaiNam(nam) <= xuatThan.phungDuongDenTuoi
   return (
     (1 + (daKetHon ? ct.cuoiTangChiPhi : 0)) *
-    Math.pow(1 + ct.conTangChiPhi, soConDangNuoi(conCai, nam))
+    Math.pow(1 + ct.conTangChiPhi, soConDangNuoi(conCai, nam)) *
+    xuatThan.heSoChiPhiSong *
+    (conPhungDuong ? 1 + xuatThan.tyLePhungDuong : 1) *
+    (1 + (heSoLuongKhoiDiem - 1) * CONFIG.xuatThan.loiSongTheoLuong)
   )
+}
+
+/**
+ * Xuất thân đang áp dụng cho ván chơi hiện tại.
+ *
+ * TẠM THỜI: `GameState` chưa có trường `xuatThanId` (việc của Task 2), nên đọc
+ * phòng thủ qua ép kiểu cục bộ. Khi Task 2 thêm trường thật vào `GameState`,
+ * chữ ký hàm này giữ nguyên và phần ép kiểu phòng thủ có thể bỏ đi.
+ */
+export const xuatThanHienTai = (s: GameState): XuatThan =>
+  timXuatThan((s as { xuatThanId?: string }).xuatThanId ?? '') ?? XUAT_THAN[1]!
+
+/**
+ * Điểm hạnh phúc mỗi năm do bậc lương — âm khi chọn lương cao, dương khi chọn
+ * lương thấp. Tắt hẳn sau khi nghỉ hưu: không còn đi làm thì không còn áp lực.
+ *
+ * TẠM THỜI: `GameState` chưa có trường `heSoLuongKhoiDiem` (việc của Task 2),
+ * nên đọc phòng thủ qua ép kiểu cục bộ giống `xuatThanHienTai`.
+ */
+export function apLucCongViec(s: GameState): number {
+  if (s.daNghiHuu) return 0
+  const heSoLuongKhoiDiem = (s as { heSoLuongKhoiDiem?: number }).heSoLuongKhoiDiem ?? 1
+  return Math.round((1 - heSoLuongKhoiDiem) * CONFIG.xuatThan.apLucTheoLuong)
 }
 
 /* ============================================================
@@ -1243,6 +1284,12 @@ function chuyenNam(s: GameState): GameState {
     })
   }
 
+  // Áp lực công việc của bậc lương đã chọn. Đứng cùng chỗ với phạt khát vọng vì
+  // cả hai đều là khoản đều đặn hàng năm, và nó phải nằm TRƯỚC khi chốt hạnh phúc
+  // cuối năm để cửa ải thua đọc đúng con số.
+  const apLuc = apLucCongViec(s)
+  const apLucThucNhan = apLuc !== 0 ? apHanhPhuc(apLuc) : 0
+
   // Ghi lại số điểm THỰC bị trừ / thực nhận, không phải con số danh nghĩa —
   // để bảng tổng kết cộng lại đúng bằng mức hạnh phúc thay đổi trong năm.
   // Dùng danh sách ước nguyện SAU nhóm sự kiện giao thông: xe vừa mất trộm thì
@@ -1261,7 +1308,15 @@ function chuyenNam(s: GameState): GameState {
   /* --- 10. Áp lạm phát + hoàn cảnh gia đình lên mặt bằng giá --- */
   const namMoi = s.nam + 1
   const chiSoGia = s.chiSoGia * (1 + lamPhat)
-  const heSoChiPhi = tinhHeSoChiPhi(daKetHon, conCai, namMoi)
+  // TẠM THỜI: `GameState` chưa có trường `heSoLuongKhoiDiem` (việc của Task 2) nên
+  // đọc phòng thủ qua ép kiểu cục bộ, giống `xuatThanHienTai` và `apLucCongViec`.
+  const heSoChiPhi = tinhHeSoChiPhi(
+    daKetHon,
+    conCai,
+    namMoi,
+    xuatThanHienTai(s),
+    (s as { heSoLuongKhoiDiem?: number }).heSoLuongKhoiDiem ?? 1,
+  )
   const nghe = timNghe(s.ngheId)!
   // Hệ số tối ưu chi tiêu nằm ở đây chứ không trừ một lần khi thuê: chi phí năm
   // nào cũng được dựng lại từ chi phí gốc của nghề, nên phần giảm phải nhân vào
@@ -1418,6 +1473,7 @@ function chuyenNam(s: GameState): GameState {
     thuNhapDoanhNghiep,
     phatKhatVong: phat,
     hanhPhucTuUocNguyen: thuongUocNguyen,
+    apLucCongViec: apLucThucNhan,
     suKien,
     lamPhat,
     tongTaiSan: tong,

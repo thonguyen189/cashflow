@@ -227,6 +227,8 @@ export interface TongKetNam {
   }[]
   phatKhatVong: number
   hanhPhucTuUocNguyen: number
+  /** hạnh phúc cộng trừ mỗi năm do bậc lương đã chọn (âm khi lương cao) */
+  apLucCongViec: number
   suKien: SuKien[]
   lamPhat: number
   tongTaiSan: Tien
