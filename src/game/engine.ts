@@ -1470,6 +1470,14 @@ function chuyenNam(s: GameState): GameState {
   let heSoLuongBienCo = 1
   let bienCoDaQua = s.bienCoDaQua
   let heSoLuongDiChung = s.heSoLuongDiChung
+  // Di chứng lương của việc mất việc CHỈ áp đúng một lần, vào năm sau năm xảy ra
+  // biến cố — không phải mãi mãi. Biến cục bộ này (mặc định 1, chỉ khác 1 đúng
+  // năm mất việc không có dự phòng) là thứ THẬT SỰ nhân vào lương ở bước 8.
+  // `heSoLuongDiChung` (trường của GameState) vẫn được cập nhật bên dưới để ghi
+  // nhận — dùng cho hiển thị và cho trường hợp nhiều lần mất việc chồng nhau —
+  // nhưng không còn được nhân vào lương mỗi năm như bản lỗi trước đây, nếu
+  // không lương sẽ tiệm cận 0 theo cấp số nhân (0,85 lũy thừa n).
+  let diChungApNamNay = 1
   let doanhNghiep = s.doanhNghiep
 
   if (s.lichBienCo.includes(s.nam)) {
@@ -1533,6 +1541,8 @@ function chuyenNam(s: GameState): GameState {
                 ? bc.matViec.diChungLuongKhiKhungHoang
                 : bc.matViec.diChungLuong
             heSoLuongDiChung = heSoLuongDiChung * diChung
+            // Áp đúng MỘT LẦN vào lương của năm sau — xem chú thích ở đầu bước 7b.
+            diChungApNamNay = diChung
             moTaThem = ` Lương khi đi làm lại chỉ còn ${soPhanTram(diChung)}% mức cũ.`
           }
           break
@@ -1618,7 +1628,13 @@ function chuyenNam(s: GameState): GameState {
     )
   }
   const tangLuong = s.luong > 0 ? luongMoi / s.luong - 1 : 0
-  luongMoi = Math.round(luongMoi * heSoLuongDiChung)
+  // Di chứng mất việc chỉ áp đúng MỘT LẦN, năm ngay sau năm xảy ra biến cố —
+  // dùng biến cục bộ `diChungApNamNay`, KHÔNG dùng `heSoLuongDiChung` của
+  // GameState. `heSoLuongDiChung` vẫn được lưu lại ở bước 7b để ghi nhận, nhưng
+  // nếu nhân thẳng nó vào đây thì di chứng sẽ bị áp lại mỗi năm — mất việc một
+  // lần sẽ biến thành lương tiệm cận 0 theo cấp số nhân (xem test "di chứng
+  // lương mất việc chỉ áp một lần, không nhân chồng mỗi năm").
+  luongMoi = Math.round(luongMoi * diChungApNamNay)
   // hệ số cắt lương của biến cố chỉ có hiệu lực đúng năm đó nên KHÔNG lưu vào
   // GameState — nó là biến cục bộ, năm sau lương quay lại mức bình thường
   const luongThucNhan = Math.round(luongMoi * heSoLuongBienCo)

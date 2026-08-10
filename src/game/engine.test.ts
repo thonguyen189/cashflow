@@ -2499,6 +2499,31 @@ describe('v1.6 — sáu biến cố lớn', () => {
     )
   })
 
+  it('di chứng lương mất việc chỉ áp một lần, không nhân chồng mỗi năm', () => {
+    const tru: BienCoId[] = ['benhHiemNgheo', 'boMeNgaBenh', 'voHui', 'doanhNghiepDongCua', 'baoLu']
+    // Mất việc năm 10, không có quỹ dự phòng (tienMat=0) nên chịu di chứng.
+    let s = reducer(
+      diTronMotNam(epBienCo({ ...moiVan(), nam: 10 }, tru), 0),
+      { type: 'dongTongKet' },
+    )
+    expect(s.heSoLuongDiChung).toBeCloseTo(CONFIG.bienCo.matViec.diChungLuong, 10)
+    const luongNgaySauMatViec = s.luong
+
+    // Không hẹn thêm biến cố nào khác — chạy tiếp vài năm hoàn toàn bình thường.
+    s = { ...s, lichBienCo: [] }
+    for (let i = 0; i < 5; i++) {
+      s = reducer(diTronMotNam(s), { type: 'dongTongKet' })
+    }
+
+    // Di chứng chỉ áp đúng MỘT LẦN vào năm sau năm mất việc. Các năm sau đó
+    // lương phải TĂNG trở lại theo lạm phát và tăng lương thực — nếu lỗi cũ còn
+    // đó (nhân `heSoLuongDiChung` vào lương mỗi năm), lương sẽ tiếp tục co lại
+    // theo cấp số nhân 0,85ⁿ dù không còn biến cố nào xảy ra thêm.
+    expect(s.luong).toBeGreaterThan(luongNgaySauMatViec)
+    // Trường ghi nhận trong state đứng yên vì không có lần mất việc nào khác.
+    expect(s.heSoLuongDiChung).toBeCloseTo(CONFIG.bienCo.matViec.diChungLuong, 10)
+  })
+
   it('vỡ hụi chỉ trừ tiền mặt, không đụng danh mục đầu tư', () => {
     const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'doanhNghiepDongCua', 'baoLu']
     const s: GameState = {
