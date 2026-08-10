@@ -2182,6 +2182,24 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
       expect(CONFIG.thiTruong.maTranChuyen[truoc][s.thiTruong]).toBeGreaterThan(0)
     }
   })
+
+  it('chu kỳ thị trường thật sự đổi qua nhiều năm, không đứng yên mãi một trạng thái', () => {
+    // Bẫy của test phía trên: mọi hàng ma trận đều có xác suất tự lặp dương trên
+    // đường chéo (binhThuong → binhThuong = 0,54), nên nếu `chuyenNam` quên gán
+    // `thiTruong: thiTruongSau` ở cuối thì trạng thái đứng yên VĨNH VIỄN ở giá trị
+    // khởi tạo mà test trên vẫn xanh — mọi "chuyển" quan sát được vẫn hợp lệ theo
+    // ma trận. Đóng lưới bằng cách chạy đủ nhiều năm (40, seed cố định để tất
+    // định) rồi khẳng định TẬP các trạng thái quan sát được có nhiều hơn một
+    // phần tử — nếu đứng yên thì tập chỉ có đúng một phần tử và test này đỏ.
+    const trangThaiQuanSat = new Set<TrangThaiThiTruong>()
+    let s = moiVan()
+    trangThaiQuanSat.add(s.thiTruong)
+    for (let i = 0; i < 40 && s.trangThai === 'dangChoi'; i++) {
+      s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
+      trangThaiQuanSat.add(s.thiTruong)
+    }
+    expect(trangThaiQuanSat.size).toBeGreaterThan(1)
+  })
 })
 
 describe('v1.6 — tài sản ròng và trần quy mô góp vốn', () => {
