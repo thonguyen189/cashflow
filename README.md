@@ -195,6 +195,101 @@ hạnh phúc của gói hoạch định tài chính. Gói hoạch định thật
 vào đúng lúc túng quẫn nhất. Bài học nằm đúng ở chỗ đó: **đừng đợi kiệt sức mới đi
 gặp chuyên gia.**
 
+## Đời thật hơn: xuất thân, chu kỳ kinh tế và cái giá của đòn bẩy
+
+Bản này thêm năm hệ thống mới, tất cả xoay quanh một ý: vận may xuất phát khác nhau,
+kinh tế có chu kỳ chứ không phẳng lặng, đời người có vài cú sốc lớn, và rủi ro tài
+chính phải có hậu quả thật — nhưng hậu quả đó phải cho **làm lại được**.
+
+### Xuất thân và bậc lương — hai trục độc lập
+
+Màn chọn nghề giờ có **hai bước**. Bước một chọn nghề (thu nhập, chi phí, khát vọng).
+Bước hai chọn **xuất thân** (vốn liếng gia đình) và **bậc lương khởi điểm** (năng lực cá
+nhân) — hai trục hoàn toàn độc lập, một người giỏi từ nhà nghèo vẫn thắng ngang một
+người xuất thân khá giả.
+
+| Xuất thân | Vốn ban đầu | Nợ học phí | Chi phí sống | Đặc điểm |
+|---|---|---|---|---|
+| 🌾 Nhà thuần nông | 0,85× lương | 0,4× lương | 0,92× | Gửi tiền phụng dưỡng tới 55 tuổi, nhưng thói quen tằn tiện đi theo suốt đời |
+| 🏘️ Viên chức tỉnh lẻ | 1× lương | không nợ | 1,0× | Trung tính — mọi lời gọi cũ mặc định vào đây |
+| 🏢 Buôn bán ngoài phố | 2× lương | không nợ | 1,1× | Bố mẹ có tích luỹ — biến cố "bố mẹ ngã bệnh" nhẹ đi |
+| 🏛️ Nhà có của ăn của để | 3,5× lương | không nợ | 1,25× | Vốn dày nhất nhưng nếp sống đắt đỏ nhất, đích tự do cũng lùi xa nhất |
+
+Bậc lương khởi điểm có **năm mức**, từ 0,75× tới 1,25× lương gốc của nghề. Chọn lương
+cao thì thặng dư tuyệt đối lớn hơn, nhưng đổi lại mất tới **5 điểm hạnh phúc mỗi năm** vì
+áp lực công việc (tắt hẳn sau khi nghỉ hưu) — người chọn lương cao đang đổi tiền lấy
+tuổi thọ của ván chơi, không phải một nước đi luôn đúng.
+
+### Chu kỳ kinh tế — bốn trạng thái, không còn mỗi kênh tự tung xúc xắc riêng
+
+Trước bản này, mỗi kênh đầu tư rút biến động độc lập nên "đa dạng hoá" chỉ là khẩu
+hiệu. Giờ cả nền kinh tế cùng chuyển trạng thái mỗi năm theo một ma trận xác suất:
+
+| Từ ↓ Sang → | 📈 Thịnh vượng | 😐 Bình thường | 📉 Suy thoái | 💥 Khủng hoảng |
+|---|---|---|---|---|
+| 📈 Thịnh vượng | 52% | 34% | 11% | 3% |
+| 😐 Bình thường | 24% | 54% | 18% | 4% |
+| 📉 Suy thoái | 5% | 40% | 33% | 22% |
+| 💥 Khủng hoảng | 0% | 28% | 47% | 25% |
+
+Khủng hoảng không bao giờ nhảy thẳng lên thịnh vượng — kinh tế hồi phục dần, không bật
+dậy. Khủng hoảng cắt biến động giá xuống, giảm lợi tức và thu nhập doanh nghiệp còn một
+nửa, đẩy lạm phát cao hơn 5 điểm phần trăm, và siết tăng lương thực. 🥇 Vàng thì ngược
+lại — nghịch chu kỳ, càng hoảng loạn càng đắt. Trạng thái hiện hành công khai ngay trên
+thanh chỉ số, và mọi phép tính của một năm dùng trạng thái người chơi **đã nhìn thấy**
+suốt năm đó, không phải trạng thái mới bốc ra lúc chuyển năm.
+
+### Sáu biến cố lớn, mỗi cái có một lá chắn riêng
+
+Đời người có **3 tới 6** cú sốc lớn, hẹn lịch sẵn (tất định theo seed) trong khoảng
+tuổi 28–85, cách nhau ít nhất 8 năm — không phải năm nào cũng tung xúc xắc. Mỗi biến cố
+có đúng một thứ phải chuẩn bị từ trước mới chặn được:
+
+| Biến cố | Lá chắn |
+|---|---|
+| 🏥 Bệnh hiểm nghèo | Bảo hiểm y tế còn hiệu lực |
+| 🏭 Mất việc | Quỹ dự phòng tiền mặt |
+| 👴 Bố mẹ ngã bệnh | Xuất thân có bố mẹ tích luỹ |
+| 💸 Vỡ hụi | Đã thuê chuyên gia hoạch định tài chính |
+| 🏚️ Doanh nghiệp đóng cửa | Không dồn quá 40% tài sản ròng vào một chỗ |
+| 🌊 Bão lũ | Không có — cú nhẹ nhất trong sáu cái, vì một trò chơi giả vờ rằng chuẩn bị đủ kỹ thì miễn nhiễm mọi thứ là một trò chơi nói dối |
+
+Mất việc mà không có quỹ dự phòng thì lương đi làm lại chỉ còn 85% mức cũ (75% nếu rơi
+đúng năm khủng hoảng) — di chứng áp **đúng một lần** vào năm ngay sau đó rồi thôi, không
+dồn lại năm này qua năm khác.
+
+### Ba nấc vỡ nợ — phá sản không phải dấu chấm hết
+
+Thiếu tiền mặt cuối năm giờ đi qua ba nấc, mỗi nấc chỉ vào cuộc khi nấc trước không đủ
+bù:
+
+1. **Bán tài sản đầu tư** — trái phiếu trước, bất động sản sau cùng.
+2. **Thanh lý doanh nghiệp** — bán từ cái NHỎ NHẤT lên để giữ nguồn thu lớn nhất càng
+   lâu càng tốt, nhưng bán gấp thì chỉ thu về **45%** vốn đã bỏ ra.
+3. **Phá sản** — nếu thiếu hụt còn lại vẫn vượt một năm chi phí sinh hoạt: toà xoá sạch
+   nợ, tiền mặt về 0, mất **25 điểm hạnh phúc**, cấm vay **5 năm**, cấm nhận cơ hội kinh
+   doanh **3 năm**. Ước nguyện đã mua thì giữ nguyên — luật phá sản cũng chừa lại nhà ở
+   và phương tiện đi lại thiết yếu.
+
+Phá sản không phải dấu chấm hết: đó là lằn ranh cho **làm lại**, không phải kết thúc
+ván.
+
+### Sáu bậc quy mô góp vốn — và cái giá thật của đòn bẩy
+
+Cơ hội kinh doanh giờ góp được theo **sáu bậc quy mô** (1, 2, 3, 5, 8, 12 suất), trần ở
+**60% tài sản ròng** và cảnh báo màu đỏ khi vượt **40%**. Rót to không phải nước đi hiển
+nhiên đúng: khủng hoảng cắt một nửa thu nhập doanh nghiệp, thanh lý gấp chỉ thu về 45%,
+và biến cố "doanh nghiệp đóng cửa" luôn nhắm vào cái lớn nhất.
+
+Đo bằng bot mô phỏng: một bot **cân bằng** — mua đủ bảo hiểm, giữ quỹ dự phòng, không
+vay để góp vốn — thắng ổn định **85–95%** tuỳ nghề và gần như không bao giờ phá sản. Đó
+không phải một lỗ hổng cân bằng mà chính là thông điệp của game: kỷ luật tài chính cơ
+bản, giữ đủ lâu, gần như luôn thắng. Một bot **dùng đòn bẩy** — vay tối đa để góp vốn
+quy mô lớn — khi THẮNG thì về đích rõ rệt nhanh hơn (một canh bạc có lãi kỳ vọng thật,
+không phải cái bẫy thuần tuý), nhưng đó không phải bữa trưa miễn phí: chính con đường
+vay tối đa rồi khủng hoảng ập tới là cách người ta phá sản ngoài đời — không phải vì
+một quyết định ngu ngốc, mà vì đòn bẩy gặp đúng chu kỳ xấu.
+
 ## Chạy
 
 ```bash
@@ -211,7 +306,8 @@ npm run build      # build ra thư mục dist/, mở bằng file:// cũng chạy
 
 Toàn bộ số liệu cân bằng nằm trong **[src/game/config.ts](src/game/config.ts)** — hệ số
 an toàn của tự do tài chính, cột mốc tài sản, ngưỡng hạnh phúc, biên độ lạm phát,
-lãi vay, xác suất sự kiện, phí và hiệu quả của hai gói chuyên gia đồng hành.
+lãi vay, xác suất sự kiện, phí và hiệu quả của hai gói chuyên gia đồng hành, bốn xuất
+thân, ma trận chu kỳ kinh tế, sáu biến cố lớn, ba nấc vỡ nợ và sáu bậc quy mô góp vốn.
 
 Nút vặn chính là `tuDoTaiChinh.heSoAnToan`. Nó điều chỉnh **nhịp độ** chứ không phải
 tỉ lệ thắng: mô phỏng cho thấy nâng từ 1,0 lên 2,0 kéo ván dài thêm khoảng năm năm
