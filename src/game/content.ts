@@ -708,6 +708,48 @@ export const CO_HOI: CoHoi[] = [
     loiNhuanMin: -0.25,
     loiNhuanMax: 0.75,
   },
+
+  /* ---------- Tầm lớn: chỉ mở khi tài sản ròng đã đủ ----------
+   * Thanh trượt quy mô đã lo phần "cơ hội nhỏ vẫn dùng được khi giàu", nhưng
+   * nửa sau ván chơi vẫn cần nội dung MỚI để còn cảm giác thăng tiến. Cả ba nằm
+   * trong dải sinh lời 19–22% mà game vẫn giữ, nên không kênh nào trội hẳn.
+   */
+  {
+    id: 'khuNhaXuong',
+    ten: 'Khu nhà xưởng cho thuê',
+    moTa: 'Vài héc ta đất công nghiệp và những dãy nhà xưởng xây sẵn. Hợp đồng thuê dài hạn, tiền về đều như nước chảy.',
+    emoji: '🏭',
+    loai: 'kinhDoanh',
+    taiSanToiThieu: 20 * TY,
+    gia: 12 * TY,
+    thuNhapMoiNam: 2.3 * TY,
+    bienDongThuNhapMin: -0.18,
+    bienDongThuNhapMax: 0.22,
+  },
+  {
+    id: 'khachSanVenBien',
+    ten: 'Khách sạn ven biển',
+    moTa: 'Bốn chục phòng nhìn ra biển. Mùa cao điểm thì kín chỗ, nhưng kinh tế xấu là ngành lưu trú gãy đầu tiên.',
+    emoji: '🏨',
+    loai: 'kinhDoanh',
+    taiSanToiThieu: 35 * TY,
+    gia: 20 * TY,
+    thuNhapMoiNam: 4.2 * TY,
+    bienDongThuNhapMin: -0.45,
+    bienDongThuNhapMax: 0.5,
+  },
+  {
+    id: 'duAnKhuDoThi',
+    ten: 'Góp vốn dự án khu đô thị',
+    moTa: 'Đứng tên một phần trong dự án cả trăm héc ta. Tới tầm này thì bạn không còn đi làm ăn nữa — bạn là người bỏ vốn.',
+    emoji: '🏗️',
+    loai: 'kinhDoanh',
+    taiSanToiThieu: 70 * TY,
+    gia: 40 * TY,
+    thuNhapMoiNam: 8 * TY,
+    bienDongThuNhapMin: -0.35,
+    bienDongThuNhapMax: 0.4,
+  },
 ]
 
 export const timNghe = (id: string) => NGHE.find((n) => n.id === id)

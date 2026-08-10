@@ -582,18 +582,25 @@ interface BoiCanhCoHoi {
   ngheId: string
   nam: number
   coHoiDaLam: readonly string[]
+  taiSanRong: Tien
 }
 
 function hopLe(c: CoHoi, bc: BoiCanhCoHoi): boolean {
   if (c.ngheId !== undefined && c.ngheId !== bc.ngheId) return false
   if (c.namToiThieu !== undefined && bc.nam < c.namToiThieu) return false
+  if (c.taiSanToiThieu !== undefined && bc.taiSanRong < c.taiSanToiThieu) return false
   if (c.chiMotLan && bc.coHoiDaLam.includes(c.id)) return false
   return true
 }
 
 /** Cơ hội có hợp lệ với nghề, thâm niên và lịch sử tham gia của ván này không. */
 export const coHoiHopLe = (c: CoHoi, s: GameState): boolean =>
-  hopLe(c, { ngheId: s.ngheId, nam: s.nam, coHoiDaLam: s.coHoiDaLam })
+  hopLe(c, {
+    ngheId: s.ngheId,
+    nam: s.nam,
+    coHoiDaLam: s.coHoiDaLam,
+    taiSanRong: taiSanRong(s),
+  })
 
 /**
  * Rút cơ hội của năm. Suất đầu tiên ưu tiên lấy từ bộ cơ hội riêng của nghề đang
@@ -689,6 +696,10 @@ export function taoGameMoi(
     ngheId: nghe.id,
     nam: 1,
     coHoiDaLam: [],
+    // GameState chưa dựng xong nên chưa gọi được taiSanRong(s); năm 1 chưa có
+    // đầu tư hay nợ nào khác ngoài vốn ban đầu, nên vốn ban đầu chính là tài
+    // sản ròng của ván lúc này.
+    taiSanRong: vonBanDau,
   })
 
   return {
@@ -1577,6 +1588,12 @@ function chuyenNam(s: GameState): GameState {
     ngheId: s.ngheId,
     nam: namMoi,
     coHoiDaLam: s.coHoiDaLam,
+    // `sauChuyen` chưa dựng tới đây nên không gọi thẳng taiSanRong(sauChuyen)
+    // được; dùng lại tổng tài sản sau năm (tongSauNam, bước 12) trừ đi nợ CÒN
+    // PHẢI TRẢ của `khoanVay` đã cập nhật ở bước 4 — đúng công thức taiSanRong.
+    taiSanRong:
+      tongSauNam -
+      khoanVay.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0),
   })
 
   const sauChuyen: GameState = {
@@ -1831,7 +1848,14 @@ export function reducer(s: GameState, a: Action): GameState {
       const conLai = s.coHoiNamNay.filter((c) => c.id !== a.coHoiId)
       if (!a.nhan) return { ...s, coHoiNamNay: conLai }
 
-      const gia = giaThucTe(s, coHoi.gia)
+      // Kẹp về trần thay vì từ chối: người chơi kéo thanh trượt tới đâu thì giao
+      // diện đã chặn tới đó, còn ở đây chặn lần nữa để lời gọi từ bot và từ test
+      // không vượt rào được. `quyMoToiDa` trả 1 cho canh bạc nên Math.min tự kẹp
+      // canh bạc về một suất — không cần nhánh riêng.
+      const quyMo = Math.min(a.heSoQuyMo ?? 1, quyMoToiDa(s, coHoi))
+      if (quyMo < 1) return s
+
+      const gia = giaThucTe(s, coHoi.gia) * quyMo
       if (s.tienMat < gia) return s
 
       const coHoiDaLam = coHoi.chiMotLan
@@ -1849,7 +1873,7 @@ export function reducer(s: GameState, a: Action): GameState {
             {
               coHoiId: coHoi.id,
               ten: coHoi.ten,
-              thuNhapNen: giaThucTe(s, coHoi.thuNhapMoiNam ?? 0),
+              thuNhapNen: giaThucTe(s, coHoi.thuNhapMoiNam ?? 0) * quyMo,
               chiSoGiaLucMua: s.chiSoGia,
               vonGoc: gia,
             },

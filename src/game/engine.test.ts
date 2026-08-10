@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CONFIG, TRIEU, TY } from './config'
 import {
+  CO_HOI,
   NGHE,
   TAI_SAN,
   THE_TIEU_DUNG,
@@ -2241,5 +2242,101 @@ describe('v1.6 — tài sản ròng và trần quy mô góp vốn', () => {
     const bac = CONFIG.quyMoGopVon.bac
     expect(bac[0]).toBe(1)
     for (let i = 1; i < bac.length; i++) expect(bac[i]!).toBeGreaterThan(bac[i - 1]!)
+  })
+})
+
+describe('v1.6 — góp vốn theo quy mô', () => {
+  const vanGiau = (): GameState => ({ ...moiVan(), tienMat: 50 * TY, khoanVay: [] })
+
+  it('góp 5 suất thì trả gấp 5 lần và thu nhập nền gấp 5 lần', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = { ...vanGiau(), phase: 'tuDo' as const, coHoiNamNay: [coHoi] }
+    const gia = giaThucTe(s, coHoi.gia)
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: coHoi.id,
+      nhan: true,
+      heSoQuyMo: 5,
+    })
+    expect(sau.tienMat).toBe(s.tienMat - gia * 5)
+    const dn = sau.doanhNghiep.at(-1)!
+    expect(dn.vonGoc).toBe(gia * 5)
+    expect(dn.thuNhapNen).toBe(giaThucTe(s, coHoi.thuNhapMoiNam!) * 5)
+  })
+
+  it('thiếu heSoQuyMo thì hiểu là một suất — lời gọi cũ giữ nguyên ý nghĩa', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const s = { ...vanGiau(), phase: 'tuDo' as const, coHoiNamNay: [coHoi] }
+    const sau = reducer(s, { type: 'quyetDinhCoHoi', coHoiId: coHoi.id, nhan: true })
+    expect(sau.tienMat).toBe(s.tienMat - giaThucTe(s, coHoi.gia))
+    expect(sau.doanhNghiep.at(-1)!.vonGoc).toBe(giaThucTe(s, coHoi.gia))
+  })
+
+  it('quy mô bị kẹp về trần, không cho vượt tài sản ròng', () => {
+    const coHoi = timCoHoi('quanCaPhe')!
+    const base = moiVan()
+    // Cùng lý do với test tương tự ở Task 9: không có khoản đầu tư nào khác
+    // ngoài tiền mặt thì tài sản ròng đúng bằng tiền mặt, và 60% của chính nó
+    // luôn nhỏ hơn 100% của nó — trần tài sản ròng sẽ luôn bó chặt hơn trần
+    // tiền mặt, khiến "yêu cầu 12 suất bị kẹp về 2" không bao giờ xảy ra. Thêm
+    // 700 phần trái phiếu (700 triệu) để trần tài sản ròng (1,6 tỷ × 60% = 960
+    // triệu) rộng hơn trần tiền mặt (900 triệu), đúng như test này muốn đo.
+    const s = {
+      ...base,
+      tienMat: 900 * TRIEU,
+      khoanVay: [],
+      phase: 'tuDo' as const,
+      coHoiNamNay: [coHoi],
+      soHuu: { ...base.soHuu, traiPhieu: 700 },
+    }
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: coHoi.id,
+      nhan: true,
+      heSoQuyMo: 12,
+    })
+    expect(sau.doanhNghiep.at(-1)!.vonGoc).toBe(giaThucTe(s, coHoi.gia) * 2)
+  })
+
+  it('canh bạc bỏ qua quy mô — luôn đúng một suất', () => {
+    const coHoi = timCoHoi('coinMoi')!
+    const s = { ...vanGiau(), phase: 'tuDo' as const, coHoiNamNay: [coHoi] }
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: coHoi.id,
+      nhan: true,
+      heSoQuyMo: 8,
+    })
+    expect(sau.tienMat).toBe(s.tienMat - giaThucTe(s, coHoi.gia))
+    expect(sau.khoanDangCho.at(-1)!.gia).toBe(giaThucTe(s, coHoi.gia))
+  })
+
+  it('tổ chức sự kiện trả lãi trên số vốn thật đã bỏ ra', () => {
+    const coHoi = timCoHoi('hoiChoTet')!
+    const s = { ...vanGiau(), phase: 'tuDo' as const, coHoiNamNay: [coHoi] }
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: coHoi.id,
+      nhan: true,
+      heSoQuyMo: 3,
+    })
+    expect(sau.khoanDangCho.at(-1)!.gia).toBe(giaThucTe(s, coHoi.gia) * 3)
+  })
+
+  it('cơ hội tầm lớn không xuất hiện khi chưa đủ giàu', () => {
+    const lon = CO_HOI.filter((c) => c.taiSanToiThieu !== undefined)
+    expect(lon.length).toBeGreaterThanOrEqual(3)
+    const ngheo = { ...moiVan(), tienMat: 100 * TRIEU, khoanVay: [] }
+    for (const c of lon) expect(coHoiHopLe(c, ngheo)).toBe(false)
+    const giau = { ...moiVan(), tienMat: 200 * TY, khoanVay: [], nam: 40 }
+    expect(lon.some((c) => coHoiHopLe(c, giau))).toBe(true)
+  })
+
+  it('cơ hội tầm lớn vẫn nằm trong dải sinh lời 19–22% mỗi năm', () => {
+    for (const c of CO_HOI.filter((x) => x.taiSanToiThieu !== undefined)) {
+      const tyLe = (c.thuNhapMoiNam ?? 0) / c.gia
+      expect(tyLe).toBeGreaterThanOrEqual(0.19)
+      expect(tyLe).toBeLessThanOrEqual(0.22)
+    }
   })
 })
