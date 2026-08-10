@@ -1,3 +1,4 @@
+import { CONFIG } from '../game/config'
 import { dongTienThuDong, mucTieuTuDo, tienDoTuDo } from '../game/engine'
 import { dinhDangTien, dinhDangPhanTram } from '../game/format'
 import type { Action, GameState, SuKienLoai } from '../game/types'
@@ -26,6 +27,7 @@ const BIEU_TUONG_SU_KIEN: Record<SuKienLoai, string> = {
   kietSuc: '😔',
   triLieu: '🧘',
   suKienKetQua: '🎪',
+  chuKyKinhTe: '🌐',
 }
 
 export default function TongKetModal({
@@ -51,6 +53,14 @@ export default function TongKetModal({
     <div className="lop-phu">
       <div className="modal">
         <h2 className="modal-tieu-de">📋 Tổng kết năm {tk.nam}</h2>
+
+        {tk.thiTruongSau !== tk.thiTruongTruoc && (
+          <div className={`bang-chu-ky ${tk.thiTruongSau}`}>
+            {CONFIG.thiTruong.icon[tk.thiTruongSau]} Kinh tế chuyển từ{' '}
+            {CONFIG.thiTruong.ten[tk.thiTruongTruoc].toLowerCase()} sang{' '}
+            {CONFIG.thiTruong.ten[tk.thiTruongSau].toLowerCase()}
+          </div>
+        )}
 
         <div className="the">
           <div className="hang">

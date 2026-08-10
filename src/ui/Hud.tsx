@@ -74,6 +74,12 @@ export default function Hud({ state }: { state: GameState }) {
           {matCuoi(state.hanhPhuc, dangTriLieu(state))} Hạnh phúc
         </div>
       </div>
+      <div className={`hud-o thi-truong ${state.thiTruong}`}>
+        <div className="hud-so">{CONFIG.thiTruong.ten[state.thiTruong]}</div>
+        <div className="hud-nhan">
+          {CONFIG.thiTruong.icon[state.thiTruong]} Thị trường
+        </div>
+      </div>
     </div>
   )
 }

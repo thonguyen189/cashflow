@@ -136,10 +136,10 @@ body {
   cursor: pointer;
 }
 
-/* Bốn ô: tự do tài chính (điều kiện thắng), đầu tư, tiền mặt, hạnh phúc */
+/* Năm ô: tự do tài chính (điều kiện thắng), đầu tư, tiền mặt, hạnh phúc, thị trường */
 .hud {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   padding: 0 16px 4px;
 }
@@ -160,6 +160,15 @@ body {
   color: var(--chu-mo);
   margin-top: 3px;
 }
+
+/* Ô thị trường: tên trạng thái dài hơn số liệu các ô khác nên hạ cỡ chữ một
+ * chút cho vừa một dòng; màu đổi theo chu kỳ kinh tế, bình thường giữ màu mặc định */
+.hud-o.thi-truong .hud-so {
+  font-size: 12.5px;
+}
+.hud-o.thi-truong.thinhVuong .hud-so { color: var(--xanh); }
+.hud-o.thi-truong.suyThoai .hud-so { color: var(--vang); }
+.hud-o.thi-truong.khungHoang .hud-so { color: var(--do); }
 
 .thanh-tien-do {
   margin: 10px 16px 0;
@@ -372,6 +381,20 @@ body {
   font-weight: 800;
   margin: 0 0 14px;
 }
+
+/* Dòng báo đổi chu kỳ kinh tế ở đầu bảng tổng kết, chỉ hiện khi trạng thái đổi */
+.bang-chu-ky {
+  background: var(--the);
+  border: 1px solid var(--vien);
+  border-radius: var(--bo-goc-nho);
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+.bang-chu-ky.thinhVuong { border-color: var(--xanh); color: var(--xanh); }
+.bang-chu-ky.suyThoai { border-color: var(--vang); color: var(--vang); }
+.bang-chu-ky.khungHoang { border-color: var(--do); color: var(--do); }
 
 .ghi-chu-luu {
   text-align: center;
