@@ -538,10 +538,16 @@ export const CONFIG = {
    * tiện đi lại thiết yếu, nên ước nguyện đã mua KHÔNG bị đụng tới.
    *
    * ---------- Vì sao vẫn là mối đe doạ thật ----------
-   * 25 điểm hạnh phúc là gần một nửa quãng đường từ mức khởi điểm 70 xuống ngưỡng
-   * thua 50. Cộng thêm mất sạch dòng tiền thụ động, mất khả năng vay để gây dựng
+   * Quãng đường từ mức khởi điểm 70 xuống ngưỡng thua 50 dài đúng 20 điểm. 15
+   * điểm hạnh phúc là 75% quãng đường đó — đau thật, nhưng người chơi đang giữ
+   * hạnh phúc ở mức khởi điểm vẫn còn 55 điểm, TRÊN ngưỡng thua, nên còn đường
+   * gượng lại chứ không bị đẩy thẳng xuống thua ngay năm đó (25 điểm — con số
+   * cũ — làm phép trừ ra 45, dưới ngưỡng 50, tức phá sản gần như luôn kéo theo
+   * thua ngay lập tức, mâu thuẫn với câu "không phải dấu chấm hết" ngay bên
+   * dưới). Cộng thêm mất sạch dòng tiền thụ động, mất khả năng vay để gây dựng
    * lại, và khoản phạt khát vọng vẫn tiếp tục chảy máu nếu chưa mua được món của
-   * nghề — phá sản rất dễ kéo theo một cái thua vì hạnh phúc chỉ vài năm sau.
+   * nghề — phá sản vẫn rất dễ kéo theo một cái thua vì hạnh phúc chỉ vài năm sau
+   * nếu không gượng lại kịp, nên đây vẫn là biến cố đáng sợ nhất game.
    *
    * ---------- Con đường dẫn tới đây ----------
    * Vay tối đa để góp vốn quy mô lớn → khủng hoảng ập tới, thu nhập doanh nghiệp
@@ -555,7 +561,7 @@ export const CONFIG = {
     tyLeThanhLyDoanhNghiep: 0.45,
     /** thiếu hụt vượt tỉ lệ này × chi phí sinh hoạt thì tuyên phá sản */
     nguongTheoChiPhi: 1,
-    hanhPhuc: 25,
+    hanhPhuc: 15,
     soNamCamVay: 5,
     /** uy tín cần thời gian dựng lại */
     soNamCamCoHoi: 3,

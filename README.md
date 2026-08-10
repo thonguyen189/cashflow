@@ -267,7 +267,7 @@ bù:
 2. **Thanh lý doanh nghiệp** — bán từ cái NHỎ NHẤT lên để giữ nguồn thu lớn nhất càng
    lâu càng tốt, nhưng bán gấp thì chỉ thu về **45%** vốn đã bỏ ra.
 3. **Phá sản** — nếu thiếu hụt còn lại vẫn vượt một năm chi phí sinh hoạt: toà xoá sạch
-   nợ, tiền mặt về 0, mất **25 điểm hạnh phúc**, cấm vay **5 năm**, cấm nhận cơ hội kinh
+   nợ, tiền mặt về 0, mất **15 điểm hạnh phúc**, cấm vay **5 năm**, cấm nhận cơ hội kinh
    doanh **3 năm**. Ước nguyện đã mua thì giữ nguyên — luật phá sản cũng chừa lại nhà ở
    và phương tiện đi lại thiết yếu.
 

@@ -343,7 +343,7 @@ bán gấp thì mất hơn một nửa giá trị, đúng như ngoài đời.
 
 - Xoá toàn bộ `khoanVay`
 - `tienMat` về 0
-- **−25 hạnh phúc**
+- **−15 hạnh phúc**
 - Không được vay trong **5 năm**
 - Không được mời cơ hội kinh doanh trong **3 năm** — uy tín cần thời gian dựng lại
 - `soLanPhaSan` tăng một
@@ -357,11 +357,16 @@ Nếu tiền mặt âm nhưng **chưa** vượt ngưỡng, giữ nguyên cơ ch�
 
 ### Vì sao đây là mối đe doạ thật dù không phải thua ngay
 
-−25 hạnh phúc trong một năm là gần một nửa quãng đường từ mức khởi điểm 70 xuống ngưỡng
-thua 50. Cộng thêm việc mất sạch dòng tiền thụ động, mất luôn khả năng vay để gây dựng
-lại, và nếu chưa mua được món khát vọng thì khoản phạt 5 điểm mỗi năm vẫn tiếp tục chảy
-máu — phá sản rất dễ kéo theo một cái thua vì hạnh phúc ngay vài năm sau. Nó không phải
-dấu chấm hết, nhưng là cú ngã mà nhiều ván sẽ không đứng dậy nổi.
+Quãng đường từ mức khởi điểm 70 xuống ngưỡng thua 50 dài đúng 20 điểm. −15 hạnh phúc
+trong một năm là 75% quãng đường đó — đau thật, nhưng người chơi đang giữ hạnh phúc ở
+mức khởi điểm vẫn còn lại 55 điểm, TRÊN ngưỡng thua, nên còn đường gượng lại chứ không
+bị đẩy thẳng xuống thua ngay năm đó (con số cũ, −25, làm phép trừ ra 45 — dưới ngưỡng
+50, tức phá sản gần như luôn kéo theo thua ngay lập tức, mâu thuẫn thẳng với chính câu
+"không phải dấu chấm hết" bên dưới). Cộng thêm việc mất sạch dòng tiền thụ động, mất
+luôn khả năng vay để gây dựng lại, và nếu chưa mua được món khát vọng thì khoản phạt 5
+điểm mỗi năm vẫn tiếp tục chảy máu — phá sản vẫn rất dễ kéo theo một cái thua vì hạnh
+phúc chỉ vài năm sau nếu không gượng lại kịp. Nó không phải dấu chấm hết, nhưng là cú
+ngã mà nhiều ván sẽ không đứng dậy nổi.
 
 ### Con đường dẫn tới phá sản
 
