@@ -51,7 +51,18 @@ import {
 import type { CoHoi, GameState } from './types'
 
 const SEED = 12345
-const moiVan = (ngheId = 'giaoVien') => taoGameMoi(ngheId, SEED)
+/**
+ * Ván mới cho các bài kiểm thử KHÔNG xoay quanh xuất thân. Từ v1.6, vốn ban đầu
+ * mặc định (viên chức, 40% lương) đã ít hơn chi phí sinh hoạt năm đầu của cả ba
+ * nghề — đúng chủ ý thiết kế "đời thật hơn" (xem describe 'v1.6 — xuất thân' và
+ * task-2-brief). Cấp lại đúng một năm lương như mặc định trước v1.6 để các bài
+ * kiểm thử cơ chế chung (thẻ tiêu dùng, đầu tư, chuyển năm...) không phải bận
+ * tâm tới bài toán vốn khởi điểm — bài toán đó đã có bộ test riêng ở trên.
+ */
+const moiVan = (ngheId = 'giaoVien') => {
+  const s = taoGameMoi(ngheId, SEED)
+  return { ...s, tienMat: s.luong }
+}
 
 /** Chạy hết chuỗi thẻ tiêu dùng, trả lời giống nhau cho mọi thẻ. */
 function duyetHetThe(s: GameState, nhan: boolean): GameState {
@@ -91,10 +102,11 @@ function moiDungMotCoHoi(
 }
 
 describe('khởi tạo', () => {
-  it('tiền mặt ban đầu bằng đúng một năm lương', () => {
+  it('tiền mặt ban đầu bằng đúng vốn của xuất thân mặc định (viên chức)', () => {
+    const vienChuc = timXuatThan('vienChuc')!
     for (const nghe of NGHE) {
       const s = taoGameMoi(nghe.id, SEED)
-      expect(s.tienMat).toBe(nghe.luong)
+      expect(s.tienMat).toBe(Math.round(nghe.luong * vienChuc.tyLeVonBanDau))
       expect(s.luong).toBe(nghe.luong)
       expect(s.chiPhiHangNam).toBe(nghe.chiPhi)
     }
@@ -1930,6 +1942,62 @@ describe('chuyên gia đồng hành', () => {
       expect(bac[2]).toBe(1)
       expect(bac[0]! + bac[4]!).toBeCloseTo(2, 10)
     })
+
+    it('mặc định vẫn là viên chức tỉnh lẻ, lương đúng bằng lương gốc của nghề', () => {
+      const s = taoGameMoi('giaoVien', SEED)
+      expect(s.xuatThanId).toBe('vienChuc')
+      expect(s.heSoLuongKhoiDiem).toBe(1)
+      expect(s.luong).toBe(timNghe('giaoVien')!.luong)
+      expect(s.tienMat).toBe(Math.round(s.luong * 0.4))
+      expect(s.khoanVay).toHaveLength(0)
+    })
+
+    it('mỗi xuất thân cho đúng số vốn ban đầu', () => {
+      for (const x of XUAT_THAN) {
+        const s = taoGameMoi('giaoVien', SEED, {
+          xuatThanId: x.id,
+          heSoLuongKhoiDiem: 1,
+        })
+        expect(s.tienMat).toBe(Math.round(s.luong * x.tyLeVonBanDau))
+        expect(s.hanhPhuc).toBe(CONFIG.hanhPhucBanDau + x.hanhPhucBanDau)
+      }
+    })
+
+    it('nhà thuần nông vào đời với khoản nợ học phí trả trong mười năm', () => {
+      const s = taoGameMoi('giaoVien', SEED, {
+        xuatThanId: 'thuanNong',
+        heSoLuongKhoiDiem: 1,
+      })
+      expect(s.khoanVay).toHaveLength(1)
+      const no = s.khoanVay[0]!
+      expect(no.goc).toBe(Math.round(s.luong * 0.4))
+      expect(no.kyHan).toBe(CONFIG.kyHanVayToiDa)
+      expect(no.namConLai).toBe(CONFIG.kyHanVayToiDa)
+      expect(no.thanhToanMoiNam).toBe(
+        thanhToanMoiNamCuaKhoanVay(no.goc, CONFIG.kyHanVayToiDa),
+      )
+    })
+
+    it('bậc lương nhân đúng vào lương khởi điểm', () => {
+      for (const bac of CONFIG.xuatThan.bacLuong) {
+        const s = taoGameMoi('bacSi', SEED, {
+          xuatThanId: 'vienChuc',
+          heSoLuongKhoiDiem: bac,
+        })
+        expect(s.luong).toBe(Math.round(timNghe('bacSi')!.luong * bac))
+      }
+    })
+
+    it('action chonNghe truyền được thiết lập nhân vật', () => {
+      const s = reducer({} as GameState, {
+        type: 'chonNghe',
+        ngheId: 'kySuPhanMem',
+        seed: SEED,
+        thietLap: { xuatThanId: 'khaGia', heSoLuongKhoiDiem: 1.25 },
+      })
+      expect(s.xuatThanId).toBe('khaGia')
+      expect(s.heSoLuongKhoiDiem).toBe(1.25)
+    })
   })
 })
 
@@ -1965,22 +2033,20 @@ describe('v1.6 — chi phí sống và áp lực công việc', () => {
   })
 
   it('bậc lương cao nhất trừ đúng 5 điểm hạnh phúc mỗi năm', () => {
-    // taoGameMoi chưa nhận tham số ThietLapNhanVat thứ ba (việc của Task 2) nên
-    // dựng trạng thái trực tiếp từ moiVan() rồi ghi đè heSoLuongKhoiDiem.
-    const s = { ...moiVan(), heSoLuongKhoiDiem: 1.25 } as GameState
+    const s = taoGameMoi('giaoVien', SEED, { xuatThanId: 'vienChuc', heSoLuongKhoiDiem: 1.25 })
     expect(apLucCongViec(s)).toBe(-5)
-    expect(apLucCongViec({ ...s, heSoLuongKhoiDiem: 0.75 } as GameState)).toBe(5)
-    expect(apLucCongViec({ ...s, heSoLuongKhoiDiem: 1 } as GameState)).toBe(0)
+    expect(apLucCongViec({ ...s, heSoLuongKhoiDiem: 0.75 })).toBe(5)
+    expect(apLucCongViec({ ...s, heSoLuongKhoiDiem: 1 })).toBe(0)
   })
 
   it('áp lực công việc tắt hẳn sau khi nghỉ hưu', () => {
-    const s = { ...moiVan(), heSoLuongKhoiDiem: 1.25 } as GameState
+    const s = taoGameMoi('giaoVien', SEED, { xuatThanId: 'vienChuc', heSoLuongKhoiDiem: 1.25 })
     expect(apLucCongViec({ ...s, daNghiHuu: true })).toBe(0)
   })
 
   it('mocTaiSanCuaNghe không đổi theo xuất thân hay bậc lương', () => {
     const moc = mocTaiSanCuaNghe('giaoVien')
-    const s = { ...moiVan(), heSoLuongKhoiDiem: 1.25 } as GameState
+    const s = taoGameMoi('giaoVien', SEED, { xuatThanId: 'vienChuc', heSoLuongKhoiDiem: 1.25 })
     expect(mocTaiSanCuaNghe(s.ngheId)).toEqual(moc)
   })
 })

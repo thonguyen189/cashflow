@@ -242,6 +242,11 @@ export interface GameState {
   ngheId: string
   khatVongId: string
 
+  /** ---------- Thiết lập nhân vật (v1.6) ---------- */
+  xuatThanId: XuatThanId
+  /** hệ số nhân với lương gốc của nghề, chọn ở màn mở đầu */
+  heSoLuongKhoiDiem: number
+
   tienMat: Tien
   hanhPhuc: number
   luong: Tien
@@ -324,7 +329,13 @@ export interface GameState {
 }
 
 export type Action =
-  | { type: 'chonNghe'; ngheId: string; seed?: number }
+  | {
+      type: 'chonNghe'
+      ngheId: string
+      seed?: number
+      /** thiếu thì dùng THIET_LAP_MAC_DINH — giữ nguyên ý nghĩa mọi lời gọi cũ */
+      thietLap?: ThietLapNhanVat
+    }
   | { type: 'traChiPhi' }
   | { type: 'quyetDinhThe'; nhan: boolean }
   | { type: 'muaKhoaHoc'; khoaHocId: string }

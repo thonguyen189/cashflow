@@ -22,11 +22,13 @@ import type {
   CoHoi,
   DoanhNghiep,
   GameState,
+  KhoanVay,
   LoaiBaoHiemXe,
   Nghe,
   SuKien,
   TaiSan,
   TheTieuDung,
+  ThietLapNhanVat,
   Tien,
   TongKetNam,
   XuatThan,
@@ -484,27 +486,17 @@ export function tinhHeSoChiPhi(
   )
 }
 
-/**
- * Xuất thân đang áp dụng cho ván chơi hiện tại.
- *
- * TẠM THỜI: `GameState` chưa có trường `xuatThanId` (việc của Task 2), nên đọc
- * phòng thủ qua ép kiểu cục bộ. Khi Task 2 thêm trường thật vào `GameState`,
- * chữ ký hàm này giữ nguyên và phần ép kiểu phòng thủ có thể bỏ đi.
- */
+/** Xuất thân đang áp dụng cho ván chơi hiện tại. */
 export const xuatThanHienTai = (s: GameState): XuatThan =>
-  timXuatThan((s as { xuatThanId?: string }).xuatThanId ?? '') ?? XUAT_THAN[1]!
+  timXuatThan(s.xuatThanId) ?? XUAT_THAN[1]!
 
 /**
  * Điểm hạnh phúc mỗi năm do bậc lương — âm khi chọn lương cao, dương khi chọn
  * lương thấp. Tắt hẳn sau khi nghỉ hưu: không còn đi làm thì không còn áp lực.
- *
- * TẠM THỜI: `GameState` chưa có trường `heSoLuongKhoiDiem` (việc của Task 2),
- * nên đọc phòng thủ qua ép kiểu cục bộ giống `xuatThanHienTai`.
  */
 export function apLucCongViec(s: GameState): number {
   if (s.daNghiHuu) return 0
-  const heSoLuongKhoiDiem = (s as { heSoLuongKhoiDiem?: number }).heSoLuongKhoiDiem ?? 1
-  return Math.round((1 - heSoLuongKhoiDiem) * CONFIG.xuatThan.apLucTheoLuong)
+  return Math.round((1 - s.heSoLuongKhoiDiem) * CONFIG.xuatThan.apLucTheoLuong)
 }
 
 /* ============================================================
@@ -581,10 +573,43 @@ function rutCoHoi(rng: Rng, soLuong: number, bc: BoiCanhCoHoi): CoHoi[] {
   return kq
 }
 
-export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9)): GameState {
+/**
+ * Xuất thân mặc định là viên chức tỉnh lẻ — cái duy nhất trung tính ở mọi hệ số,
+ * nên mọi lời gọi `taoGameMoi(ngheId, seed)` có từ trước v1.6 giữ nguyên ý nghĩa.
+ */
+export const THIET_LAP_MAC_DINH: ThietLapNhanVat = {
+  xuatThanId: 'vienChuc',
+  heSoLuongKhoiDiem: 1,
+}
+
+export function taoGameMoi(
+  ngheId: string,
+  seed = Math.floor(Math.random() * 1e9),
+  thietLap: ThietLapNhanVat = THIET_LAP_MAC_DINH,
+): GameState {
   const nghe = timNghe(ngheId) ?? NGHE[0]!
+  const xuatThan = timXuatThan(thietLap.xuatThanId) ?? XUAT_THAN[1]!
   const rng = taoRng(seed, 0)
   const ct = CONFIG.cotTruyen
+
+  const luong = Math.round(nghe.luong * thietLap.heSoLuongKhoiDiem)
+  const vonBanDau = Math.round(luong * xuatThan.tyLeVonBanDau)
+  // Nợ học phí là một KhoanVay bình thường, nên nó chiếm chỗ trong hạn mức vay
+  // và đội `nghiaVuHangNam` trong mười năm đầu — đúng như đời thật.
+  const goc = Math.round(luong * xuatThan.tyLeNoBanDau)
+  const khoanVayBanDau: KhoanVay[] =
+    goc > 0
+      ? [
+          {
+            id: 'noHocPhi',
+            goc,
+            kyHan: CONFIG.kyHanVayToiDa,
+            thanhToanMoiNam: thanhToanMoiNamCuaKhoanVay(goc, CONFIG.kyHanVayToiDa),
+            namConLai: CONFIG.kyHanVayToiDa,
+          },
+        ]
+      : []
+  const heSoChiPhiBanDau = tinhHeSoChiPhi(false, [], 1, xuatThan, thietLap.heSoLuongKhoiDiem)
 
   // Hẹn lịch cột mốc đời người ngay từ đầu ván — tất định theo seed.
   const namCuoi = rng.nguyen(ct.cuoiTuoiSomNhat, ct.cuoiTuoiMuonNhat) - ct.tuoiBatDau + 1
@@ -630,10 +655,13 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     ngheId: nghe.id,
     khatVongId: nghe.khatVongId,
 
-    tienMat: nghe.luong,
-    hanhPhuc: CONFIG.hanhPhucBanDau,
-    luong: nghe.luong,
-    chiPhiHangNam: nghe.chiPhi,
+    xuatThanId: xuatThan.id,
+    heSoLuongKhoiDiem: thietLap.heSoLuongKhoiDiem,
+
+    tienMat: vonBanDau,
+    hanhPhuc: CONFIG.hanhPhucBanDau + xuatThan.hanhPhucBanDau,
+    luong,
+    chiPhiHangNam: Math.round(nghe.chiPhi * heSoChiPhiBanDau),
     chiSoGia: 1,
     heSoChiPhi: 1,
     daTraChiPhiNamNay: false,
@@ -654,7 +682,7 @@ export function taoGameMoi(ngheId: string, seed = Math.floor(Math.random() * 1e9
     daThueChuyenGiaTaiChinh: false,
     heSoToiUuChiPhi: 1,
 
-    khoanVay: [],
+    khoanVay: khoanVayBanDau,
     doanhNghiep: [],
     coHoiDaLam: [],
     khoanDangCho: [],
@@ -1308,14 +1336,12 @@ function chuyenNam(s: GameState): GameState {
   /* --- 10. Áp lạm phát + hoàn cảnh gia đình lên mặt bằng giá --- */
   const namMoi = s.nam + 1
   const chiSoGia = s.chiSoGia * (1 + lamPhat)
-  // TẠM THỜI: `GameState` chưa có trường `heSoLuongKhoiDiem` (việc của Task 2) nên
-  // đọc phòng thủ qua ép kiểu cục bộ, giống `xuatThanHienTai` và `apLucCongViec`.
   const heSoChiPhi = tinhHeSoChiPhi(
     daKetHon,
     conCai,
     namMoi,
     xuatThanHienTai(s),
-    (s as { heSoLuongKhoiDiem?: number }).heSoLuongKhoiDiem ?? 1,
+    s.heSoLuongKhoiDiem,
   )
   const nghe = timNghe(s.ngheId)!
   // Hệ số tối ưu chi tiêu nằm ở đây chứ không trừ một lần khi thuê: chi phí năm
@@ -1507,7 +1533,7 @@ const choPhepHanhDongTuDo = (s: GameState) =>
 export function reducer(s: GameState, a: Action): GameState {
   switch (a.type) {
     case 'chonNghe':
-      return taoGameMoi(a.ngheId, a.seed)
+      return taoGameMoi(a.ngheId, a.seed, a.thietLap ?? THIET_LAP_MAC_DINH)
 
     case 'choiLai':
       return taoGameMoi(s.ngheId, Math.floor(Math.random() * 1e9))
