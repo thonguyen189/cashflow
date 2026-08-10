@@ -52,7 +52,14 @@ import {
   vayToiDa,
   xeDangCo,
 } from './engine'
-import type { AssetId, CoHoi, GameState, TongKetNam, TrangThaiThiTruong } from './types'
+import type {
+  AssetId,
+  BienCoId,
+  CoHoi,
+  GameState,
+  TongKetNam,
+  TrangThaiThiTruong,
+} from './types'
 
 const SEED = 12345
 const moiVan = (ngheId = 'giaoVien') => taoGameMoi(ngheId, SEED)
@@ -2416,5 +2423,113 @@ describe('v1.6 — lịch biến cố lớn', () => {
     const s = taoGameMoi('giaoVien', SEED)
     expect(s.bienCoDaQua).toEqual([])
     expect(s.heSoLuongDiChung).toBe(1)
+  })
+})
+
+describe('v1.6 — sáu biến cố lớn', () => {
+  /** Ép một biến cố cụ thể nổ ra ngay năm nay. */
+  const epBienCo = (s: GameState, tru: BienCoId[] = []): GameState => ({
+    ...s,
+    lichBienCo: [s.nam],
+    bienCoDaQua: tru,
+  })
+  const timBienCo = (tk: TongKetNam) => tk.suKien.find((e) => e.loai === 'bienCoLon')
+
+  it('mỗi năm đã hẹn đều nổ ra đúng một biến cố', () => {
+    const s = epBienCo({ ...moiVan(), nam: 20 })
+    const tk = diTronMotNam(s).tongKet!
+    expect(tk.suKien.filter((e) => e.loai === 'bienCoLon')).toHaveLength(1)
+  })
+
+  it('không biến cố nào lặp lại trong một ván', () => {
+    let s = moiVan()
+    const daGap: string[] = []
+    for (let i = 0; i < 30 && s.trangThai === 'dangChoi'; i++) {
+      s = reducer(diTronMotNam(epBienCo(s)), { type: 'dongTongKet' })
+      daGap.push(...s.bienCoDaQua)
+    }
+    expect(new Set(s.bienCoDaQua).size).toBe(s.bienCoDaQua.length)
+  })
+
+  it('bệnh hiểm nghèo: có bảo hiểm thì tốn ít hơn hẳn và mất ít hạnh phúc hơn', () => {
+    const nen: GameState = {
+      ...moiVan(),
+      nam: 25,
+      bienCoDaQua: ['matViec', 'boMeNgaBenh', 'voHui', 'doanhNghiepDongCua', 'baoLu'],
+    }
+    const co = diTronMotNam(epBienCo({ ...nen, baoHiemDenNam: 999 }, nen.bienCoDaQua)).tongKet!
+    const khong = diTronMotNam(epBienCo({ ...nen, baoHiemDenNam: -1 }, nen.bienCoDaQua)).tongKet!
+    const eCo = timBienCo(co)!
+    const eKhong = timBienCo(khong)!
+    expect(-eCo.tienThayDoi).toBeLessThan(-eKhong.tienThayDoi)
+    expect(eCo.hanhPhucThayDoi).toBeGreaterThan(eKhong.hanhPhucThayDoi)
+  })
+
+  it('mất việc: có quỹ dự phòng thì không để lại di chứng lương', () => {
+    const chiPhi = moiVan().chiPhiHangNam
+    const tru: BienCoId[] = ['benhHiemNgheo', 'boMeNgaBenh', 'voHui', 'doanhNghiepDongCua', 'baoLu']
+    const co = reducer(
+      diTronMotNam(epBienCo({ ...moiVan(), nam: 10 }, tru), chiPhi * 5),
+      { type: 'dongTongKet' },
+    )
+    expect(co.heSoLuongDiChung).toBe(1)
+    const khong = reducer(
+      diTronMotNam(epBienCo({ ...moiVan(), nam: 10 }, tru), 0),
+      { type: 'dongTongKet' },
+    )
+    expect(khong.heSoLuongDiChung).toBeCloseTo(CONFIG.bienCo.matViec.diChungLuong, 10)
+  })
+
+  it('mất việc giữa khủng hoảng để lại di chứng nặng hơn', () => {
+    const tru: BienCoId[] = ['benhHiemNgheo', 'boMeNgaBenh', 'voHui', 'doanhNghiepDongCua', 'baoLu']
+    const s = epBienCo({ ...moiVan(), nam: 10, thiTruong: 'khungHoang' }, tru)
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.heSoLuongDiChung).toBeCloseTo(
+      CONFIG.bienCo.matViec.diChungLuongKhiKhungHoang,
+      10,
+    )
+  })
+
+  it('vỡ hụi chỉ trừ tiền mặt, không đụng danh mục đầu tư', () => {
+    const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'doanhNghiepDongCua', 'baoLu']
+    const s: GameState = {
+      ...moiVan(),
+      nam: 15,
+      soHuu: { ...moiVan().soHuu, coPhieu: 1000 },
+    }
+    const sau = reducer(diTronMotNam(epBienCo(s, tru), 2 * TY), { type: 'dongTongKet' })
+    expect(sau.soHuu.coPhieu).toBe(1000)
+  })
+
+  it('đã thuê chuyên gia hoạch định tài chính thì vỡ hụi nhẹ hẳn', () => {
+    const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'doanhNghiepDongCua', 'baoLu']
+    const nen = { ...moiVan(), nam: 15 }
+    const co = diTronMotNam(
+      epBienCo({ ...nen, daThueChuyenGiaTaiChinh: true, heSoToiUuChiPhi: 0.92 }, tru),
+      2 * TY,
+    ).tongKet!
+    const khong = diTronMotNam(epBienCo(nen, tru), 2 * TY).tongKet!
+    expect(-timBienCo(co)!.tienThayDoi).toBeLessThan(-timBienCo(khong)!.tienThayDoi)
+  })
+
+  it('doanh nghiệp đóng cửa nhắm vào cái có vốn góp lớn nhất và hoàn 20% vốn', () => {
+    const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'voHui', 'baoLu']
+    const s: GameState = {
+      ...moiVan(),
+      nam: 15,
+      doanhNghiep: [
+        { coHoiId: 'choThueXe', ten: 'Đội xe máy cho thuê', thuNhapNen: 40 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 200 * TRIEU },
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+      ],
+    }
+    const sau = reducer(diTronMotNam(epBienCo(s, tru), 1 * TY), { type: 'dongTongKet' })
+    expect(sau.doanhNghiep.map((d) => d.coHoiId)).toEqual(['choThueXe'])
+  })
+
+  it('biến cố không hợp lệ thì bỏ qua năm đó chứ không vỡ', () => {
+    // chưa đủ tuổi cho bệnh hiểm nghèo, chưa có doanh nghiệp, chưa đủ tuổi vỡ hụi
+    const tru: BienCoId[] = ['matViec', 'boMeNgaBenh', 'baoLu']
+    const s = epBienCo({ ...moiVan(), nam: 2 }, tru)
+    expect(() => diTronMotNam(s)).not.toThrow()
   })
 })

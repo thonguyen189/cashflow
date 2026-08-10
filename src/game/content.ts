@@ -1,5 +1,14 @@
 import { TRIEU, TY } from './config'
-import type { CoHoi, KhoaHoc, MonUocNguyen, Nghe, TaiSan, TheTieuDung, XuatThan } from './types'
+import type {
+  BienCoId,
+  CoHoi,
+  KhoaHoc,
+  MonUocNguyen,
+  Nghe,
+  TaiSan,
+  TheTieuDung,
+  XuatThan,
+} from './types'
 
 /**
  * Nội dung game — bối cảnh Việt Nam, đơn vị VNĐ.
@@ -751,6 +760,63 @@ export const CO_HOI: CoHoi[] = [
     bienDongThuNhapMax: 0.4,
   },
 ]
+
+/** ---------------- Lời kể sáu biến cố lớn ----------------
+ * Mỗi biến cố có hai bản: khi lá chắn đỡ được và khi không. Cùng một chuyện,
+ * nhưng người có chuẩn bị kể lại nó theo một cách khác hẳn.
+ */
+export const LOI_KE_BIEN_CO: Record<
+  BienCoId,
+  { emoji: string; tieuDe: string; coLaChan: string; khongLaChan: string }
+> = {
+  benhHiemNgheo: {
+    emoji: '🏥',
+    tieuDe: 'Bệnh hiểm nghèo',
+    coLaChan:
+      'Kết quả sinh thiết về, bác sĩ nói phải điều trị dài ngày. May là tấm thẻ bảo hiểm gánh gần hết viện phí, bạn chỉ phải lo phần thuốc ngoài danh mục và những tháng nghỉ việc.',
+    khongLaChan:
+      'Kết quả sinh thiết về, bác sĩ nói phải điều trị dài ngày. Không có bảo hiểm, mỗi lần đóng viện phí là một lần rút ruột. Vừa chống chọi với bệnh vừa nhìn tiền tiết kiệm bốc hơi.',
+  },
+  matViec: {
+    emoji: '🏭',
+    tieuDe: 'Mất việc',
+    coLaChan:
+      'Công ty cắt giảm và tên bạn nằm trong danh sách. Nhờ khoản dự phòng đã để dành, bạn có thời gian tìm chỗ mới tử tế thay vì vơ vội việc gì cũng làm.',
+    khongLaChan:
+      'Công ty cắt giảm và tên bạn nằm trong danh sách. Trong túi không có đồng dự phòng nào, bạn phải nhận đại một chỗ lương thấp hơn hẳn chỉ để có việc.',
+  },
+  boMeNgaBenh: {
+    emoji: '👴',
+    tieuDe: 'Bố mẹ ngã bệnh',
+    coLaChan:
+      'Bố mẹ trở bệnh nặng phải nằm viện dài ngày. Ông bà có khoản dành dụm riêng nên bạn chỉ phải lo phần thêm và những chuyến đi về.',
+    khongLaChan:
+      'Bố mẹ trở bệnh nặng phải nằm viện dài ngày. Cả đời làm lụng không để lại được gì, mọi khoản viện phí đổ hết lên vai bạn.',
+  },
+  voHui: {
+    emoji: '💸',
+    tieuDe: 'Vỡ hụi',
+    coLaChan:
+      'Dây hụi trong xóm vỡ, chủ hụi ôm tiền bỏ đi. Người soát sổ sách cùng bạn đã thấy dấu hiệu bất thường từ trước nên bạn rút gần hết, chỉ mất phần nhỏ.',
+    khongLaChan:
+      'Dây hụi trong xóm vỡ, chủ hụi ôm tiền bỏ đi. Bao nhiêu tiền mặt gom góp mấy năm nay theo đó mà đi, chỉ còn lại tờ giấy viết tay không ai công nhận.',
+  },
+  doanhNghiepDongCua: {
+    emoji: '🏚️',
+    tieuDe: 'Doanh nghiệp đóng cửa',
+    coLaChan:
+      'Việc làm ăn không trụ nổi, đành đóng cửa và thanh lý. Cũng đau, nhưng bạn còn nhiều chỗ khác nên đây chỉ là một mảnh gãy chứ không phải cả gia tài.',
+    khongLaChan:
+      'Việc làm ăn không trụ nổi, đành đóng cửa và thanh lý. Bao nhiêu vốn liếng bạn dồn hết vào đây, giờ chỉ vớt lại được chút tiền bán máy móc và hàng tồn.',
+  },
+  baoLu: {
+    emoji: '🌊',
+    tieuDe: 'Bão lũ tàn phá',
+    coLaChan: '',
+    khongLaChan:
+      'Cơn bão lớn nhất mấy chục năm quét qua. Nước rút để lại một đống ngổn ngang, sửa sang lại tốn kém hơn mọi dự tính.',
+  },
+}
 
 export const timNghe = (id: string) => NGHE.find((n) => n.id === id)
 export const timUocNguyen = (id: string) => UOC_NGUYEN.find((u) => u.id === id)

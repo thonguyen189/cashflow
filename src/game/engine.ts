@@ -2,6 +2,7 @@ import { CONFIG } from './config'
 import {
   CO_HOI,
   KHOA_HOC,
+  LOI_KE_BIEN_CO,
   NGHE,
   TAI_SAN,
   THE_TIEU_DUNG,
@@ -19,6 +20,7 @@ import { dinhDangTien } from './format'
 import type {
   Action,
   AssetId,
+  BienCoId,
   CoHoi,
   DoanhNghiep,
   GameState,
@@ -1440,6 +1442,148 @@ function chuyenNam(s: GameState): GameState {
     hanhPhucThayDoi: 0,
   })
 
+  /* --- 7b. Biến cố lớn của đời người ---
+   * Đứng sau bước 7 (sự kiện ngẫu nhiên) và TRƯỚC bước 8 (lương): hai biến cố
+   * cắt lương của năm đó, và tiền mất do biến cố phải có khả năng đẩy người
+   * chơi vào vỡ nợ ở bước 11. Lá chắn của biến cố mất việc đo tiền mặt NGAY TẠI
+   * ĐÂY — sau khi lợi tức, thu nhập doanh nghiệp và trả nợ đã cộng trừ xong,
+   * trước khi lương của năm được cộng vào.
+   */
+  let heSoLuongBienCo = 1
+  let bienCoDaQua = s.bienCoDaQua
+  let heSoLuongDiChung = s.heSoLuongDiChung
+  let doanhNghiep = s.doanhNghiep
+
+  if (s.lichBienCo.includes(s.nam)) {
+    const bc = CONFIG.bienCo
+    const tuoi = tuoiTaiNam(s.nam)
+    const xuatThan = xuatThanHienTai(s)
+    const chiPhi = s.chiPhiHangNam
+    const dnLonNhat = [...doanhNghiep].sort(
+      (a, b) => vonDoanhNghiepNamNay(s, b) - vonDoanhNghiepNamNay(s, a),
+    )[0]
+
+    // Chỉ giữ những biến cố hợp lệ với hoàn cảnh và chưa từng xảy ra.
+    const ungVien: BienCoId[] = []
+    if (tuoi >= bc.benhHiemNgheo.tuoiToiThieu) ungVien.push('benhHiemNgheo')
+    if (!daNghiHuu) ungVien.push('matViec')
+    if (tuoi >= bc.boMeNgaBenh.tuoiToiThieu && tuoi <= bc.boMeNgaBenh.tuoiToiDa) {
+      ungVien.push('boMeNgaBenh')
+    }
+    if (tuoi >= bc.voHui.tuoiToiThieu) ungVien.push('voHui')
+    if (dnLonNhat) ungVien.push('doanhNghiepDongCua')
+    ungVien.push('baoLu')
+
+    const conLai = ungVien.filter((id) => !bienCoDaQua.includes(id))
+    if (conLai.length > 0) {
+      const chon = conLai[Math.floor(rng.next() * conLai.length)]!
+      const ke = LOI_KE_BIEN_CO[chon]
+      let matTien = 0
+      let matHanhPhucDanhNghia = 0
+      let coLaChan = false
+      let moTaThem = ''
+
+      switch (chon) {
+        case 'benhHiemNgheo': {
+          coLaChan = dangCoBaoHiem(s)
+          const vienPhi = chiPhi * bc.benhHiemNgheo.vienPhiTheoChiPhi
+          const phanTuTra = coLaChan
+            ? Math.max(tyLeDongTra(tuoi), bc.benhHiemNgheo.tuTraToiThieu)
+            : 1
+          matTien = Math.round(vienPhi * phanTuTra)
+          matHanhPhucDanhNghia = coLaChan
+            ? bc.benhHiemNgheo.matHanhPhucCoBaoHiem
+            : bc.benhHiemNgheo.matHanhPhucKhongBaoHiem
+          heSoLuongBienCo = bc.benhHiemNgheo.heSoLuongNamDo
+          break
+        }
+        case 'matViec': {
+          coLaChan = tienMat >= chiPhi * bc.matViec.duPhongTheoChiPhi
+          heSoLuongBienCo = coLaChan
+            ? bc.matViec.heSoLuongCoDuPhong
+            : bc.matViec.heSoLuongKhongDuPhong
+          matHanhPhucDanhNghia = coLaChan
+            ? bc.matViec.matHanhPhucCoDuPhong
+            : bc.matViec.matHanhPhucKhongDuPhong
+          if (!coLaChan) {
+            // Đọc thiTruongTruoc (trạng thái NGƯỜI CHƠI ĐÃ THẤY suốt năm nay), y
+            // hệt quy ước ở bước 0: mất việc giữa một năm cả thị trường đang sa
+            // thải mới đáng bị di chứng nặng hơn, chứ không phải giữa một năm
+            // bình thường tình cờ rơi vào khủng hoảng NGẪU NHIÊN của năm sau.
+            const diChung =
+              thiTruongTruoc === 'khungHoang'
+                ? bc.matViec.diChungLuongKhiKhungHoang
+                : bc.matViec.diChungLuong
+            heSoLuongDiChung = heSoLuongDiChung * diChung
+            moTaThem = ` Lương khi đi làm lại chỉ còn ${soPhanTram(diChung)}% mức cũ.`
+          }
+          break
+        }
+        case 'boMeNgaBenh': {
+          coLaChan = xuatThan.boMeCoTichLuy
+          matTien = Math.round(
+            chiPhi *
+              (coLaChan
+                ? bc.boMeNgaBenh.chiPhiCoTichLuy
+                : bc.boMeNgaBenh.chiPhiKhongTichLuy),
+          )
+          matHanhPhucDanhNghia = coLaChan
+            ? bc.boMeNgaBenh.matHanhPhucCoTichLuy
+            : bc.boMeNgaBenh.matHanhPhucKhongTichLuy
+          break
+        }
+        case 'voHui': {
+          coLaChan = daToiUuChiPhi(s)
+          // Chỉ đụng tiền mặt: kẻ lừa đảo lấy được thứ bạn đưa cho họ, không lấy
+          // được cổ phiếu trong tài khoản. Điều đó khiến biến cố này trừng phạt
+          // đúng người ôm quá nhiều tiền mặt nhàn rỗi.
+          const tyLe = coLaChan
+            ? bc.voHui.tyLeTienMatCoChuyenGia
+            : bc.voHui.tyLeTienMatKhongChuyenGia
+          matTien = Math.round(Math.max(0, tienMat) * tyLe)
+          matHanhPhucDanhNghia = coLaChan
+            ? bc.voHui.matHanhPhucCoChuyenGia
+            : bc.voHui.matHanhPhucKhongChuyenGia
+          break
+        }
+        case 'doanhNghiepDongCua': {
+          const von = vonDoanhNghiepNamNay(s, dnLonNhat!)
+          const rong = Math.max(1, taiSanRong(s))
+          coLaChan = von / rong < bc.doanhNghiepDongCua.nguongTapTrung
+          const hoanLai = Math.round(von * bc.doanhNghiepDongCua.hoanLaiVon)
+          matTien = -hoanLai
+          doanhNghiep = doanhNghiep.filter((d) => d !== dnLonNhat)
+          matHanhPhucDanhNghia = coLaChan
+            ? bc.doanhNghiepDongCua.matHanhPhucDuoiNguong
+            : bc.doanhNghiepDongCua.matHanhPhucTrenNguong
+          moTaThem = ` ${dnLonNhat!.ten} đóng cửa, vớt lại được ${dinhDangTien(hoanLai)}.`
+          break
+        }
+        case 'baoLu': {
+          const coNha = s.uocNguyenDaMua.includes('canHo')
+          matTien = Math.round(
+            chiPhi * (coNha ? bc.baoLu.chiPhiCoNha : bc.baoLu.chiPhiKhongNha),
+          )
+          matHanhPhucDanhNghia = coNha
+            ? bc.baoLu.matHanhPhucCoNha
+            : bc.baoLu.matHanhPhucKhongNha
+          break
+        }
+      }
+
+      tienMat -= matTien
+      const hpBienCo = apHanhPhuc(-matHanhPhucDanhNghia)
+      bienCoDaQua = [...bienCoDaQua, chon]
+      suKien.push({
+        loai: 'bienCoLon',
+        tieuDe: `${ke.emoji} ${ke.tieuDe}`,
+        moTa: (coLaChan && ke.coLaChan ? ke.coLaChan : ke.khongLaChan) + moTaThem,
+        tienThayDoi: -matTien,
+        hanhPhucThayDoi: hpBienCo,
+      })
+    }
+  }
+
   /* --- 8. Lương: đi làm thì bám lạm phát + tăng thực + thăng chức;
    *        năm nghỉ hưu chuyển sang lương hưu; đã hưu thì chỉ bám lạm phát --- */
   let luongMoi: Tien
@@ -1456,7 +1600,11 @@ function chuyenNam(s: GameState): GameState {
     )
   }
   const tangLuong = s.luong > 0 ? luongMoi / s.luong - 1 : 0
-  tienMat += luongMoi
+  luongMoi = Math.round(luongMoi * heSoLuongDiChung)
+  // hệ số cắt lương của biến cố chỉ có hiệu lực đúng năm đó nên KHÔNG lưu vào
+  // GameState — nó là biến cục bộ, năm sau lương quay lại mức bình thường
+  const luongThucNhan = Math.round(luongMoi * heSoLuongBienCo)
+  tienMat += luongThucNhan
 
   /* --- 9. Hạnh phúc: buổi trị liệu, phạt khát vọng và thưởng ước nguyện --- */
 
@@ -1664,6 +1812,12 @@ function chuyenNam(s: GameState): GameState {
     theNamTruoc: theConLai.map((t) => t.id),
     theConLai,
     coHoiNamNay,
+    // Ba trường biến cố lớn do chính `chuyenNam` (bước 7b) cập nhật, phải gán
+    // tường minh — phép trải `...s` sẽ mang theo giá trị cũ nếu thiếu, và lỗi
+    // đó không có dấu hiệu gì trên màn hình.
+    bienCoDaQua,
+    heSoLuongDiChung,
+    doanhNghiep,
   }
 
   const tong = tongTaiSan(sauChuyen)
