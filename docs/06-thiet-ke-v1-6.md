@@ -496,15 +496,15 @@ camCoHoiDenNam: number
 `TongKetNam` thêm `thiTruongTruoc` và `thiTruongSau` để bảng tổng kết kể được việc
 chuyển trạng thái.
 
-`Action` đổi hai chỗ:
+`Action` đổi hai chỗ — cả hai đều chỉ **thêm trường tuỳ chọn**, không đổi trường sẵn có,
+để mọi lời gọi cũ trong `engine.test.ts` và `sim.ts` vẫn biên dịch và giữ nguyên ý nghĩa:
 
 ```ts
-| { type: 'chonNghe'; ngheId: string; xuatThanId: XuatThanId
-    heSoLuongKhoiDiem: number; seed?: number }
+| { type: 'chonNghe'; ngheId: string; seed?: number; thietLap?: ThietLapNhanVat }
 | { type: 'quyetDinhCoHoi'; coHoiId: string; nhan: boolean; heSoQuyMo?: number }
 ```
 
-`heSoQuyMo` để tuỳ chọn, mặc định 1, để mọi lời gọi cũ trong test vẫn chạy.
+`heSoQuyMo` mặc định 1.
 
 ### `config.ts`
 
@@ -554,10 +554,32 @@ tinhHeSoChiPhi(daKetHon, conCai, nam, xuatThan, heSoLuongKhoiDiem)
 Nó nhân thêm: `xuatThan.heSoChiPhiSong`, `(1 + tyLePhungDuong)` khi tuổi còn dưới
 `phungDuongDenTuoi`, và `1 + (heSoLuongKhoiDiem − 1) × loiSongTheoLuong`.
 
-**`taoGameMoi(ngheId, xuatThanId, heSoLuongKhoiDiem, seed?)`** — ba tham số sau có mặc
-định (`'vienChuc'`, `1`) để test cũ không phải sửa. Khởi tạo lương theo bậc, tiền mặt
-theo `tyLeVonBanDau`, khoản nợ học phí nếu có, hạnh phúc cộng `hanhPhucBanDau`, thị
-trường `binhThuong`, và rút `lichBienCo`.
+**`taoGameMoi`** nhận thiết lập nhân vật qua một tham số tuỳ chọn **đứng cuối**, không
+chèn vào giữa:
+
+```ts
+export interface ThietLapNhanVat {
+  xuatThanId: XuatThanId
+  heSoLuongKhoiDiem: number
+}
+export const THIET_LAP_MAC_DINH: ThietLapNhanVat = {
+  xuatThanId: 'vienChuc',
+  heSoLuongKhoiDiem: 1,
+}
+
+taoGameMoi(ngheId, seed?, thietLap = THIET_LAP_MAC_DINH): GameState
+```
+
+Chèn tham số vào giữa sẽ đẩy `seed` xuống vị trí thứ tư và phá toàn bộ lời gọi
+`taoGameMoi(ngheId, seed)` đang có trong `engine.test.ts` và `sim.ts`. Xuất thân mặc
+định là **viên chức tỉnh lẻ** — cái duy nhất trung tính ở mọi hệ số — nên mọi kiểm thử
+cũ giữ nguyên ý nghĩa.
+
+Hàm khởi tạo lương theo bậc, tiền mặt theo `tyLeVonBanDau`, khoản nợ học phí nếu có,
+hạnh phúc cộng `hanhPhucBanDau`, thị trường `binhThuong`, và rút `lichBienCo`.
+
+`Action` tương ứng: `{ type: 'chonNghe'; ngheId: string; seed?: number;
+thietLap?: ThietLapNhanVat }`.
 
 **`chuyenNam` — chèn và sửa:**
 
