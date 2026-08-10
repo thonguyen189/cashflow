@@ -123,7 +123,7 @@ export const XUAT_THAN: XuatThan[] = [
   {
     id: 'buonBan',
     ten: 'Buôn bán ngoài phố',
-    emoji: '🏢',
+    emoji: '🏪',
     moTa: 'Nhà mặt phố có cửa hàng, bố mẹ dúi cho một khoản kha khá làm vốn. Đổi lại, bạn lớn lên với mức sống mà giờ khó lòng hạ xuống.',
     tyLeVonBanDau: 2,
     tyLeNoBanDau: 0,
@@ -361,8 +361,8 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
  * `ngheId` để trống nghĩa là mọi nghề đều gặp. Các cơ hội gắn nghề đều có
  * `namToiThieu` vì chúng đòi thâm niên mới mở được.
  *
- * Mọi cơ hội kinh doanh đều nằm trong dải sinh lời 19–22% mỗi năm trên vốn, nên
- * không kênh nào trội hẳn so với phần còn lại.
+ * Mọi cơ hội kinh doanh đều nằm trong dải sinh lời 18,75–22,5% mỗi năm trên vốn,
+ * nên không kênh nào trội hẳn so với phần còn lại.
  */
 export const CO_HOI: CoHoi[] = [
   /* ---------- Chung: kinh doanh ---------- */
@@ -721,7 +721,7 @@ export const CO_HOI: CoHoi[] = [
   /* ---------- Tầm lớn: chỉ mở khi tài sản ròng đã đủ ----------
    * Thanh trượt quy mô đã lo phần "cơ hội nhỏ vẫn dùng được khi giàu", nhưng
    * nửa sau ván chơi vẫn cần nội dung MỚI để còn cảm giác thăng tiến. Cả ba nằm
-   * trong dải sinh lời 19–22% mà game vẫn giữ, nên không kênh nào trội hẳn.
+   * trong dải sinh lời 18,75–22,5% mà game vẫn giữ, nên không kênh nào trội hẳn.
    */
   {
     id: 'khuNhaXuong',

@@ -428,8 +428,8 @@ export const CONFIG = {
    * bấm nhận mà không phải nghĩ, và nửa sau ván chơi mất hết sức nặng.
    *
    * ---------- Vì sao rót to không phải lựa chọn hiển nhiên ----------
-   * Cơ hội kinh doanh sinh lời 19–22% mỗi năm, cao hơn mọi kênh đầu tư. Ba đối
-   * trọng giữ cho việc rót tối đa không phải nước đi đương nhiên đúng:
+   * Cơ hội kinh doanh sinh lời 18,75–22,5% mỗi năm, cao hơn mọi kênh đầu tư. Ba
+   * đối trọng giữ cho việc rót tối đa không phải nước đi đương nhiên đúng:
    *   1. Biến cố "doanh nghiệp đóng cửa" nhắm vào CÁI LỚN NHẤT, chỉ trả lại 20%.
    *   2. Khủng hoảng cắt một nửa thu nhập doanh nghiệp, mà nợ vay không giảm theo.
    *   3. Thanh lý gấp chỉ thu về 45% — tiền nằm trong doanh nghiệp không phải

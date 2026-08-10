@@ -270,13 +270,17 @@ nhân cơ bản nhất, và game chưa từng thưởng cho nó.
 |---|---|---|
 | Lương năm đó | ×0,5 | ×0 |
 | Hạnh phúc | −6 | −15 |
-| Di chứng lương | không | ×0,85 vĩnh viễn |
+| Di chứng lương | không | ×0,85 đúng một năm sau |
 
 Nếu biến cố rơi đúng năm **khủng hoảng**, di chứng lương nặng hơn: **×0,75**. Mất việc
 giữa lúc cả thị trường đang sa thải thì đi xin lại phải chấp nhận mức thấp hơn nhiều.
 
-Di chứng lưu ở `heSoLuongDiChung`, nhân vào lương mỗi năm — mất việc hai lần thì hai hệ
-số chồng nhau.
+Di chứng chỉ áp **đúng một lần**, vào lương của năm NGAY SAU năm xảy ra biến cố — qua một
+biến cục bộ trong `chuyenNam` (`diChungApNamNay`), không nhân lại vào lương mỗi năm. Trường
+`heSoLuongDiChung` của `GameState` vẫn được cập nhật (nhân dồn nếu mất việc nhiều lần trong
+một ván) nhưng chỉ để GHI NHẬN cho hiển thị, không được nhân vào lương của các năm sau đó —
+nếu nhân thẳng nó vào lương mỗi năm, mất việc một lần sẽ khiến lương tiệm cận 0 theo cấp số
+nhân (0,85ⁿ) dù không còn biến cố nào xảy ra thêm.
 
 #### 👴 Bố mẹ ngã bệnh — tuổi 35–70
 
@@ -419,8 +423,8 @@ người ta mời bạn, không phải hàng bày bán để mua thêm.
 
 ### Vì sao rót to không phải lựa chọn hiển nhiên
 
-Cơ hội kinh doanh sinh lời 19–22% mỗi năm, cao hơn mọi kênh đầu tư. Nếu không có đối
-trọng thì rót tối đa luôn đúng. Ba đối trọng:
+Cơ hội kinh doanh sinh lời 18,75–22,5% mỗi năm, cao hơn mọi kênh đầu tư. Nếu không có
+đối trọng thì rót tối đa luôn đúng. Ba đối trọng:
 
 1. **Biến cố 🏚️ Doanh nghiệp đóng cửa nhắm vào cái lớn nhất** và chỉ trả lại 20% vốn.
    Rót 12× vào một chỗ là tự vẽ bia lên đó.
@@ -434,7 +438,7 @@ màu cảnh báo khi vượt **40%**.
 ### Ba cơ hội tầm lớn
 
 Thêm trường `taiSanToiThieu` vào `CoHoi` — cơ hội chỉ xuất hiện khi tài sản ròng đã đủ
-lớn. Ba cơ hội mới, đều nằm trong dải sinh lời 19–22% mà game vẫn giữ:
+lớn. Ba cơ hội mới, đều nằm trong dải sinh lời 18,75–22,5% mà game vẫn giữ:
 
 | Cơ hội | Vốn | Thu nhập nền | Biến động | Hiện khi tài sản ròng ≥ |
 |---|---|---|---|---|
@@ -643,8 +647,9 @@ của sáu biến cố), `phaSan` (tỉ lệ thanh lý, ngưỡng, hình phạt)
 trần theo tài sản, ngưỡng cảnh báo).
 
 `luuKey` lên `dong-tien-luu-v1-6`, `dong-tien-luu-v1-5` vào danh sách dọn dẹp trong
-`luu.ts`. Ván v1.5 thiếu chín trường mới nên `taiVan` trả `null` — cùng cách các bản
-trước đã xử lý.
+`luu.ts`. Ván v1.5 thiếu bảy trường mới (`heSoLuongKhoiDiem`, `xuatThanId`,
+`thiTruong`, `lichBienCo`, `bienCoDaQua`, `soLanPhaSan`, `heSoLuongDiChung`) nên
+`taiVan` trả `null` — cùng cách các bản trước đã xử lý.
 
 ### `content.ts`
 
@@ -661,7 +666,7 @@ chuyenTrangThaiThiTruong(rng, hienTai): TrangThaiThiTruong
 tacDongThiTruong(t): { doLechGia, heSoLoiTuc, lechLamPhat, heSoTangLuong }
 taiSanRong(s): Tien                      // xem định nghĩa ngay dưới
 quyMoToiDa(s, coHoi): number             // bậc quy mô lớn nhất được phép
-apLucCongViec(s): number                 // điểm hạnh phúc trừ mỗi năm do bậc lương
+apLucCongViec(s): number                 // điểm hạnh phúc CỘNG mỗi năm do bậc lương — ÂM khi lương cao (trừ), DƯƠNG khi lương thấp
 dangCamVay(s): boolean
 dangCamCoHoi(s): boolean
 vonDoanhNghiepNamNay(s, d): Tien         // vonGoc bám lạm phát từ năm góp
@@ -680,8 +685,9 @@ gọn một chỗ:
 tinhHeSoChiPhi(daKetHon, conCai, nam, xuatThan, heSoLuongKhoiDiem)
 ```
 
-Nó nhân thêm: `xuatThan.heSoChiPhiSong`, `(1 + tyLePhungDuong)` khi tuổi còn dưới
-`phungDuongDenTuoi`, và `1 + (heSoLuongKhoiDiem − 1) × loiSongTheoLuong`.
+Nó nhân thêm: `xuatThan.heSoChiPhiSong`, `(1 + tyLePhungDuong)` khi tuổi còn nhỏ hơn
+hoặc **bằng** `phungDuongDenTuoi` (mã dùng `<=` nên đúng năm tròn tuổi đó vẫn còn
+gửi tiền về, không phải "dưới"), và `1 + (heSoLuongKhoiDiem − 1) × loiSongTheoLuong`.
 
 **`taoGameMoi`** nhận thiết lập nhân vật qua một tham số tuỳ chọn **đứng cuối**, không
 chèn vào giữa:
@@ -720,8 +726,8 @@ thietLap?: ThietLapNhanVat }`.
 | 3 | Thu nhập doanh nghiệp nhân hệ số lợi tức |
 | 7 | Xác suất thăng chức và thưởng Tết nhân hệ số lợi tức |
 | 7b (mới) | **Biến cố lớn** nếu `s.nam` nằm trong `lichBienCo` |
-| 8 | Tăng lương thực nhân `heSoTangLuong`; lương nhân `heSoLuongDiChung` và hệ số cắt lương của biến cố năm nay (biến cục bộ trong `chuyenNam`, khởi điểm 1, **không** lưu vào `GameState` vì nó chỉ có hiệu lực đúng năm đó) |
-| 9 | Trừ `apLucCongViec(s)` khi chưa nghỉ hưu |
+| 8 | Tăng lương thực nhân `heSoTangLuong`; lương nhân hệ số cắt lương của biến cố năm nay (`heSoLuongBienCo`, biến cục bộ, khởi điểm 1, **không** lưu vào `GameState` vì nó chỉ có hiệu lực đúng năm đó), rồi nhân tiếp hệ số di chứng mất việc ÁP ĐÚNG MỘT LẦN cho năm ngay sau (`diChungApNamNay`, cũng là biến cục bộ) — `heSoLuongDiChung` của `GameState` chỉ được cập nhật để ghi nhận/hiển thị, **không** bị nhân lại vào lương mỗi năm |
+| 9 | Cộng `apLucTheoBacLuong(heSoLuongKhoiDiem)` vào hạnh phúc (giá trị có dấu — âm khi lương cao, dương khi lương thấp), bằng 0 ngay từ NĂM NGHỈ HƯU (đọc cờ `daNghiHuu` cục bộ đã cập nhật của năm nay, không phải `s.daNghiHuu` cũ — nếu không năm nghỉ hưu vẫn chịu áp lực dù lương đã chuyển sang lương hưu) |
 | 10 | `tinhHeSoChiPhi` với chữ ký mới |
 | 11 | Ba nấc vỡ nợ: bán tài sản → thanh lý doanh nghiệp → phá sản |
 
@@ -796,7 +802,8 @@ phongThuKhiSuyThoai: boolean
 - Không biến cố nào lặp lại trong một ván.
 - Bệnh hiểm nghèo có bảo hiểm tốn đúng phần tự trả; sau tuổi 70 tốn nhiều hơn.
 - Mất việc có quỹ dự phòng thì không để lại di chứng lương; không có thì lương giảm
-  vĩnh viễn 15%, và 25% nếu rơi đúng năm khủng hoảng.
+  15% đúng MỘT NĂM sau (25% nếu rơi đúng năm khủng hoảng) — không nhân chồng nếu mất
+  việc nhiều lần trong cùng một ván.
 - Doanh nghiệp đóng cửa luôn nhắm vào cái có vốn góp lớn nhất và hoàn lại đúng 20% vốn.
 - Vỡ hụi chỉ trừ tiền mặt, không đụng danh mục đầu tư.
 - Đã thuê chuyên gia hoạch định tài chính thì vỡ hụi chỉ mất 8% thay vì 30%.
@@ -805,23 +812,53 @@ phongThuKhiSuyThoai: boolean
 - Thiếu tiền thì bán tài sản trước, thanh lý doanh nghiệp sau, đúng thứ tự nhỏ tới lớn.
 - Thanh lý doanh nghiệp thu về đúng 45% vốn góp theo giá hiện hành.
 - Thiếu hụt dưới ngưỡng thì chỉ "Túng thiếu", không phá sản.
-- Phá sản xoá sạch nợ, đưa tiền mặt về 0, trừ 25 hạnh phúc, giữ nguyên ước nguyện đã mua.
+- Phá sản xoá sạch nợ, đưa tiền mặt về 0, trừ 15 hạnh phúc, giữ nguyên ước nguyện đã mua.
 - Trong 5 năm sau phá sản, `vay` không có tác dụng; trong 3 năm sau, không cơ hội kinh
   doanh nào được rút ra.
 
 **Quy mô góp vốn**
 - Góp 5× thì trả gấp 5 lần và thu nhập nền gấp 5 lần.
-- `quyMoToiDa` không cho vượt 60% tài sản ròng, và không vượt tiền mặt đang có.
+- `quyMoToiDa` không cho vượt 60% tài sản ròng — TRỪ suất gốc 1×, luôn được phép nếu
+  đủ tiền mặt, dù có vượt 60% hay không — và không cho vượt tiền mặt đang có.
 - Canh bạc bỏ qua `heSoQuyMo` — luôn đúng một suất.
 - Cơ hội có `taiSanToiThieu` không xuất hiện khi chưa đủ giàu.
 
 ### `balance.test.ts`
 
-- Ma trận 4 xuất thân × 3 nghề: chênh lệch tỉ lệ thắng không quá 15 điểm phần trăm.
-- Ma trận 5 bậc lương × 3 nghề: chênh lệch tỉ lệ thắng không quá 15 điểm phần trăm.
-- Bot cân bằng vẫn thắng trong khoảng 55–85% tuỳ nghề.
-- Bot giữ quỹ dự phòng phá sản ít hơn hẳn bot tiêu sát đáy.
-- Bot rót 12× vào một cơ hội phá sản nhiều hơn hẳn bot rót 1×, nhưng khi thắng thì đạt
-  tự do tài chính sớm hơn — đó phải là một canh bạc có lãi kỳ vọng, không phải một cái bẫy.
-- Bot phòng thủ khi suy thoái kết thúc ván với tài sản cao hơn bot mua và giữ, nhưng
-  không cao hơn quá nhiều — nếu không thì "đọc chu kỳ" thành nước đi duy nhất đúng.
+Danh sách dưới đây khớp đúng những test **đang thật sự tồn tại** trong file — bản trước
+của mục này mô tả một ma trận rộng hơn và vài test chưa từng được viết; xem "Vì sao chỉ
+tiêu đổi" ở mục F cho toàn bộ lý do các chỉ tiêu gốc bị huỷ.
+
+- Mỗi nghề (giáo viên, bác sĩ, kỹ sư phần mềm — ba `it` riêng): người chơi giỏi (bot cân
+  bằng) phải thắng được (tỉ lệ thắng > 0%).
+- Không nghề nào thắng ngay trong 5 năm đầu — phải có thử thách.
+- Chỉ ôm vàng (không nhận cơ hội kinh doanh/sự kiện) thì giàu mấy cũng không bao giờ tự
+  do tài chính — đo trên kỹ sư phần mềm.
+- Chơi ẩu — từ chối mọi thẻ tiêu dùng — thì thua vì hạnh phúc, đo trên giáo viên.
+- Tiêu hoang thì về đích chậm hơn tiêu có chọn lọc — đo trên giáo viên và bác sĩ.
+- Liệu trình tâm lý cứu được ván bí bách (bot khó tính, `nguongMoiDiem` cao) nhưng không
+  mua đứt điều kiện thua (tỉ lệ thắng luôn < 100%) — đo trên giáo viên.
+- Thuê chuyên gia hoạch định tài chính rút ngắn đường tới tự do tài chính — ghép cặp
+  từng ván theo đúng seed (có/không thuê), cả ba nghề, **chỉ chốt chiều âm** của số năm
+  chênh lệch trung bình, không chốt tỉ lệ thắng (nhiễu, đổi dấu theo nghề).
+- Bốn xuất thân không chênh nhau quá 15 điểm phần trăm tỉ lệ thắng — đo trên **một** nghề
+  cố định (giáo viên), không phải ma trận × 3 nghề.
+- Năm bậc lương không chênh nhau quá 15 điểm phần trăm tỉ lệ thắng — đo trên **một** nghề
+  cố định (bác sĩ), không phải ma trận × 3 nghề.
+- Bot cân bằng thắng ổn định trong khoảng **85–95%** cho cả ba nghề — chỉ tiêu gốc
+  55–85% không đạt được (xem mục F), đây là ngưỡng bám theo khoảng THẬT quan sát được.
+- Bot cân bằng (đo trên bác sĩ) thận trọng thì gần như không bao giờ phá sản (≤ 5% số
+  ván).
+- Bot đòn bẩy (`CHIEN_LUOC_DON_BAY`: vay tối đa, quy mô 12×, không quỹ dự phòng) khi
+  thắng thì về đích sớm hơn bot cân bằng, cả ba nghề — canh bạc có lãi kỳ vọng, không
+  phải một cái bẫy thuần tuý.
+
+Ba test **không tồn tại** dù từng được mô tả ở bản trước của tài liệu này: so sánh tỉ lệ
+phá sản giữa bot giữ quỹ dự phòng và bot tiêu sát đáy; so sánh tỉ lệ phá sản giữa bot rót
+12× và bot rót 1×; và một chiến lược `ChienLuoc.phongThuKhiSuyThoai` (đọc tín hiệu chu kỳ
+kinh tế để né suy thoái) — trường này chưa từng được thêm vào `ChienLuoc`. Lý do cả ba
+biến mất: mọi ván mô phỏng (n=1000/tổ hợp, cả thắng lẫn thua, cả hai chiến lược) đều kết
+thúc trước năm thứ 35 — không ván nào sống đủ lâu để chạm ngưỡng phá sản tự nhiên (giai
+đoạn lương hưu), nên `soLanPhaSan` đo ra 0% ở mọi chiến lược và mọi phép so sánh dựa trên
+nó đều vô nghĩa. Chi tiết đầy đủ nằm ngay trong chú thích phía trên `it('bot đòn bẩy khi
+thắng...')` của `balance.test.ts`.

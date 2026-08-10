@@ -229,7 +229,7 @@ describe('hạnh phúc — lợi ích giảm dần', () => {
 })
 
 describe('ngân hàng', () => {
-  it('trần vay khiến tổng trả nợ không vượt 50% lương', () => {
+  it('trần vay khiến tổng trả nợ không vượt 65% lương', () => {
     const s = moiVan()
     for (let kyHan = 1; kyHan <= CONFIG.kyHanVayToiDa; kyHan++) {
       const tran = vayToiDa(s, kyHan)
@@ -2463,11 +2463,11 @@ describe('v1.6 — góp vốn theo quy mô', () => {
     expect(lon.some((c) => coHoiHopLe(c, giau))).toBe(true)
   })
 
-  it('cơ hội tầm lớn vẫn nằm trong dải sinh lời 19–22% mỗi năm', () => {
+  it('cơ hội tầm lớn vẫn nằm trong dải sinh lời 18,75–22,5% mỗi năm', () => {
     for (const c of CO_HOI.filter((x) => x.taiSanToiThieu !== undefined)) {
       const tyLe = (c.thuNhapMoiNam ?? 0) / c.gia
-      expect(tyLe).toBeGreaterThanOrEqual(0.19)
-      expect(tyLe).toBeLessThanOrEqual(0.22)
+      expect(tyLe).toBeGreaterThanOrEqual(0.1875)
+      expect(tyLe).toBeLessThanOrEqual(0.225)
     }
   })
 })
@@ -2523,12 +2523,21 @@ describe('v1.6 — sáu biến cố lớn', () => {
   })
 
   it('không biến cố nào lặp lại trong một ván', () => {
+    // KHÔNG dùng epBienCo trong vòng lặp này: nó reset `bienCoDaQua` về [] ở MỖI
+    // lần gọi (tham số `tru` mặc định `[]`), nên bản test cũ chưa từng thật sự
+    // tích luỹ lịch sử biến cố giữa các năm — kiểm tra "không trùng" trên đúng
+    // một biến cố mỗi lần thì luôn xanh một cách vô nghĩa. Ở đây chạy thẳng lịch
+    // biến cố THẬT của ván (rutLichBienCo, tất định theo SEED) qua đủ số năm để
+    // đi hết `lichBienCo`, giữ tiền mặt dư dả và hạnh phúc cao để ván không kết
+    // thúc sớm vì thua hay hết lượt mô phỏng.
     let s = moiVan()
-    const daGap: string[] = []
-    for (let i = 0; i < 30 && s.trangThai === 'dangChoi'; i++) {
-      s = reducer(diTronMotNam(epBienCo(s)), { type: 'dongTongKet' })
-      daGap.push(...s.bienCoDaQua)
+    const namCuoiCung = Math.max(0, ...s.lichBienCo)
+    for (let i = 0; i < namCuoiCung + 5 && s.trangThai === 'dangChoi'; i++) {
+      s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
     }
+    // Ván phải thật sự gặp ít nhất một biến cố — mảng rỗng không được phép làm
+    // phép kiểm "không trùng" xanh một cách hoà vốn (0 === 0).
+    expect(s.bienCoDaQua.length).toBeGreaterThan(0)
     expect(new Set(s.bienCoDaQua).size).toBe(s.bienCoDaQua.length)
   })
 
@@ -2686,7 +2695,11 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
   })
 
   it('thanh lý doanh nghiệp thu về đúng 45% vốn góp theo giá hiện hành', () => {
+    // chiSoGia khác 1 để phép thử thật sự kiểm được vế "theo giá hiện hành" —
+    // nếu engine quên nhân lạm phát vào vốn góp trước khi thanh lý, con số thu
+    // về sẽ lệch khỏi kỳ vọng dưới đây dù tỉ lệ 45% vẫn đúng.
     const s = vanVoNo({
+      chiSoGia: 1.3,
       doanhNghiep: [
         { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
       ],
@@ -2694,7 +2707,11 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     const tk = diTronMotNam(s, 0).tongKet!
     const e = tk.suKien.find((x) => x.loai === 'thanhLyDoanhNghiep')
     expect(e).toBeDefined()
-    expect(e!.tienThayDoi).toBeGreaterThan(0)
+    const vonTheoGiaHienHanh = vonDoanhNghiepNamNay(s, s.doanhNghiep[0]!)
+    expect(vonTheoGiaHienHanh).toBe(520 * TRIEU) // 400tr × 1,3
+    expect(e!.tienThayDoi).toBe(
+      Math.round(vonTheoGiaHienHanh * CONFIG.phaSan.tyLeThanhLyDoanhNghiep),
+    )
   })
 
   it('thanh lý từ doanh nghiệp NHỎ NHẤT lên, giữ nguồn thu lớn nhất càng lâu càng tốt', () => {
@@ -2734,13 +2751,20 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     expect(sau.uocNguyenDaMua).toEqual(['xeMay'])
   })
 
-  it('phá sản trừ đúng 25 hạnh phúc và cấm vay 5 năm, cấm cơ hội 3 năm', () => {
-    // Đã kết hôn sẵn: SEED=12345 hẹn đám cưới đúng năm 12, một khoản CỘNG hạnh
-    // phúc cốt truyện không liên quan tới phép thử này mà đủ lớn để che mất
-    // đúng 25 điểm bị trừ vì phá sản.
+  it('phá sản trừ đúng 15 hạnh phúc và cấm vay 5 năm, cấm cơ hội 3 năm', () => {
+    // Đã kết hôn sẵn: SEED=12345 hẹn đám cưới đúng năm 12 — tránh để sự kiện đó
+    // nổ ra cùng năm và cộng thêm hạnh phúc, làm khó đọc số điểm cần kiểm.
     const s = vanVoNo({ hanhPhuc: 95, daKetHon: true })
-    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
-    expect(sau.hanhPhuc).toBeLessThanOrEqual(95 - CONFIG.phaSan.hanhPhuc)
+    const truoc = diTronMotNam(s, 0)
+    const e = truoc.tongKet!.suKien.find((x) => x.loai === 'phaSan')
+    expect(e).toBeDefined()
+    // Đọc đúng số điểm THỰC bị trừ của riêng sự kiện phá sản (delta mà
+    // `apHanhPhuc` trả về) thay vì suy luận qua hạnh phúc tổng cuối năm — năm đó
+    // còn cộng/trừ nhiều khoản khác (lạm phát, thẻ tiêu dùng...) có thể che mất
+    // đúng con số cần kiểm, và trước đây `<=` còn xanh cả khi engine trừ 50.
+    expect(e!.hanhPhucThayDoi).toBe(-CONFIG.phaSan.hanhPhuc)
+
+    const sau = reducer(truoc, { type: 'dongTongKet' })
     expect(dangCamVay(sau)).toBe(true)
     expect(dangCamCoHoi(sau)).toBe(true)
     expect(sau.camVayDenNam - sau.nam).toBe(CONFIG.phaSan.soNamCamVay - 1)

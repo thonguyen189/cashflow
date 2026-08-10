@@ -1701,7 +1701,12 @@ function chuyenNam(s: GameState): GameState {
   // Áp lực công việc của bậc lương đã chọn. Đứng cùng chỗ với phạt khát vọng vì
   // cả hai đều là khoản đều đặn hàng năm, và nó phải nằm TRƯỚC khi chốt hạnh phúc
   // cuối năm để cửa ải thua đọc đúng con số.
-  const apLuc = apLucCongViec(s)
+  //
+  // Dùng biến CỤC BỘ `daNghiHuu` (đã bật lên đúng NĂM NGHỈ HƯU ở bước trên) chứ
+  // không gọi thẳng `apLucCongViec(s)` — `s.daNghiHuu` là cờ CỦA NĂM CŨ, chưa
+  // kịp cập nhật, nên gọi thẳng sẽ khiến năm nghỉ hưu vẫn chịu áp lực dù lương
+  // của đúng năm đó đã chuyển sang lương hưu ở bước 8.
+  const apLuc = daNghiHuu ? 0 : apLucTheoBacLuong(s.heSoLuongKhoiDiem)
   const apLucThucNhan = apLuc !== 0 ? apHanhPhuc(apLuc) : 0
 
   // Ghi lại số điểm THỰC bị trừ / thực nhận, không phải con số danh nghĩa —
