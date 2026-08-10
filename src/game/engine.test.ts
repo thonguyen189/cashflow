@@ -5,9 +5,11 @@ import {
   TAI_SAN,
   THE_TIEU_DUNG,
   UOC_NGUYEN,
+  XUAT_THAN,
   timCoHoi,
   timNghe,
   timUocNguyen,
+  timXuatThan,
 } from './content'
 import {
   CHUYEN_TRI_LIEU,
@@ -1888,5 +1890,43 @@ describe('chuyên gia đồng hành', () => {
     expect(sau.phase).toBe('ketThuc')
     expect(sau.nam).toBe(daThue.nam)
     expect(sau.tongKet?.suKien.some((k) => k.loai === 'triLieu') ?? false).toBe(false)
+  })
+
+  describe('v1.6 — xuất thân', () => {
+    it('có đủ bốn xuất thân, id không trùng nhau', () => {
+      expect(XUAT_THAN).toHaveLength(4)
+      const ids = XUAT_THAN.map((x) => x.id)
+      expect(new Set(ids).size).toBe(4)
+      expect(ids).toContain('vienChuc')
+    })
+
+    it('vốn nhiều thì chi phí sống cao — đánh đổi chạy đều một chiều', () => {
+      const theoVon = [...XUAT_THAN].sort((a, b) => a.tyLeVonBanDau - b.tyLeVonBanDau)
+      for (let i = 1; i < theoVon.length; i++) {
+        expect(theoVon[i]!.heSoChiPhiSong).toBeGreaterThan(theoVon[i - 1]!.heSoChiPhiSong)
+      }
+    })
+
+    it('viên chức tỉnh lẻ trung tính ở mọi hệ số — nó là mặc định của ván cũ', () => {
+      const x = timXuatThan('vienChuc')!
+      expect(x.heSoChiPhiSong).toBe(1)
+      expect(x.tyLeNoBanDau).toBe(0)
+      expect(x.tyLePhungDuong).toBe(0)
+      expect(x.hanhPhucBanDau).toBe(0)
+    })
+
+    it('chỉ nhà thuần nông có nợ học phí và phải phụng dưỡng', () => {
+      const coNo = XUAT_THAN.filter((x) => x.tyLeNoBanDau > 0)
+      expect(coNo.map((x) => x.id)).toEqual(['thuanNong'])
+      const coPhungDuong = XUAT_THAN.filter((x) => x.tyLePhungDuong > 0)
+      expect(coPhungDuong.map((x) => x.id)).toEqual(['thuanNong'])
+    })
+
+    it('năm bậc lương đối xứng quanh 1', () => {
+      const bac = CONFIG.xuatThan.bacLuong
+      expect(bac).toHaveLength(5)
+      expect(bac[2]).toBe(1)
+      expect(bac[0]! + bac[4]!).toBeCloseTo(2, 10)
+    })
   })
 })

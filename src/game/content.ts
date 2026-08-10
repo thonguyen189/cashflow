@@ -1,5 +1,5 @@
 import { TRIEU, TY } from './config'
-import type { CoHoi, KhoaHoc, MonUocNguyen, Nghe, TaiSan, TheTieuDung } from './types'
+import type { CoHoi, KhoaHoc, MonUocNguyen, Nghe, TaiSan, TheTieuDung, XuatThan } from './types'
 
 /**
  * Nội dung game — bối cảnh Việt Nam, đơn vị VNĐ.
@@ -37,6 +37,71 @@ export const NGHE: Nghe[] = [
     luong: 600 * TRIEU,
     chiPhi: 435 * TRIEU,
     khatVongId: 'canHo',
+  },
+]
+
+/** ---------------- Xuất thân ----------------
+ * Vốn tính theo TỈ LỆ với lương khởi điểm chứ không phải số tiền tuyệt đối, để
+ * cả ba nghề đều cân nhau.
+ *
+ * Nhà thuần nông là trường hợp đáng chú ý nhất: trong những năm còn phụng dưỡng,
+ * hai hệ số triệt tiêu nhau gần hết (0,92 × 1,08 ≈ 0,99) — gánh nặng rơi đúng
+ * vào quãng đời cần vốn nhất rồi biến mất sau tuổi 55, để lại lợi thế chi phí
+ * thấp cho phần đời còn lại. Ngoài đời cũng thế: người xuất thân khó khăn bị níu
+ * ở đoạn đầu, nhưng thói quen tằn tiện là tài sản của đoạn sau.
+ */
+export const XUAT_THAN: XuatThan[] = [
+  {
+    id: 'thuanNong',
+    ten: 'Nhà thuần nông',
+    emoji: '🌾',
+    moTa: 'Bố mẹ làm ruộng, nuôi bạn ăn học bằng những mùa lúa. Ra trường với hai bàn tay trắng và một khoản nợ học phí, nhưng bạn quen sống tằn tiện và biết đủ.',
+    tyLeVonBanDau: 0,
+    tyLeNoBanDau: 0.4,
+    heSoChiPhiSong: 0.92,
+    hanhPhucBanDau: 5,
+    tyLePhungDuong: 0.08,
+    phungDuongDenTuoi: 55,
+    boMeCoTichLuy: false,
+  },
+  {
+    id: 'vienChuc',
+    ten: 'Viên chức tỉnh lẻ',
+    emoji: '🏘️',
+    moTa: 'Bố mẹ là công chức nhà nước, đủ ăn đủ mặc. Cho bạn một khoản nhỏ làm vốn rồi để bạn tự lo phần còn lại.',
+    tyLeVonBanDau: 0.4,
+    tyLeNoBanDau: 0,
+    heSoChiPhiSong: 1,
+    hanhPhucBanDau: 0,
+    tyLePhungDuong: 0,
+    phungDuongDenTuoi: 0,
+    boMeCoTichLuy: false,
+  },
+  {
+    id: 'buonBan',
+    ten: 'Buôn bán ngoài phố',
+    emoji: '🏢',
+    moTa: 'Nhà mặt phố có cửa hàng, bố mẹ dúi cho một khoản kha khá làm vốn. Đổi lại, bạn lớn lên với mức sống mà giờ khó lòng hạ xuống.',
+    tyLeVonBanDau: 1.5,
+    tyLeNoBanDau: 0,
+    heSoChiPhiSong: 1.1,
+    hanhPhucBanDau: 0,
+    tyLePhungDuong: 0,
+    phungDuongDenTuoi: 0,
+    boMeCoTichLuy: true,
+  },
+  {
+    id: 'khaGia',
+    ten: 'Nhà có của ăn của để',
+    emoji: '🏛️',
+    moTa: 'Xuất phát trước người ta cả một quãng dài. Nhưng nếp sống sang trọng đi theo bạn suốt đời, và cái đích tự do vì thế cũng lùi xa hơn.',
+    tyLeVonBanDau: 4,
+    tyLeNoBanDau: 0,
+    heSoChiPhiSong: 1.25,
+    hanhPhucBanDau: 0,
+    tyLePhungDuong: 0,
+    phungDuongDenTuoi: 0,
+    boMeCoTichLuy: true,
   },
 ]
 
@@ -606,3 +671,4 @@ export const timUocNguyen = (id: string) => UOC_NGUYEN.find((u) => u.id === id)
 export const timKhoaHoc = (id: string) => KHOA_HOC.find((k) => k.id === id)
 export const timTaiSan = (id: string) => TAI_SAN.find((t) => t.id === id)
 export const timCoHoi = (id: string) => CO_HOI.find((c) => c.id === id)
+export const timXuatThan = (id: string) => XUAT_THAN.find((x) => x.id === id)

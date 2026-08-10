@@ -22,6 +22,41 @@ export interface Nghe {
   khatVongId: string
 }
 
+export type XuatThanId = 'thuanNong' | 'vienChuc' | 'buonBan' | 'khaGia'
+
+/**
+ * Hoàn cảnh gia đình lúc vào đời. Quyết định VỐN ban đầu và một GÁNH NẶNG đi
+ * theo suốt ván. Đánh đổi cố ý chạy đều một chiều: vốn càng nhiều thì chi phí
+ * sống càng cao, mà `nghiaVuHangNam` lấy chi phí sinh hoạt làm thành phần chính
+ * nên cái đích tự do tài chính cũng lùi xa theo.
+ */
+export interface XuatThan {
+  id: XuatThanId
+  ten: string
+  emoji: string
+  moTa: string
+  /** vốn ban đầu = tỉ lệ này × lương khởi điểm */
+  tyLeVonBanDau: number
+  /** nợ học phí ban đầu = tỉ lệ này × lương khởi điểm; 0 nghĩa là không nợ */
+  tyLeNoBanDau: number
+  /** chi phí sinh hoạt nhân hệ số này suốt ván */
+  heSoChiPhiSong: number
+  /** cộng vào hạnh phúc khởi điểm */
+  hanhPhucBanDau: number
+  /** gửi tiền phụng dưỡng = tỉ lệ này × chi phí sinh hoạt, tới `phungDuongDenTuoi` */
+  tyLePhungDuong: number
+  phungDuongDenTuoi: number
+  /** bố mẹ có tích luỹ nên biến cố "bố mẹ ngã bệnh" nhẹ đi */
+  boMeCoTichLuy: boolean
+}
+
+/** Thiết lập nhân vật chọn ở màn mở đầu, ngoài nghề nghiệp. */
+export interface ThietLapNhanVat {
+  xuatThanId: XuatThanId
+  /** hệ số nhân với lương gốc của nghề */
+  heSoLuongKhoiDiem: number
+}
+
 /** Thẻ chỉ xuất hiện ở giai đoạn đời tương ứng; không có = mọi giai đoạn. */
 export type GiaiDoanThe = 'giaDinh' | 'conCai' | 'tuoiGia'
 

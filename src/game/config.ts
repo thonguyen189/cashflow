@@ -224,6 +224,26 @@ export const CONFIG = {
     phatMatHanhPhuc: 3,
   },
 
+  /** ---------- Xuất thân và bậc lương khởi điểm ----------
+   * Ngoài đời hai người cùng nghề có thể chênh nhau cả một gia tài ở vạch xuất
+   * phát. Xuất thân lo phần vốn, bậc lương lo phần năng lực.
+   *
+   * ---------- Vì sao bậc lương phải trừ hạnh phúc ----------
+   * Nếu chỉ có tiền thì lương cao LUÔN thắng: lương lớn hơn chi phí nên nhân
+   * cùng một tỉ lệ vẫn ra thặng dư lớn hơn. Khoản trừ hạnh phúc mới là vế giữ
+   * cân bằng — bậc cao nhất mất 5 điểm mỗi năm, đúng bằng khoản phạt khát vọng,
+   * mà hạnh phúc lại là điều kiện thua duy nhất. Người chọn lương cao đang đổi
+   * tiền lấy tuổi thọ của ván chơi.
+   */
+  xuatThan: {
+    /** các bậc nhân với lương gốc của nghề */
+    bacLuong: [0.75, 0.875, 1, 1.125, 1.25],
+    /** lệch 1 phần lương thì chi phí sinh hoạt lệch ngần này phần */
+    loiSongTheoLuong: 0.6,
+    /** áp lực công việc: hạnh phúc trừ mỗi năm = (hệ số lương − 1) × số này */
+    apLucTheoLuong: 20,
+  },
+
   /** ---------- Chuyên gia đồng hành ----------
    * Hai gói dịch vụ để người chơi CHỦ ĐỘNG can thiệp khi hạnh phúc tụt dốc. Trước
    * bản này mọi đường hồi phục đều thụ động: thẻ tiêu dùng do máy rút, ước nguyện
