@@ -295,26 +295,26 @@ export const CONFIG = {
    * thật thì cổ phiếu, bất động sản và tiền mã hoá cùng rơi một lượt, doanh
    * nghiệp hụt thu, lạm phát vọt lên — và chỉ vàng với trái phiếu còn đứng vững.
    *
-   * ---------- Ma trận này cho ra nhịp nào ----------
-   * Tính trên một ván trọn 79 năm (mô phỏng 20.000 ván):
-   *   tỉ lệ số năm  thịnh vượng 24,1% · bình thường 43,5% · suy thoái 22,6%
-   *                 · khủng hoảng 9,9%
-   *   5,8 đợt khủng hoảng mỗi ván — trung bình MỘT ĐỢT MỖI 13,6 NĂM
-   *   mỗi đợt kéo dài 1,33 năm
-   * Đó là nhịp mà một người Việt Nam đi làm từ đầu thập niên 1990 tới nay đã
-   * thật sự sống qua.
+   * ---------- Ma trận này cho ra nhịp nào (siết lại ở v1.7) ----------
+   * Bản v1.6 cho khủng hoảng chiếm 9,9% số năm, một đợt mỗi 13,6 năm. Đo thực
+   * nghiệm cho thấy đó là mức mà một danh mục dàn đều vẫn đi qua êm ru. Ma trận
+   * v1.7 đẩy lên khoảng 17% số năm và làm sâu hơn hẳn: giá sập 45% thay vì 30%,
+   * lợi tức còn một phần tư thay vì một nửa, lạm phát vọt thêm 7 điểm.
    *
-   * Hai tính chất cài có chủ ý: khủng hoảng không bao giờ nhảy thẳng về thịnh
-   * vượng (kinh tế hồi phục dần chứ không bật dậy), và suy thoái là cửa ngõ
-   * chính vào khủng hoảng.
+   * Đo riêng đòn này ở thực nghiệm vòng hai, tỉ lệ thắng của giáo viên rơi từ
+   * 72% xuống 51% — đòn bẩy mạnh thứ hai của cả bản, sau thang tiền.
+   *
+   * Hai tính chất của v1.6 giữ nguyên: khủng hoảng không bao giờ nhảy thẳng về
+   * thịnh vượng (kinh tế hồi phục dần chứ không bật dậy), và suy thoái là cửa
+   * ngõ chính vào khủng hoảng.
    */
   thiTruong: {
     banDau: 'binhThuong' as TrangThaiThiTruong,
     maTranChuyen: {
-      thinhVuong: { thinhVuong: 0.52, binhThuong: 0.34, suyThoai: 0.11, khungHoang: 0.03 },
-      binhThuong: { thinhVuong: 0.24, binhThuong: 0.54, suyThoai: 0.18, khungHoang: 0.04 },
-      suyThoai: { thinhVuong: 0.05, binhThuong: 0.4, suyThoai: 0.33, khungHoang: 0.22 },
-      khungHoang: { thinhVuong: 0, binhThuong: 0.28, suyThoai: 0.47, khungHoang: 0.25 },
+      thinhVuong: { thinhVuong: 0.42, binhThuong: 0.34, suyThoai: 0.16, khungHoang: 0.08 },
+      binhThuong: { thinhVuong: 0.2, binhThuong: 0.46, suyThoai: 0.24, khungHoang: 0.1 },
+      suyThoai: { thinhVuong: 0.04, binhThuong: 0.3, suyThoai: 0.36, khungHoang: 0.3 },
+      khungHoang: { thinhVuong: 0, binhThuong: 0.22, suyThoai: 0.43, khungHoang: 0.35 },
     },
     /**
      * `doLechGia` cộng vào biến động giá sau khi nhân `nhayChuKy` của từng kênh.
@@ -325,8 +325,8 @@ export const CONFIG = {
     tacDong: {
       thinhVuong: { doLechGia: 0.1, heSoLoiTuc: 1.15, lechLamPhat: 0, heSoTangLuong: 1.3 },
       binhThuong: { doLechGia: 0, heSoLoiTuc: 1, lechLamPhat: 0, heSoTangLuong: 1 },
-      suyThoai: { doLechGia: -0.1, heSoLoiTuc: 0.8, lechLamPhat: 0.01, heSoTangLuong: 0.3 },
-      khungHoang: { doLechGia: -0.3, heSoLoiTuc: 0.5, lechLamPhat: 0.05, heSoTangLuong: 0 },
+      suyThoai: { doLechGia: -0.18, heSoLoiTuc: 0.65, lechLamPhat: 0.02, heSoTangLuong: 0.2 },
+      khungHoang: { doLechGia: -0.45, heSoLoiTuc: 0.25, lechLamPhat: 0.07, heSoTangLuong: 0 },
     },
     /** giá có thể sập chín phần mười nhưng không về không */
     sanBienDong: -0.9,

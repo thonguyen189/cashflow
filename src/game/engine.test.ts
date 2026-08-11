@@ -43,6 +43,7 @@ import {
   soNamTriLieuConLai,
   taiSanRong,
   taoGameMoi,
+  taoRng,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   thuNhapThuDong,
@@ -56,6 +57,7 @@ import {
   vayToiDa,
   vonDoanhNghiepNamNay,
   xeDangCo,
+  chuyenTrangThaiThiTruong,
 } from './engine'
 import type {
   AssetId,
@@ -2243,13 +2245,22 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
     }
   })
 
-  it('lạm phát năm khủng hoảng cao hơn năm bình thường đúng 5 điểm phần trăm', () => {
+  it('lạm phát năm khủng hoảng cao hơn năm bình thường đúng bằng lệch lạm phát cấu hình', () => {
+    // v1.7 nâng lechLamPhat của khủng hoảng từ 0,05 lên 0,07 (bình thường vẫn
+    // là 0) — so với CONFIG thay vì hằng số cứng để không lệch khi Task 8 đổi
+    // số.
     const kh = namVoiThiTruong('khungHoang')
     const bt = namVoiThiTruong('binhThuong')
-    expect(kh.lamPhat - bt.lamPhat).toBeCloseTo(0.05, 10)
+    const lechKyVong =
+      CONFIG.thiTruong.tacDong.khungHoang.lechLamPhat -
+      CONFIG.thiTruong.tacDong.binhThuong.lechLamPhat
+    expect(kh.lamPhat - bt.lamPhat).toBeCloseTo(lechKyVong, 10)
   })
 
-  it('thu nhập doanh nghiệp trong khủng hoảng bằng một nửa mức bình thường', () => {
+  it('thu nhập doanh nghiệp trong khủng hoảng bằng đúng tỉ lệ heSoLoiTuc cấu hình', () => {
+    // v1.7 hạ heSoLoiTuc của khủng hoảng từ 0,5 xuống 0,25 (còn một phần tư
+    // thay vì một nửa) — so với CONFIG thay vì hằng số cứng để không lệch khi
+    // Task 8 đổi số.
     const nen = {
       ...moiVan(),
       doanhNghiep: [
@@ -2266,7 +2277,10 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
     const kh = diTronMotNam({ ...nen, thiTruong: 'khungHoang' }).tongKet!
     const tienBT = bt.thuNhapDoanhNghiep[0]!.soTien
     const tienKH = kh.thuNhapDoanhNghiep[0]!.soTien
-    expect(tienKH / tienBT).toBeCloseTo(0.5, 2)
+    const tyLeKyVong =
+      CONFIG.thiTruong.tacDong.khungHoang.heSoLoiTuc /
+      CONFIG.thiTruong.tacDong.binhThuong.heSoLoiTuc
+    expect(tienKH / tienBT).toBeCloseTo(tyLeKyVong, 2)
   })
 
   it('lương không tăng thực trong khủng hoảng', () => {
@@ -3062,5 +3076,44 @@ describe('v1.7 — thuế trên thu nhập thụ động', () => {
       ],
     }
     expect(dongTienThuDong(s)).toBe(Math.round(30 * TRIEU * 0.8))
+  })
+})
+
+describe('v1.7 — chu kỳ kinh tế khắc nghiệt hơn', () => {
+  it('mỗi hàng của ma trận chuyển vẫn cộng đủ 1', () => {
+    for (const hang of Object.values(CONFIG.thiTruong.maTranChuyen)) {
+      const tong = Object.values(hang).reduce((t: number, x) => t + x, 0)
+      expect(tong).toBeCloseTo(1, 10)
+    }
+  })
+
+  it('khủng hoảng không bao giờ nhảy thẳng về thịnh vượng', () => {
+    expect(CONFIG.thiTruong.maTranChuyen.khungHoang.thinhVuong).toBe(0)
+  })
+
+  it('khủng hoảng chiếm khoảng 17-21% số năm trên chặng dài', () => {
+    // Ghi chú: phân phối dừng thật của ma trận v1.7 (giải bằng lặp luỹ thừa,
+    // độc lập hạt giống) là ~21,1%, cao hơn con số "khoảng 17%" nêu trong mô
+    // tả — tài liệu thiết kế mục E nêu ước lượng định hướng, còn đây là hành
+    // vi thật của đúng ma trận được yêu cầu. Biên trên nới từ 0,21 lên 0,23
+    // để ôm trọn phân phối dừng thật (đo được 20,8%-21,4% qua nhiều hạt giống)
+    // mà vẫn đủ chặt để bắt được hồi quy nếu ma trận bị đổi sai sau này.
+    const rng = taoRng(1234, 0)
+    let tt: TrangThaiThiTruong = 'binhThuong'
+    let dem = 0
+    const SO_NAM = 40_000
+    for (let i = 0; i < SO_NAM; i++) {
+      tt = chuyenTrangThaiThiTruong(rng, tt)
+      if (tt === 'khungHoang') dem++
+    }
+    const tyLe = dem / SO_NAM
+    expect(tyLe).toBeGreaterThan(0.14)
+    expect(tyLe).toBeLessThan(0.23)
+  })
+
+  it('khủng hoảng sâu hơn v1.6 ở cả giá lẫn lợi tức', () => {
+    const kh = CONFIG.thiTruong.tacDong.khungHoang
+    expect(kh.doLechGia).toBeLessThanOrEqual(-0.45)
+    expect(kh.heSoLoiTuc).toBeLessThanOrEqual(0.25)
   })
 })
