@@ -113,6 +113,20 @@ export const CONFIG = {
     /** chuyện tuổi già: xác suất mỗi năm sau tuổi này */
     tuoiGiaSuKienTuTuoi: 70,
     tuoiGiaSuKienXacSuat: 0.3,
+
+    /** ---------- Chăm sóc tuổi già (v1.7) ----------
+     * Thuê người chăm, thuốc men hàng ngày, viện dưỡng lão. Bản v1.6 hoàn toàn
+     * không có khoản này, mà ngoài đời nó chính là cái làm người đã về hưu vỡ
+     * trận: thu nhập đứng yên trong khi chi phí leo không ngừng.
+     *
+     * Vì `nghiaVuHangNam` lấy `chiPhiHangNam` làm thành phần chính, cái ĐÍCH tự
+     * do tài chính tự lùi ra khi bạn già đi — giữ được tự do ở tuổi 60 không có
+     * nghĩa là giữ được ở tuổi 85. Đây là mảnh ghép làm cho chế độ chơi tiếp sau
+     * khi thắng có ý nghĩa thật.
+     */
+    chamSocTuTuoi: 75,
+    chamSocTangMoiNam: 0.03,
+    chamSocToiDa: 0.6,
   },
 
   /** ---------- Hạnh phúc ---------- */

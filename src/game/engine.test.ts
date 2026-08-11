@@ -58,6 +58,7 @@ import {
   vonDoanhNghiepNamNay,
   xeDangCo,
   chuyenTrangThaiThiTruong,
+  heSoChamSocTuoiGia,
 } from './engine'
 import type {
   AssetId,
@@ -3115,5 +3116,29 @@ describe('v1.7 — chu kỳ kinh tế khắc nghiệt hơn', () => {
     const kh = CONFIG.thiTruong.tacDong.khungHoang
     expect(kh.doLechGia).toBeLessThanOrEqual(-0.45)
     expect(kh.heSoLoiTuc).toBeLessThanOrEqual(0.25)
+  })
+})
+
+describe('v1.7 — chi phí chăm sóc tuổi già', () => {
+  it('chưa tới 75 tuổi thì chưa cộng gì', () => {
+    expect(heSoChamSocTuoiGia(60)).toBe(0)
+    expect(heSoChamSocTuoiGia(75)).toBe(0)
+  })
+
+  it('leo dần rồi chạm trần 60%', () => {
+    expect(heSoChamSocTuoiGia(80)).toBeCloseTo(0.15, 6)
+    expect(heSoChamSocTuoiGia(85)).toBeCloseTo(0.3, 6)
+    expect(heSoChamSocTuoiGia(90)).toBeCloseTo(0.45, 6)
+    expect(heSoChamSocTuoiGia(95)).toBeCloseTo(0.6, 6)
+    expect(heSoChamSocTuoiGia(100)).toBeCloseTo(0.6, 6)
+  })
+
+  it('đích tự do tài chính tự lùi ra khi già đi', () => {
+    // Giữ được tự do ở tuổi 60 không có nghĩa là giữ được ở tuổi 85.
+    const nam60 = 60 - CONFIG.cotTruyen.tuoiBatDau + 1
+    const nam85 = 85 - CONFIG.cotTruyen.tuoiBatDau + 1
+    const gia = tinhHeSoChiPhi(true, [], nam60, XUAT_THAN[1]!, 1)
+    const raGia = tinhHeSoChiPhi(true, [], nam85, XUAT_THAN[1]!, 1)
+    expect(raGia).toBeGreaterThan(gia * 1.25)
   })
 })

@@ -575,6 +575,13 @@ export function soConDangNuoi(conCai: readonly number[], nam: number): number {
     .length
 }
 
+/** Phần chi phí sinh hoạt cộng thêm do chăm sóc tuổi già. 0 khi chưa tới tuổi. */
+export function heSoChamSocTuoiGia(tuoi: number): number {
+  const ct = CONFIG.cotTruyen
+  if (tuoi <= ct.chamSocTuTuoi) return 0
+  return Math.min(ct.chamSocToiDa, ct.chamSocTangMoiNam * (tuoi - ct.chamSocTuTuoi))
+}
+
 /**
  * Hệ số chi phí cố định ở năm `nam`. Gom TẤT CẢ hệ số nhân vào chi phí sinh hoạt
  * về một chỗ: hoàn cảnh gia đình, xuất thân, phụng dưỡng bố mẹ và lối sống theo
@@ -583,6 +590,9 @@ export function soConDangNuoi(conCai: readonly number[], nam: number): number {
  *
  * Hai tham số cuối để tuỳ chọn: mọi lời gọi ba tham số có từ trước v1.6 vẫn đúng
  * vì viên chức tỉnh lẻ và bậc lương 1 đều trung tính.
+ *
+ * Chăm sóc tuổi già (v1.7) nhân thêm SAU CÙNG, cạnh mọi hệ số khác: nó là phần
+ * phụ trội của riêng tuổi tác, không phụ thuộc hôn nhân, con cái hay xuất thân.
  */
 export function tinhHeSoChiPhi(
   daKetHon: boolean,
@@ -599,7 +609,8 @@ export function tinhHeSoChiPhi(
     Math.pow(1 + ct.conTangChiPhi, soConDangNuoi(conCai, nam)) *
     xuatThan.heSoChiPhiSong *
     (conPhungDuong ? 1 + xuatThan.tyLePhungDuong : 1) *
-    (1 + (heSoLuongKhoiDiem - 1) * CONFIG.xuatThan.loiSongTheoLuong)
+    (1 + (heSoLuongKhoiDiem - 1) * CONFIG.xuatThan.loiSongTheoLuong) *
+    (1 + heSoChamSocTuoiGia(tuoiTaiNam(nam)))
   )
 }
 
