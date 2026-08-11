@@ -502,6 +502,24 @@ export const CONFIG = {
     nguongCanhBaoTapTrung: 0.4,
   },
 
+  /** ---------- Doanh nghiệp: bão hoà và rủi ro nền ----------
+   * Ở v1.6 một quán cà phê trả 20% vốn mỗi năm, mãi mãi, không già đi. Đó là cỗ
+   * máy lãi kép không rủi ro, và là lý do sâu xa khiến mọi nghề đều tự do tài
+   * chính trước tuổi 40.
+   *
+   * ---------- Bão hoà ----------
+   * Thu nhập nền giảm THỰC 3% mỗi năm kể từ năm góp vốn — tức không bám đủ lạm
+   * phát. Sau 5 năm còn 86%, 10 năm còn 74%, 15 năm còn 63%, 25 năm còn 47%.
+   * Cạnh tranh mọc lên, thiết bị cũ đi, mặt bằng tăng giá, khách quen chuyển đi.
+   * Người chơi buộc phải liên tục gây dựng cái mới thay vì mua một lần rồi ngồi
+   * thu tiền tới già — và đây cũng là thứ khiến người ĐÃ tự do tài chính có thể
+   * rớt lại nếu ngủ quên, điều kiện để chế độ chơi tiếp có ý nghĩa.
+   */
+  doanhNghiep: {
+    /** thu nhập nền giảm thực ngần này mỗi năm kể từ năm góp vốn */
+    baoHoaMoiNam: 0.03,
+  },
+
   /** ---------- Biến cố lớn ----------
    * Sự kiện ngẫu nhiên sẵn có — ốm đau, sự cố, va chạm — đều ở mức vài chục phần
    * trăm chi phí một năm. Chúng là gợn sóng. Đời người thì có sóng lớn, và những

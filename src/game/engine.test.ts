@@ -28,6 +28,7 @@ import {
   giaThucTe,
   giaUocNguyen,
   hanhPhucTuUocNguyen,
+  heSoBaoHoa,
   hoiPhucTriLieu,
   mocTaiSanCuaNghe,
   muaToiDa,
@@ -45,6 +46,7 @@ import {
   taoGameMoi,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
+  thuNhapNenNamNay,
   thuNhapThuDong,
   thueThuNhapCaNhan,
   tangLuongThucTheoTuoi,
@@ -2259,6 +2261,9 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
           thuNhapNen: 195 * TRIEU,
           chiSoGiaLucMua: 1,
           vonGoc: timCoHoi('nhaTroCongNhan')!.gia,
+          // góp vốn đúng năm hiện tại (v1.7): hệ số bão hoà = 1, không làm nhiễu
+          // phép so sánh tỉ lệ bình thường/khủng hoảng mà bài test này muốn đo
+          namGop: moiVan().nam,
         },
       ],
     }
@@ -2378,7 +2383,7 @@ describe('v1.6 — tài sản ròng và trần quy mô góp vốn', () => {
       tienMat: 1 * TY,
       khoanVay: [],
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Quán cà phê', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        { coHoiId: 'quanCaPhe', ten: 'Quán cà phê', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 1 },
       ],
     }
     expect(taiSanRong(s)).toBe(tongTaiSan(s) + 400 * TRIEU)
@@ -2707,12 +2712,12 @@ describe('v1.6 — sáu biến cố lớn', () => {
 
   it('doanh nghiệp đóng cửa nhắm vào cái có vốn góp lớn nhất và hoàn 20% vốn', () => {
     const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'voHui', 'baoLu']
-    const quanCaPhe = { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU }
+    const quanCaPhe = { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 15 }
     const s: GameState = {
       ...moiVan(),
       nam: 15,
       doanhNghiep: [
-        { coHoiId: 'choThueXe', ten: 'Đội xe máy cho thuê', thuNhapNen: 40 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 200 * TRIEU },
+        { coHoiId: 'choThueXe', ten: 'Đội xe máy cho thuê', thuNhapNen: 40 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 200 * TRIEU, namGop: 15 },
         quanCaPhe,
       ],
     }
@@ -2750,7 +2755,7 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     const s = vanVoNo({
       soHuu: { ...moiVan().soHuu, traiPhieu: 5000 },
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 12 },
       ],
     })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
@@ -2765,7 +2770,7 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     const s = vanVoNo({
       chiSoGia: 1.3,
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 12 },
       ],
     })
     const tk = diTronMotNam(s, 0).tongKet!
@@ -2794,8 +2799,8 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
         { id: 'v1', goc: 1 * TY, kyHan: 10, thanhToanMoiNam: 150 * TRIEU, namConLai: 8 },
       ],
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
-        { coHoiId: 'xuongMay', ten: 'Góp vốn xưởng may gia công', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 1.5 * TY },
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 12 },
+        { coHoiId: 'xuongMay', ten: 'Góp vốn xưởng may gia công', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 1.5 * TY, namGop: 12 },
       ],
     })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
@@ -3058,9 +3063,53 @@ describe('v1.7 — thuế trên thu nhập thụ động', () => {
           thuNhapNen: 30 * TRIEU,
           chiSoGiaLucMua: s.chiSoGia,
           vonGoc: 200 * TRIEU,
+          namGop: s.nam,
         },
       ],
     }
     expect(dongTienThuDong(s)).toBe(Math.round(30 * TRIEU * 0.8))
+  })
+})
+
+describe('v1.7 — doanh nghiệp bão hoà theo thời gian', () => {
+  const dungDoanhNghiep = (s: GameState, namGop: number) => ({
+    ...s,
+    doanhNghiep: [
+      {
+        coHoiId: 'choThueXe',
+        ten: 'Đội xe máy cho thuê',
+        thuNhapNen: 30 * TRIEU,
+        chiSoGiaLucMua: 1,
+        vonGoc: 200 * TRIEU,
+        namGop,
+      },
+    ],
+  })
+
+  it('doanh nghiệp mới góp thì chưa bão hoà', () => {
+    let s = taoGameMoi('bacSi', 21)
+    s = { ...dungDoanhNghiep(s, s.nam), chiSoGia: 1 }
+    expect(heSoBaoHoa(s, s.doanhNghiep[0]!)).toBe(1)
+  })
+
+  it('sau mười năm thu nhập còn khoảng 74%', () => {
+    let s = taoGameMoi('bacSi', 22)
+    s = { ...dungDoanhNghiep(s, 1), nam: 11, chiSoGia: 1 }
+    expect(heSoBaoHoa(s, s.doanhNghiep[0]!)).toBeCloseTo(0.737, 3)
+    // So sánh chính xác tuyệt đối (`toBe`), không phải xấp xỉ: nhân thẳng hằng số
+    // bão hoà mười năm liên tiếp qua Math.pow thay vì chép tay một số thập phân
+    // đã làm tròn (0,737424) — 0,97¹⁰ thực ra là 0,7374241268949281, và làm tròn
+    // số đã cắt bớt cho ra 22.122.720 trong khi công thức thật cho 22.122.724.
+    expect(thuNhapNenNamNay(s, s.doanhNghiep[0]!)).toBe(
+      Math.round(30 * TRIEU * Math.pow(1 - CONFIG.doanhNghiep.baoHoaMoiNam, 10)),
+    )
+  })
+
+  it('bão hoà kéo dòng tiền thụ động xuống theo', () => {
+    let moi = taoGameMoi('bacSi', 23)
+    moi = { ...dungDoanhNghiep(moi, moi.nam), chiSoGia: 1 }
+    let cu = taoGameMoi('bacSi', 23)
+    cu = { ...dungDoanhNghiep(cu, 1), nam: 26, chiSoGia: 1 }
+    expect(dongTienThuDong(cu)).toBeLessThan(dongTienThuDong(moi) * 0.5)
   })
 })

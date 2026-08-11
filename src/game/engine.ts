@@ -144,12 +144,26 @@ export function quyMoToiDa(s: GameState, coHoi: CoHoi): number {
 }
 
 /**
+ * Hệ số bão hoà của một doanh nghiệp: 1 ở năm góp vốn, giảm thực dần theo tuổi.
+ * Đặt riêng thành hàm xuất khẩu vì giao diện cần kể được "thu nhập còn bao nhiêu
+ * phần trăm so với ngày đầu" (xem TabKinhDoanh.tsx).
+ */
+export function heSoBaoHoa(s: GameState, d: DoanhNghiep): number {
+  const soNam = Math.max(0, s.nam - d.namGop)
+  return Math.pow(1 - CONFIG.doanhNghiep.baoHoaMoiNam, soNam)
+}
+
+/**
  * Mức thu nhập NỀN của một doanh nghiệp trong năm nay.
  * Thu nhập bám theo lạm phát kể từ năm góp vốn, nếu không thì sau vài chục năm
- * một doanh nghiệp từng đáng giá sẽ teo lại thành tiền lẻ.
+ * một doanh nghiệp từng đáng giá sẽ teo lại thành tiền lẻ. Nhân thêm hệ số bão
+ * hoà (v1.7) để thu nhập giảm thực dần theo tuổi doanh nghiệp — xem chú thích
+ * khối `doanhNghiep` trong config.ts.
  */
 export function thuNhapNenNamNay(s: GameState, d: DoanhNghiep): Tien {
-  return Math.round(d.thuNhapNen * (s.chiSoGia / d.chiSoGiaLucMua))
+  return Math.round(
+    d.thuNhapNen * (s.chiSoGia / d.chiSoGiaLucMua) * heSoBaoHoa(s, d),
+  )
 }
 
 /** Tổng thu nhập thụ động nền năm nay, chưa áp biến động của từng ngành. */
@@ -2341,6 +2355,7 @@ export function reducer(s: GameState, a: Action): GameState {
               thuNhapNen: giaThucTe(s, coHoi.thuNhapMoiNam ?? 0) * quyMo,
               chiSoGiaLucMua: s.chiSoGia,
               vonGoc: gia,
+              namGop: s.nam,
             },
           ],
         }
