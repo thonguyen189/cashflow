@@ -154,8 +154,19 @@ export const CONFIG = {
 
   /** ---------- Ngân hàng ----------
    * v1.2 hạ lãi và kéo dài kỳ hạn để "vay mua doanh nghiệp" thành quyết
-   * định cân não thật: trả 10 năm lãi 8% ≈ 18%/năm gốc, sát mức sinh lời
-   * 18,75–22,5%/năm của các cơ hội kinh doanh.
+   * định cân não thật: trả 10 năm lãi 8% ≈ 18%/năm gốc.
+   *
+   * ---------- v1.7: dải sinh lời hạ, quan hệ với lãi vay đã đổi ----------
+   * Lúc đặt số này (v1.2), 18%/năm nằm sát ngay dưới dải sinh lời doanh
+   * nghiệp cũ 18,75–22,5%/năm, nên vay để rót vốn vẫn có lời chút ít — cân
+   * não thật vì biên lời mỏng chứ không phải vì lỗ. v1.7 hạ dải sinh lời
+   * xuống 12–18% (xem chú thích đầu mảng `CO_HOI` trong content.ts) mà
+   * KHÔNG đổi lãi vay: giờ chi phí vay 18%/năm chạm trần hoặc vượt hẳn cả
+   * dải, nên đòn bẩy hoà vốn ở kịch bản tốt nhất và lỗ ròng ở phần lớn cơ
+   * hội còn lại. Đây là hệ quả ĐÃ BIẾT của việc hạ dải sinh lời, CỐ Ý chưa
+   * vá ở đây — để dành cho vòng hiệu chỉnh cân bằng cân nhắc cùng lúc với
+   * những đòn bẩy độ khó khác (mục J, tài liệu thiết kế v1.7), không phải
+   * lỗi cần sửa ngay khi đọc thấy dòng này.
    */
   laiSuatVay: 0.08,
   kyHanVayToiDa: 10,
@@ -428,7 +439,7 @@ export const CONFIG = {
    * bấm nhận mà không phải nghĩ, và nửa sau ván chơi mất hết sức nặng.
    *
    * ---------- Vì sao rót to không phải lựa chọn hiển nhiên ----------
-   * Cơ hội kinh doanh sinh lời 18,75–22,5% mỗi năm, cao hơn mọi kênh đầu tư. Ba
+   * Cơ hội kinh doanh sinh lời 12–18% mỗi năm, cao hơn mọi kênh đầu tư. Ba
    * đối trọng giữ cho việc rót tối đa không phải nước đi đương nhiên đúng:
    *   1. Biến cố "doanh nghiệp đóng cửa" nhắm vào CÁI LỚN NHẤT, chỉ trả lại 20%.
    *   2. Khủng hoảng cắt một nửa thu nhập doanh nghiệp, mà nợ vay không giảm theo.

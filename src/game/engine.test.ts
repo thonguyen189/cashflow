@@ -2889,7 +2889,7 @@ describe('v1.7 — cơ hội kinh doanh sát thực tế hơn', () => {
     )
     // Giáo viên tiết kiệm 14tr/năm — suất đầu tiên phải với tới trong ~2 năm,
     // nếu không thì mười năm đầu người chơi không có quyết định nào để ra.
-    expect(nhoNhat).toBeLessThanOrEqual(30_000_000)
+    expect(nhoNhat).toBeLessThanOrEqual(30 * TRIEU)
   })
 
   it('rủi ro cao thì sinh lời cao — nhà trọ chắc nhất và lãi thấp nhất', () => {
