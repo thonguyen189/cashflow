@@ -46,11 +46,62 @@ describe('cân bằng game', () => {
    *  Sáu chỉ tiêu của mục J
    * ================================================================ */
 
-  it('CHỈ TIÊU 1 — bot cân bằng thắng 45–55%, đều cả ba nghề', () => {
-    const ty: number[] = []
+  /**
+   * ---------- Vì sao chỉ tiêu này chuyển sang dải RIÊNG từng nghề ----------
+   * Mục J bản đầu muốn cả ba nghề cùng thắng 45–55% và chênh nhau ≤ 10 điểm. Giữ
+   * được dải chung ấy đòi hỏi cho giáo viên một thang lương không tồn tại ngoài
+   * đời: 6,0% tăng thực mỗi năm ở bậc đầu, so với 3,5% thật. v1.7 đợt 2 trả
+   * đường cong về số thật (`content.ts`, `duongCongSuNghiep` của giáo viên) và
+   * chấp nhận hệ quả — ba nghề KHÁC NHAU, và đó là thông điệp chứ không phải lỗi
+   * cân bằng.
+   *
+   * ---------- Sàn 8% của kế hoạch đã bị phá, đây là chỗ ghi lại ----------
+   * Kế hoạch đặt một chốt chặn: không nghề nào được có sàn dưới 8%, vì dưới mức
+   * đó thì nghề ấy là BẤT KHẢ THI chứ không phải khó, và đó là lỗi thiết kế cần
+   * báo lại chứ không phải số cần chép. Giáo viên đo được 6,0% — thủng chốt.
+   *
+   * Đã báo lại và đã dò trước khi chép. Đòn bẩy duy nhất còn lại là
+   * `tuDoTaiChinh.heSoToiThieu/heSoPhuThem`; quét nó qua bảy mức, n=200 mỗi ô,
+   * từ 0,8+0,9 tới 2,6+2,8 — tức đòi hệ số an toàn ở tuổi 21 từ 1,70 tới 5,40:
+   *
+   *   mức       giáo viên       bác sĩ          kỹ sư PM        chênh nghề
+   *   0,8+0,9   19,0% · 60,9t   52,5% · 48,8t   62,5% · 45,3t   43,5 điểm
+   *   1,2+1,3   11,5% · 62,9t   52,5% · 50,9t   56,0% · 48,5t   44,5 điểm
+   *   1,6+1,8   10,0% · 69,1t   50,5% · 52,9t   53,0% · 51,2t   43,0 điểm
+   *   1,8+2,0    9,0% · 72,5t   49,0% · 53,5t   52,0% · 51,8t   43,0 điểm
+   *   1,9+2,1    7,5% · 74,1t   49,0% · 53,9t   51,5% · 52,5t   44,0 điểm
+   *   2,2+2,4    6,0% · 74,8t   49,0% · 55,3t   50,5% · 53,5t   44,5 điểm ← đang cài
+   *   2,6+2,8    4,0% · 73,1t   47,5% · 56,5t   47,5% · 55,7t   43,5 điểm
+   *
+   * Chênh lệch giữa nghề mạnh nhất và nghề yếu nhất đứng yên ở 43–44,5 điểm suốt
+   * cả dải. Vặn hệ số gấp hơn ba lần không bóp được khoảng cách ấy lấy một điểm —
+   * nó chỉ trượt cả ba nghề xuống cùng lúc. Nghĩa là 6% của giáo viên KHÔNG do hệ
+   * số an toàn gây ra, và không mức nào của hệ số ấy chữa được: mức duy nhất đưa
+   * giáo viên lên 19% cũng đẩy kỹ sư lên 62,5% và dìm tuổi thắng cả ba nghề xuống
+   * 45–49, thủng đáy dải của chỉ tiêu 2.
+   *
+   * Người chốt đã quyết sau khi đọc bảng trên: nhận 6% là sự thật của nghề, sửa
+   * thước đo. Sàn của giáo viên dưới đây vì vậy là 2% chứ không phải 8% — cố ý
+   * phá chốt chặn, sau khi đã đo và đã báo, chứ không phải lặng lẽ chép số cho
+   * xanh. Việc chữa 6% nếu muốn chữa nằm ở kinh tế của nghề giáo viên (chi phí
+   * sinh hoạt riêng, hoặc một cơ chế bù như đổi nghề hay dạy thêm) — một vòng
+   * thiết kế mới, không phải một con số trong bảng này.
+   *
+   * ---------- Dải dưới đây đọc thế nào ----------
+   * Bám theo số đo thật, nới đúng biên ±8 điểm quanh nó (giáo viên kẹp sàn ở 2%
+   * vì 6 − 8 đã xuống dưới 0), và vẫn đủ chặt để bắt hồi quy: một con số rơi ra
+   * ngoài nghĩa là vừa có thay đổi thật sự dời cân bằng, phải đọc lại chứ không
+   * phải nới tiếp.
+   */
+  it('CHỈ TIÊU 1 — mỗi nghề nằm trong dải riêng đã đo, không nghề nào bất khả thi', () => {
+    const dai: Record<string, [number, number]> = {
+      giaoVien: [0.02, 0.14],
+      bacSi: [0.41, 0.57],
+      kySuPhanMem: [0.43, 0.59],
+    }
     for (const nghe of NGHE) {
       const r = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU)
-      ty.push(r.tyLeThang)
+      const [san, tran] = dai[nghe.id]!
       // eslint-disable-next-line no-console
       console.log(
         `${nghe.ten.padEnd(18)} thắng ${(r.tyLeThang * 100).toFixed(1)}%` +
@@ -60,26 +111,60 @@ describe('cân bằng game', () => {
           ` · phá sản ${(r.tyLeThuaVi.phaSan * 100).toFixed(1)}%` +
           ` · hết đời chưa tự do ${(r.tyLeThuaVi.hetDoi * 100).toFixed(1)}%`,
       )
-      expect(r.tyLeThang).toBeGreaterThanOrEqual(0.45)
-      expect(r.tyLeThang).toBeLessThanOrEqual(0.55)
+      expect(r.tyLeThang).toBeGreaterThanOrEqual(san)
+      expect(r.tyLeThang).toBeLessThanOrEqual(tran)
     }
-    expect(Math.max(...ty) - Math.min(...ty)).toBeLessThanOrEqual(0.1)
+    // Chốt chặn trên chính BẢNG DẢI, không phải trên số đo: trần 60% của kế
+    // hoạch vẫn giữ nguyên hiệu lực, vì trên mức đó thì nghề ấy hoá thành nước
+    // đi hiển nhiên đúng và ván chơi hết chỗ để quyết định. Đây là dây bẫy chống
+    // việc nới dải về sau — sàn 8% thì đã cố ý bỏ, có ghi lý do ở chú thích trên.
+    for (const [, tran] of Object.values(dai)) {
+      expect(tran).toBeLessThanOrEqual(0.6)
+    }
   })
 
-  it('CHỈ TIÊU 2 — tuổi thắng trung bình rơi vào 52–62', () => {
+  /**
+   * ---------- Vì sao giáo viên KHÔNG có mặt trong bài này ----------
+   * `soNamTrungBinhKhiThang` chỉ có nghĩa khi tập ván thắng đủ lớn. Giáo viên nay
+   * thắng 6,0% trên 200 ván — trung bình tuổi thắng 74,8 của nghề này được tính
+   * trên đúng 12 ván. Quét hệ số an toàn cho thấy con số ấy còn quay đầu: 74,1 ở
+   * mức 1,9+2,1 (15 ván) rồi 74,8 (12 ván) rồi 73,1 ở mức 2,6+2,8 (8 ván) — dao
+   * động của mẫu nhỏ, không phải xu hướng.
+   *
+   * Tệ hơn, con số ấy còn bị THIÊN LỆCH SỐNG SÓT: hệ số an toàn càng cao thì chỉ
+   * những ván lì nhất mới thắng nổi, nên trung bình bị kéo lên chứ không phải vì
+   * người chơi giáo viên thật sự về đích muộn hơn. Nới dải 52–62 lên tới 75 cho
+   * vừa giáo viên là chép một con số vô nghĩa vào chỗ của một chỉ tiêu.
+   *
+   * Nên bài này đo hai nghề có tập ván thắng đủ lớn (98 và 101 ván), và dải bám
+   * theo số đo thật: 53,5 của kỹ sư và 55,3 của bác sĩ, nới ±3 tuổi rồi làm tròn
+   * ra ngoài. Tuổi thắng của giáo viên vẫn được IN RA ở chỉ tiêu 1 để không ai
+   * mất dấu nó — chỉ là không bị chốt bằng một phép so mà mẫu không đỡ nổi.
+   */
+  it('CHỈ TIÊU 2 — tuổi thắng trung bình 50–59 ở hai nghề có đủ mẫu', () => {
     for (const nghe of NGHE) {
+      if (nghe.id === 'giaoVien') continue
       const r = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU)
       const tuoi = tuoiThang(r.soNamTrungBinhKhiThang)
-      expect(tuoi).toBeGreaterThanOrEqual(52)
-      expect(tuoi).toBeLessThanOrEqual(62)
+      // Mẫu phải đủ lớn thì phép so mới có nghĩa — nếu một nghề nào đó tụt xuống
+      // dưới ngần này ván thắng thì bài phải được đọc lại chứ không phải chạy tiếp.
+      expect(r.tyLeThang * SO_VAN_CHI_TIEU).toBeGreaterThanOrEqual(50)
+      expect(tuoi).toBeGreaterThanOrEqual(50)
+      expect(tuoi).toBeLessThanOrEqual(59)
     }
   })
 
   /**
    * ---------- CHỈ TIÊU 3 KHÔNG ĐẠT ----------
-   * Mục J muốn chết non vì hạnh phúc chỉ còn ≤ 40% số ván thua. Đo thật: 88% /
-   * 100% / 95%. Đây là ngưỡng bám theo khoảng THẬT quan sát được, không phải
-   * khoảng mong muốn ban đầu — cùng khuôn với mục F của v1.6.
+   * Mục J muốn chết non vì hạnh phúc chỉ còn ≤ 40% số ván thua. Đo thật ở v1.7
+   * đợt 2: 87% / 100% / 95%. Đây là ngưỡng bám theo khoảng THẬT quan sát được,
+   * không phải khoảng mong muốn ban đầu — cùng khuôn với mục F của v1.6.
+   *
+   * Đợt 2 có một dự đoán ở đây và nó SAI: cơ chế phá sản vừa sửa lẽ ra phải lấy
+   * bớt một phần số ván thua và kéo thị phần này xuống. Phá sản đo được cao nhất
+   * chỉ 0,5% ở đúng một ô, nên nó không lấy đi được gì đáng kể — con số duy nhất
+   * nhúc nhích là giáo viên, 88% → 87%, và đó là do đường lương trả về số thật
+   * chứ không phải do phá sản.
    *
    * Vì sao không đạt, đã dò tới tận cơ chế: điểm hạnh phúc NHẬN được bị chặn bởi
    * trần mềm 100 và trần cứng 130, nhưng điểm MẤT khi từ chối thẻ thì không bị
@@ -115,18 +200,25 @@ describe('cân bằng game', () => {
 
   /**
    * ---------- CHỈ TIÊU 4 KHÔNG ĐẠT, nhưng đã đi được một quãng thật ----------
-   * Mục J muốn > 30% số ván sống trọn tới tuổi 100. Đo thật: 8% / 0% / 2,5%.
+   * Mục J muốn > 30% số ván sống trọn tới tuổi 100. Đo thật ở v1.7 đợt 2:
+   * 13,5% / 0,0% / 2,5%.
    *
    * Dù vậy đây KHÔNG phải chỗ đứng yên so với v1.6. Suốt bản đó, dò vết 1000 ván
    * mỗi tổ hợp cho thấy KHÔNG ván nào sống quá năm thứ 35 — nửa sau cuộc đời chưa
-   * từng được chơi lấy một lần. Nay ván dài nhất chạm trọn 79 năm và tuổi thắng
-   * trung bình đã lùi từ 33–42 lên 53–61, tức phần đời sau tuổi 50 đã thật sự
+   * từng được chơi lấy một lần. Nay ván dài nhất chạm trọn 80 năm và tuổi thắng
+   * trung bình đã lùi từ 33–42 lên 53,5–74,8, tức phần đời sau tuổi 50 đã thật sự
    * được mô phỏng đi qua. Test dưới đây chốt đúng điều đó: chốt cái đã đạt được,
    * và ghi lại cái chưa.
    *
+   * Con số 13,5% của giáo viên là số CAO NHẤT dự án từng đo, và nó cao vì lý do
+   * buồn: nghề này nay hiếm khi thắng, nên ván của nó hay đi hết đời mà chưa tự
+   * do. "Sống trọn đời" ở đây đếm cả hai nghĩa — sống trọn vì đã thong dong, và
+   * sống trọn vì không bao giờ tới đích.
+   *
    * Nguyên nhân không đạt là hệ quả số học của chỉ tiêu 3: muốn > 30% ván sống
-   * trọn đời trong khi 45–55% ván kết thúc bằng chiến thắng, thì cửa thua hạnh
-   * phúc chỉ được phép lấy đi ≤ 20% tổng số ván. Đo thật con số đó là 45–51%.
+   * trọn đời trong khi ngần ấy ván kết thúc bằng chiến thắng, thì cửa thua hạnh
+   * phúc chỉ được phép lấy đi một phần nhỏ tổng số ván. Đo thật con số đó là
+   * 47–81,5%.
    */
   it('CHỈ TIÊU 4 — nửa sau cuộc đời cuối cùng cũng được chơi, dù chưa tới mức 30%', () => {
     for (const nghe of NGHE) {
@@ -156,40 +248,69 @@ describe('cân bằng game', () => {
   })
 
   /**
-   * ---------- CHỈ TIÊU 5 VÀ 6 KHÔNG ĐẠT — và lý do là CẤU TRÚC ----------
-   * Mục J muốn bot cân bằng phá sản 8–18% và bot đòn bẩy > 30%. Đo thật: 0% và
-   * 0%. Bản v1.6 cũng đo ra 0%, nhưng khi đó lời giải thích là "mô phỏng không
-   * bao giờ sống quá năm thứ 35 nên không chạm tới quãng đời trả giá". Lời giải
-   * thích ấy nay đã bị bác bỏ: ván chạy trọn 79 năm mà phá sản VẪN không xảy ra.
+   * ---------- CHỈ TIÊU 5 VÀ 6 VẪN KHÔNG ĐẠT — nhưng bức tường đã nứt ----------
+   * Mục J muốn bot cân bằng phá sản 8–18% và bot đòn bẩy > 30%. Đo thật ở v1.7
+   * đợt 2: cao nhất là 0,5% (giáo viên, bot đòn bẩy), năm ô còn lại là 0,0%.
    *
-   * Nguyên nhân thật nằm ở nấc 1 của cơ chế ba nấc vỡ nợ. Đếm trực tiếp số lần
-   * mỗi nấc nổ (n = 450 ván mỗi chiến lược, cả ba nghề):
+   * ---------- Phần chẩn đoán cũ, vẫn đúng và vẫn là công sức đắt nhất -------
+   * Bản v1.6 đo ra 0% và giải thích là "mô phỏng không bao giờ sống quá năm thứ
+   * 35 nên không chạm tới quãng đời trả giá". Lời giải thích ấy đã bị bác bỏ: ván
+   * chạy trọn 79 năm mà phá sản VẪN không xảy ra. Nguyên nhân thật nằm ở nấc 1
+   * của cơ chế ba nấc vỡ nợ. Đếm trực tiếp số lần mỗi nấc nổ (n = 450 ván mỗi
+   * chiến lược, cả ba nghề):
    *   · bot cân bằng: nấc 1 nổ 1 lần, nấc 2 nổ 0 lần, nấc 3 nổ 0 lần
    *   · bot đòn bẩy:  nấc 1 nổ 46 lần, nấc 2 nổ 9 lần, nấc 3 nổ 1 lần
-   * Bot đòn bẩy vay tổng 15–27 tỷ mỗi ván ở 149/150 ván, vậy mà vẫn không đổ.
    * Lý do: nấc 1 bán tài sản đầu tư KHÔNG có giới hạn mỗi năm — nó bán tới khi
    * tiền mặt hết âm. Mà nấc 3 lại đòi khoản thiếu hụt còn vượt trọn một năm chi
    * phí SAU KHI đã bán sạch tài sản và thanh lý hết doanh nghiệp. Người chơi đem
-   * tiền đi đầu tư thì luôn có cái để bán, nên trạng thái "nghèo tài sản mà nặng
-   * nợ" — trạng thái duy nhất dẫn tới nấc 3 — không bao giờ xuất hiện.
+   * tiền đi đầu tư thì luôn có cái để bán, nên trạng thái "nghèo thanh khoản mà
+   * nặng nợ" — trạng thái duy nhất dẫn tới nấc 3 — không bao giờ xuất hiện.
    *
-   * Nâng `xacSuatPhaSanCoBan` 0,02 → 0,15 KHÔNG sinh ra ván phá sản nào: nó chỉ
-   * dìm tỉ lệ thắng của bot đòn bẩy từ 23% xuống 1%. Nó tạo ra sự nghèo đi, không
-   * tạo ra sự sụp đổ. Muốn có phá sản thật thì phải sửa ENGINE — chẳng hạn chặn
-   * mỗi năm chỉ được bán một phần danh mục — chứ không phải vặn thêm một con số
-   * cân bằng nào. Xem mục L của tài liệu thiết kế.
+   * ---------- Đợt 2 đã sửa đúng chỗ đó, và nó có tác dụng ----------
+   * `phaSan.tyLeBanToiDaMoiNam` (0,4) áp trần bán tháo mỗi năm cho nấc 1. Sau đó
+   * phá sản lần đầu tiên KHÁC 0 trong lịch sử dự án: giáo viên chơi đòn bẩy đổ
+   * 0,5%. Con số bé, nhưng nó là hiệu số giữa "bất khả thi về cấu trúc" và "hiếm".
+   *
+   * ---------- Vì sao dừng ở đây thay vì vặn tiếp ----------
+   * Kế hoạch cho tối đa bốn vòng vặn hai con số. Đã quét, và cả hai đều TRƠ:
+   *   · `tyLeBanToiDaMoiNam` 0,4 → 0,15: mười sáu ô đo giống nhau tới từng chữ
+   *     số thập phân, kể cả tỉ lệ thắng. Trần này không còn cắn, vì kỳ hạn vay 20
+   *     năm của đợt 2 làm khoản trả nợ nhẹ đi tới mức khoản hụt tiền mỗi năm nhỏ
+   *     hơn hẳn phần danh mục được phép bán — `Math.ceil(-tienMat / gia)` mới là
+   *     vế thắng trong `Math.min`, không phải cái trần.
+   *   · `nguongTheoChiPhi` 1,0 → 0,8 → 0,6 → 0,5 → 0,2 → 0,05 → 0,01 → 0: cao
+   *     nhất chạm 4,5% (giáo viên, bot cân bằng) ở mức 0 — tức coi BẤT KỲ đồng
+   *     tiền mặt âm nào còn sót sau hai nấc đầu cũng là phá sản. Vẫn dưới sàn 8%
+   *     của mục J, mà đã phải phá nát định nghĩa "thế nào là vỡ nợ" để tới đó.
+   *
+   * Ràng buộc đang cắn nay nằm ở NẤC 2: thanh lý doanh nghiệp cũng không có trần
+   * mỗi năm, và 45% vốn góp của một người vay lớn thì thừa sức bù. Sửa chỗ đó là
+   * đổi ENGINE, đúng cùng một khiếm khuyết "thanh lý không giới hạn" mà đợt 2 vừa
+   * sửa ở nấc 1 — và nó phải là một task riêng có test riêng, không phải một con
+   * số nhét vào vòng hiệu chỉnh. Xem mục L của tài liệu thiết kế.
+   *
+   * Bài này vì vậy chốt đúng cái đo được, và cố ý đo CẢ BA NGHỀ: bản cũ chỉ đo
+   * bác sĩ — nghề dư dả nhất — nên nó bỏ sót đúng cái ô duy nhất khác 0.
    */
-  it('CHỈ TIÊU 5 và 6 — phá sản vẫn KHÔNG xảy ra ở cả hai chiến lược', () => {
-    const canBang = moPhongNhieuVan('bacSi', SO_VAN_CHI_TIEU)
-    const donBay = moPhongNhieuVan('bacSi', SO_VAN_CHI_TIEU, CHIEN_LUOC_DON_BAY)
-    // eslint-disable-next-line no-console
-    console.log(
-      `phá sản — cân bằng ${(canBang.tyLePhaSan * 100).toFixed(1)}%` +
-        ` (mục J muốn 8–18%) · đòn bẩy ${(donBay.tyLePhaSan * 100).toFixed(1)}%` +
-        ` (mục J muốn > 30%)`,
-    )
-    expect(canBang.tyLePhaSan).toBeLessThanOrEqual(0.02)
-    expect(donBay.tyLePhaSan).toBeLessThanOrEqual(0.02)
+  it('CHỈ TIÊU 5 và 6 — phá sản đã khác 0 nhưng còn xa mục tiêu', () => {
+    const tyLe: number[] = []
+    for (const nghe of NGHE) {
+      const canBang = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU)
+      const donBay = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU, CHIEN_LUOC_DON_BAY)
+      tyLe.push(canBang.tyLePhaSan, donBay.tyLePhaSan)
+      // eslint-disable-next-line no-console
+      console.log(
+        `${nghe.ten.padEnd(18)} phá sản — cân bằng ${(canBang.tyLePhaSan * 100).toFixed(1)}%` +
+          ` (mục J muốn 8–18%) · đòn bẩy ${(donBay.tyLePhaSan * 100).toFixed(1)}%` +
+          ` (mục J muốn > 30%)`,
+      )
+    }
+    // Trần 2%: còn cách sàn 8% của mục J một quãng xa, và đó là điều bài này ghi
+    // lại. Nếu ô nào vượt 2% thì cơ chế vỡ nợ vừa đổi thật — đọc lại, đừng nới.
+    expect(Math.max(...tyLe)).toBeLessThanOrEqual(0.02)
+    // Nhưng KHÔNG được quay về 0 tuyệt đối: trần bán tháo của đợt 2 là thứ duy
+    // nhất từng đưa phá sản ra khỏi con số 0, và bài này canh đúng thành quả đó.
+    expect(Math.max(...tyLe)).toBeGreaterThan(0)
   })
 
   /**
@@ -287,6 +408,13 @@ describe('cân bằng game', () => {
      * làm mất chừng ấy ván, vì tiền trả cho nó (25% chi phí sinh hoạt một năm)
      * nay là khoản đáng kể so với thặng dư đã mỏng đi.
      *
+     * Đợt 2 kéo cả hai con số xuống thấp hơn nữa — 1,2% so với 1,6% — vì bài này
+     * đứng trên giáo viên với bot khó tính, tức nghề khó nhất chơi theo lối ngặt
+     * nhất, sau khi đường lương đã trả về số thật. Ghép cặp vẫn cho đúng bức
+     * tranh cũ: lật thắng 5 ván, lật thua 7 ván. Đây CỐ Ý là cảnh ngặt nghèo nhất
+     * dựng được — nếu một gói dịch vụ nhỏ mua đứt được điều kiện thua thì nó phải
+     * lộ ra ở đây trước tiên.
+     *
      * Chốt vào một hiệu ứng cỡ nhiễu là chốt vào nhiễu — đúng cái bẫy mà chú
      * thích đầu `CHIEN_LUOC_CAN_BANG` trong sim.ts đã ghi lại một lần rồi. Phần
      * CÒN VỮNG của bất biến là phần dưới đây, và nó mới là phần quan trọng: một
@@ -359,7 +487,8 @@ describe('cân bằng game', () => {
    * ---------- Vì sao ở đây không có trần chênh lệch cứng ----------
    * Mục J bản đầu muốn giữ chênh lệch giữa bốn xuất thân và giữa năm bậc lương ở
    * mức ≤ 15 điểm như v1.6. Chỉ tiêu đó đã được GỠ khỏi mục J, vì nó loại trừ
-   * nhau với chỉ tiêu tỉ lệ thắng 45–55% ở đầu bảng. Đo thật: 24 điểm và 33 điểm.
+   * nhau với chỉ tiêu tỉ lệ thắng 45–55% ở đầu bảng. Đo thật ở v1.7 đợt 2, cả hai
+   * bài nay cùng đứng trên bác sĩ: 19,2 điểm và 33 điểm.
    *
    * Đây KHÔNG phải chuyện game hoá bất công hơn — nó là HIỆU ỨNG TRẦN biến mất.
    * Ở v1.6 bot cân bằng thắng 91–94%, tức mọi xuất thân đều đụng trần: nhà thuần
@@ -367,27 +496,47 @@ describe('cân bằng game', () => {
    * điểm, vì cả hai đều bị ép sát vào 100%. Kéo tỉ lệ thắng về 45–55% theo đúng
    * chỉ tiêu 1 thì trần biến mất và khoảng cách THẬT lộ ra nguyên vẹn.
    *
-   * Đã kiểm chứng bằng cách quét `heSoAnToanTheoTuoi` (n=200 mỗi điểm): chênh lệch
-   * xuất thân đo được 35/32/28/24 điểm và bậc lương 37/36/34/33 điểm ở bốn mức
-   * 1,2+1,3 · 1,6+1,8 · 1,9+2,1 · 2,2+2,4. Hạ hệ số an toàn — tức đẩy tỉ lệ thắng
-   * LÊN — làm chênh lệch RỘNG ra chứ không hẹp lại, đúng như dự đoán của lời giải
-   * thích trần. Không có mức nào vừa giữ tỉ lệ thắng 45–55% vừa giữ chênh lệch
-   * ≤ 15 điểm: hai chỉ tiêu này loại trừ nhau.
+   * Đã kiểm chứng bằng cách quét `heSoAnToanTheoTuoi` (n=200 mỗi điểm, hồi đó cả
+   * hai bài còn đứng trên giáo viên với đường lương đã vặn): chênh lệch xuất thân
+   * đo được 35/32/28/24 điểm và bậc lương 37/36/34/33 điểm ở bốn mức 1,2+1,3 ·
+   * 1,6+1,8 · 1,9+2,1 · 2,2+2,4. Hạ hệ số an toàn — tức đẩy tỉ lệ thắng LÊN — làm
+   * chênh lệch RỘNG ra chứ không hẹp lại, đúng như dự đoán của lời giải thích
+   * trần. Không có mức nào vừa giữ tỉ lệ thắng 45–55% vừa giữ chênh lệch ≤ 15
+   * điểm: hai chỉ tiêu này loại trừ nhau.
    *
    * Ngưỡng 40 điểm dưới đây bám theo khoảng THẬT quan sát được, và vẫn đủ chặt để
    * bắt được hồi quy: nó sẽ đỏ ngay nếu một xuất thân nào đó hoá thành lựa chọn
    * áp đảo. Xem mục L của docs/07-thiet-ke-v1-7.md.
+   *
+   * ---------- Vì sao bài này chuyển từ GIÁO VIÊN sang BÁC SĨ ở đợt 2 ----------
+   * Không phải để tìm một nghề cho ra số đẹp hơn — mà vì trên giáo viên bài này
+   * đã mất sạch khả năng đo. Sau khi đường lương trả về số thật, bốn xuất thân
+   * của giáo viên ra 4% · 4% · 5% · 3%: chênh lệch teo còn 1,7 điểm không phải vì
+   * bốn xuất thân đã hoá công bằng, mà vì cả bốn cùng bị dồn sát sàn 0, chỗ không
+   * còn gì để phân biệt. Một bài test mà mọi nhánh đều ra "gần như không thắng"
+   * thì không đỏ được trước bất kỳ hồi quy nào.
+   *
+   * Đã quét xem có mức `heSoAnToanTheoTuoi` nào cứu được bài này trên giáo viên
+   * không (n=120 mỗi ô): thấp nhất trong bốn xuất thân là 3,3% ở mức đang cài,
+   * 7,5% ở 1,6+1,8, 10,0% ở 1,2+1,3, và 10,8% ở 0,8+0,9 — tức chỉ mức đáy dải mới
+   * vượt nổi ngưỡng 10%, mà mức đó lại đẩy kỹ sư lên 62,5% và phá chỉ tiêu 1.
+   * Không có mức nào vừa giữ được chỉ tiêu 1 vừa cứu được bài này trên giáo viên.
+   *
+   * Bác sĩ đo ra 30,8 · 47,5 · 50,0 · 32,5 — chênh 19,2 điểm, bốn nhánh tách bạch
+   * rõ ràng, và ĐÚNG điều bài này sinh ra để canh lại đo được: xuất thân dịch
+   * chuyển cửa thắng thật sự mà không xuất thân nào thành nước đi hiển nhiên. Ý
+   * định của bài không đổi một chữ; chỉ đổi chỗ đứng để nhìn cho thấy.
    */
-  it('bốn xuất thân chênh nhau 24 điểm — không xuất thân nào là nước đi hiển nhiên', () => {
+  it('bốn xuất thân chênh nhau 19 điểm — không xuất thân nào là nước đi hiển nhiên', () => {
     const ty: number[] = []
     for (const x of XUAT_THAN) {
-      const r = moPhongNhieuVan('giaoVien', 120, CHIEN_LUOC_CAN_BANG, {
+      const r = moPhongNhieuVan('bacSi', 120, CHIEN_LUOC_CAN_BANG, {
         xuatThanId: x.id,
         heSoLuongKhoiDiem: 1,
       })
       ty.push(r.tyLeThang)
       // eslint-disable-next-line no-console
-      console.log(`${x.ten.padEnd(24)} thắng ${(r.tyLeThang * 100).toFixed(0)}%`)
+      console.log(`${x.ten.padEnd(24)} thắng ${(r.tyLeThang * 100).toFixed(1)}%`)
     }
     expect(Math.max(...ty) - Math.min(...ty)).toBeLessThanOrEqual(0.4)
     // Không xuất thân nào được thành nước đi hiển nhiên đúng hay hiển nhiên sai

@@ -501,7 +501,7 @@ cấm vay và ba năm cấm cơ hội thì không.
 | Chỉ số | v1.6 đo thật | Mục tiêu v1.7 |
 |---|---|---|
 | Tỉ lệ thắng, bot cân bằng, **cả ba nghề** | 91–94% | **45–55%** |
-| Chênh lệch tỉ lệ thắng giữa ba nghề | 3 điểm (vỡ ra 34 điểm khi siết) | **≤ 10 điểm** |
+| Chênh lệch tỉ lệ thắng giữa ba nghề | 3 điểm (vỡ ra 34 điểm khi siết) | ~~≤ 10 điểm~~ → **đã gỡ ở đợt 2** |
 | Tuổi thắng trung bình | 33–42 | **52–62** |
 | Tỉ lệ ván thua vì hạnh phúc trong 15 năm đầu | 100% | **≤ 40%** |
 | Phá sản, bot cân bằng | 0% | **8–18%** |
@@ -514,10 +514,19 @@ Dòng cuối là dòng quan trọng nhất và là dòng chưa từng đo đư�
 bằng của v1.6 chỉ nói về chặng đầu đời. Nếu sau bản này vẫn không có ván nào sống tới
 tuổi 100 thì mọi con số khác trong bảng đều vô nghĩa.
 
-> **Đã đo xong — xem mục L.** Bảng trên là mục tiêu đặt ra trước khi cài đặt. Ba chỉ tiêu
-> đạt (tỉ lệ thắng, chênh lệch ba nghề, tuổi thắng), bốn không đạt, và hai dòng chênh
-> lệch xuất thân/bậc lương đã được **gỡ khỏi danh sách chỉ tiêu** — không phải vì trượt
-> mà vì chúng **loại trừ nhau** với dòng đầu bảng.
+> **Đã đo xong — xem mục L.** Bảng trên là mục tiêu đặt ra trước khi cài đặt. Sau vòng
+> hiệu chỉnh, ba chỉ tiêu đạt (tỉ lệ thắng, chênh lệch ba nghề, tuổi thắng) và bốn không
+> đạt; hai dòng chênh lệch xuất thân/bậc lương đã được **gỡ khỏi danh sách chỉ tiêu** —
+> không phải vì trượt mà vì chúng **loại trừ nhau** với dòng đầu bảng.
+>
+> **Đợt 2 gỡ thêm dòng "chênh lệch giữa ba nghề", vì đúng cùng một lý do.** Giữ được nó
+> đòi hỏi cho giáo viên một thang lương không tồn tại ngoài đời (6,0%/năm tăng thực so với
+> 3,5% thật). Đường lương đã được trả về sự thật, và chênh lệch ba nghề nay là **44,5
+> điểm** — không phải một chỉ tiêu bị trượt, mà là **thông điệp** của game: nghề bạn chọn
+> quyết định phần lớn cuộc chơi. Hệ quả là giáo viên thắng 6,0%, dưới cả lằn ranh 8% mà
+> kế hoạch đợt 2 tự đặt cho mình; việc phá lằn ranh ấy đã được đo, được báo lại và được
+> người chốt, chứ không phải lặng lẽ chép số cho test xanh. Toàn bộ số đo và lý lẽ ở mục
+> con "Chênh lệch ba nghề" của mục L.
 >
 > Lý do đầy đủ ở mục L: trần 15 điểm của v1.6 là một **hiệu ứng trần**, không phải một
 > tính chất công bằng của game. Khi bot thắng 91–94% thì nhà thuần nông thắng 85% và nhà
@@ -668,31 +677,41 @@ Viết lại theo bảng mục J. Thêm hai phép đo chưa từng có: tỉ l�
 nên cùng một bộ tham số luôn cho đúng cùng một dãy kết quả. Mẫu 200 ván mỗi nghề trừ chỗ
 ghi khác.
 
-### Bảng kết quả — ba chỉ tiêu đạt, sáu không
+### Bảng kết quả — đợt 2 đổi ba chỉ tiêu đã đạt lấy một đường lương có thật
 
-| Chỉ số | v1.6 | Mục tiêu v1.7 | **Đo thật** | |
-|---|---|---|---|---|
-| Tỉ lệ thắng, ba nghề | 91–94% | 45–55% | **48,0 / 49,0 / 50,5%** | ✅ |
-| Chênh lệch ba nghề | 3 điểm | ≤ 10 điểm | **2,5 điểm** | ✅ |
-| Tuổi thắng trung bình | 33–42 | 52–62 | **61,2 / 55,3 / 53,5** | ✅ |
-| Thua vì hạnh phúc, trên số ván thua | 100% | ≤ 40% | **88 / 100 / 95%** | ❌ |
-| Số ván sống trọn tới tuổi 100 | 0% | > 30% | **8,0 / 0,0 / 2,5%** | ❌ |
-| Phá sản, bot cân bằng | 0% | 8–18% | **0,0%** | ❌ |
-| Phá sản, bot đòn bẩy | 0% | > 30% | **0,0%** | ❌ |
-| Chênh lệch bốn xuất thân | ≤ 15 điểm | giữ ≤ 15 điểm | **24 điểm** | ❌ |
-| Chênh lệch năm bậc lương | ≤ 15 điểm | giữ ≤ 15 điểm | **33 điểm** | ❌ |
+Cột **Vòng hiệu chỉnh** là số đo khi giáo viên còn chạy trên đường lương đã vặn ×1,75.
+Cột **Đợt 2** là số đo sau khi đường lương ấy được trả về sự thật, kỳ hạn vay lên 20 năm
+và nấc 1 vỡ nợ có trần bán tháo. Giữ cả hai cột để thấy thay đổi nào dời cái gì.
+
+| Chỉ số | v1.6 | Mục tiêu v1.7 | Vòng hiệu chỉnh | **Đợt 2** | |
+|---|---|---|---|---|---|
+| Tỉ lệ thắng, ba nghề | 91–94% | 45–55% | 48,0 / 49,0 / 50,5% | **6,0 / 49,0 / 50,5%** | ❌ giáo viên |
+| Chênh lệch ba nghề | 3 điểm | *(đã gỡ ở đợt 2)* | 2,5 điểm | **44,5 điểm** | — |
+| Tuổi thắng trung bình | 33–42 | 52–62 | 61,2 / 55,3 / 53,5 | **74,8 / 55,3 / 53,5** | ❌ giáo viên |
+| Thua vì hạnh phúc, trên số ván thua | 100% | ≤ 40% | 88 / 100 / 95% | **87 / 100 / 95%** | ❌ |
+| Số ván sống trọn tới tuổi 100 | 0% | > 30% | 8,0 / 0,0 / 2,5% | **13,5 / 0,0 / 2,5%** | ❌ |
+| Phá sản, bot cân bằng | 0% | 8–18% | 0,0% | **0,0%** | ❌ |
+| Phá sản, bot đòn bẩy | 0% | > 30% | 0,0% | **0,5%** (giáo viên) | ❌ |
+| Chênh lệch bốn xuất thân | ≤ 15 điểm | *(đã gỡ)* | 24 điểm (trên giáo viên) | **19,2 điểm** (trên bác sĩ) | — |
+| Chênh lệch năm bậc lương | ≤ 15 điểm | *(đã gỡ)* | 33 điểm | **33 điểm** | — |
+
+Ba chỉ tiêu từng đạt ở vòng hiệu chỉnh nay còn đạt một rưỡi: tuổi thắng vẫn nằm trong dải
+ở hai nghề có đủ mẫu ván thắng, tỉ lệ thắng vẫn đúng dải ở hai nghề ấy, còn giáo viên rơi
+khỏi cả hai. Đó là cái giá đã biết trước và đã chọn — xem mục con cuối cùng.
 
 ### Tham số đã vặn
 
 | Tham số | Cũ | Mới | Vì sao |
 |---|---|---|---|
-| `giaoVien.duongCongSuNghiep` | 0,035 / 0,030 / 0,025 | **0,060 / 0,052 / 0,044** | ×1,75 ba bậc đầu — xoá 44,5 điểm chênh lệch giữa ba nghề |
-| `bacSi.duongCongSuNghiep` | 0,050 / 0,090 / 0,050 | **0,060 / 0,108 / 0,060** | ×1,2 — kéo bác sĩ từ 40% về lại trong dải 45–55% |
+| `giaoVien.duongCongSuNghiep` | 0,035 / 0,030 / 0,025 | ~~0,060 / 0,052 / 0,044~~ → **đã trả về 0,035 / 0,030 / 0,025 ở đợt 2** | vòng hiệu chỉnh vặn ×1,75 để xoá 44,5 điểm chênh lệch; đợt 2 trả về số thật và chấp nhận chênh lệch |
+| `bacSi.duongCongSuNghiep` | 0,050 / 0,090 / 0,050 | **0,060 / 0,108 / 0,060** | ×1,2 — kéo bác sĩ từ 40% về lại trong dải 45–55%. Đợt 2 **giữ nguyên**: quyết định của người chỉ nói tới giáo viên |
 | `tuDoTaiChinh.heSoToiThieu` | 1,2 | **2,2** | dời tuổi thắng vào dải 52–62 |
 | `tuDoTaiChinh.heSoPhuThem` | 1,3 | **2,4** | như trên |
+| `kyHanVayToiDa` | 10 năm | **20 năm** *(đợt 2)* | chi phí vay mỗi năm 18% → 13%, lọt vào giữa dải sinh lời sau thuế 9,6–14,4% — đòn bẩy thôi là cái bẫy thuần tuý |
+| `phaSan.tyLeBanToiDaMoiNam` | *(không có trần)* | **0,4** *(đợt 2)* | chặn nấc 1 bán sạch danh mục trong một năm — thứ duy nhất từng đưa tỉ lệ phá sản ra khỏi con số 0 |
 
-`chiPhi` của ba nghề, `xacSuatPhaSanCoBan`, dải sinh lời doanh nghiệp và ma trận chu kỳ
-**giữ nguyên** — lý do ở các phần dưới.
+`chiPhi` của ba nghề, `xacSuatPhaSanCoBan`, `phaSan.nguongTheoChiPhi`, dải sinh lời doanh
+nghiệp và ma trận chu kỳ **giữ nguyên** — lý do ở các phần dưới.
 
 ### Chênh lệch ba nghề: thủ phạm là đường cong, không phải tỉ lệ chi phí
 
@@ -726,6 +745,59 @@ phỏng để chỉ tiêu ≤ 10 điểm đạt được. Lựa chọn còn lạ
 rằng giáo viên trên đồng lương giáo viên thật thì gần như không bao giờ đạt tự do tài
 chính — cũng là một lựa chọn thiết kế chính đáng, và thành thật hơn về mặt thông điệp.
 Người quyết định nên là người, không phải vòng hiệu chỉnh.
+
+**Người đã quyết, ở đợt 2: lấy lựa chọn còn lại.** Đường cong giáo viên trả về
+0,035 / 0,030 / 0,025 — đúng thang lương viên chức thật. Hệ quả đo được là 6,0%, thấp hơn
+cả con số 11% mà thí nghiệm đối chứng ở bảng trên dự đoán, vì thí nghiệm ấy chạy trước khi
+mục A–I cài đủ. Chỉ tiêu "chênh lệch ba nghề ≤ 10 điểm" vì vậy **bị gỡ khỏi mục J** chứ
+không nằm lại dưới dạng một ô đỏ vĩnh viễn: nó loại trừ nhau với việc nói thật về thang
+lương, và giữa hai thứ ấy thì sự thật thắng.
+
+Thông điệp của game đổi theo, và đây là đổi có chủ đích: **nghề bạn chọn quyết định phần
+lớn cuộc chơi.** Ba nghề không còn là ba lối đi cân sức tới cùng một đích; chúng là ba
+cuộc đời khác nhau về căn bản, đúng như ngoài đời.
+
+**Chốt chặn 8% đã bị phá, và đây là chỗ báo lại.** Kế hoạch đợt 2 tự đặt một lằn ranh:
+không nghề nào được có sàn dưới 8%, vì dưới mức đó nghề ấy là *bất khả thi* chứ không phải
+*khó*, và đó là lỗi thiết kế cần báo lại chứ không phải số cần chép vào test. 6,0% đã
+xuống dưới lằn ranh đó.
+
+Đòn bẩy duy nhất còn lại là `tuDoTaiChinh.heSoToiThieu/heSoPhuThem`. Đã quét bảy mức,
+n=200 mỗi ô, trước khi chép bất cứ con số nào:
+
+| Mức | Giáo viên | Bác sĩ | Kỹ sư PM | Chênh nghề |
+|---|---|---|---|---|
+| 0,8+0,9 | **19,0%** · 60,9t | 52,5% · 48,8t | 62,5% · 45,3t | 43,5 điểm |
+| 1,2+1,3 | 11,5% · 62,9t | 52,5% · 50,9t | 56,0% · 48,5t | 44,5 điểm |
+| 1,6+1,8 | 10,0% · 69,1t | 50,5% · 52,9t | 53,0% · 51,2t | 43,0 điểm |
+| 1,8+2,0 | 9,0% · 72,5t | 49,0% · 53,5t | 52,0% · 51,8t | 43,0 điểm |
+| 1,9+2,1 | 7,5% · 74,1t | 49,0% · 53,9t | 51,5% · 52,5t | 44,0 điểm |
+| **2,2+2,4** ← đang cài | **6,0%** · 74,8t | 49,0% · 55,3t | 50,5% · 53,5t | 44,5 điểm |
+| 2,6+2,8 | 4,0% · 73,1t | 47,5% · 56,5t | 47,5% · 55,7t | 43,5 điểm |
+
+**Chênh lệch giữa nghề mạnh nhất và nghề yếu nhất đứng yên ở 43–44,5 điểm suốt cả dải.**
+Vặn hệ số an toàn gấp hơn ba lần — đòi ở tuổi 21 từ 1,70 lên 5,40 — không bóp được khoảng
+cách ấy lấy một điểm; nó chỉ trượt cả ba nghề xuống cùng lúc. Nghĩa là 6% của giáo viên
+**không do hệ số an toàn gây ra**, và không mức nào của hệ số ấy chữa được: mức duy nhất
+đưa giáo viên lên 19% cũng đẩy kỹ sư lên 62,5% và dìm tuổi thắng cả ba nghề xuống 45–49,
+thủng đáy dải của chỉ tiêu 2. Mức gần nhất còn qua được mốc 8% là 1,8+2,0 (9,0%), và nó
+mua mốc ấy bằng việc đẩy tuổi thắng kỹ sư xuống 51,8 — hụt dải — mà vẫn không cứu nổi bài
+bốn xuất thân.
+
+Điều này cũng **bác bỏ một dự đoán của chính mục L**: mục con "Trần 15 điểm" bên dưới suy
+ra rằng hạ hệ số an toàn sẽ làm chênh lệch *rộng* ra. Điều đó đúng với chênh lệch **xuất
+thân và bậc lương trong một nghề**, nhưng sai với chênh lệch **giữa ba nghề** — đại lượng
+ấy trơ với cần gạt này.
+
+Q3 vì vậy trả lời được bằng số đo: **cặp 2,2 / 2,4 không cần hiệu chỉnh lại.** Nó vẫn là
+điểm tốt nhất cho hai nghề còn đo được, và nó không phải nguyên nhân của 6%. Dòng chú
+thích ở `config.ts` — "cần gạt nhịp độ, không phải cần gạt độ khó" — vừa được xác nhận
+thêm một lần: qua cả dải, tuổi thắng hai nghề khoẻ dịch 48,8 → 56,5 trong khi khoảng cách
+giữa các nghề bất động.
+
+**Việc chữa 6%, nếu muốn chữa, nằm ở kinh tế của nghề giáo viên** — chi phí sinh hoạt
+riêng, hoặc một cơ chế bù như đổi nghề hay dạy thêm — chứ không nằm ở bất kỳ con số nào
+trong bảng cân bằng. Đó là một vòng thiết kế mới và phải do người mở.
 
 ### Vì sao cửa thua hạnh phúc không hạ được
 
@@ -810,12 +882,47 @@ tức thì ngoài đời), để khoản thiếu hụt còn sót lại đủ s�
 là việc của một task engine, không phải của vòng hiệu chỉnh. Cơ chế ba nấc **tự nó không
 hỏng** — nó vẫn được kiểm trực tiếp bằng cách ép trạng thái trong `engine.test.ts`.
 
-### Trần 15 điểm cho xuất thân và bậc lương không còn giữ được
+**Đã sửa ở đợt 2.** Chẩn đoán trên đúng, và cách sửa nó đề ra đã được cài: `phaSan.tyLeBanToiDaMoiNam`
+= 0,4 áp trần bán tháo mỗi năm cho nấc 1, tính theo **số đơn vị của từng loại** tài sản
+chứ không theo giá trị cả danh mục — bản đầu tính theo giá trị có một chế độ hỏng chết
+người, ai giữ hai căn nhà 2 tỷ mà túi tiền chung chỉ 1,6 tỷ thì phép chia lấy phần nguyên
+ra 0, bán được đúng 0 đồng rồi bị tuyên phá sản trong khi đang đứng trên 4 tỷ bất động
+sản. Chi tiết ở chú thích `tyLeBanToiDaMoiNam` trong `config.ts`.
 
-Đo thật: 24 điểm giữa bốn xuất thân, 33 điểm giữa năm bậc lương. Đây **không** phải game
-hoá bất công hơn — nó là **hiệu ứng trần** biến mất. Ở v1.6 bot cân bằng thắng 91–94%,
-tức mọi xuất thân đều đụng trần và khoảng cách thật bị nén lại. Kéo tỉ lệ thắng về 45–55%
-theo đúng chỉ tiêu đầu bảng thì trần biến mất và khoảng cách lộ ra nguyên vẹn.
+Kết quả: **phá sản lần đầu tiên khác 0 trong lịch sử dự án** — giáo viên chơi đòn bẩy đổ
+0,5%. Năm ô còn lại (ba nghề × hai chiến lược) vẫn 0,0%. Con số bé, nhưng nó là hiệu số
+giữa "bất khả thi về cấu trúc" và "hiếm", và đó là hiệu số đắt nhất của cả bản này.
+
+**Vì sao dừng ở 0,5% thay vì vặn tiếp tới dải 8–18%.** Kế hoạch cho tối đa bốn vòng vặn
+hai con số. Đã quét, và cả hai đều **trơ**:
+
+- `tyLeBanToiDaMoiNam` 0,4 → 0,15: mười sáu ô đo giống nhau tới từng chữ số thập phân, kể
+  cả tỉ lệ thắng. Trần này **không còn cắn**, và thủ phạm là chính đợt 2: kỳ hạn vay 20
+  năm làm khoản trả nợ mỗi năm nhẹ đi tới mức khoản hụt tiền nhỏ hơn hẳn phần danh mục
+  được phép bán, nên `Math.ceil(-tienMat / gia)` mới là vế thắng trong `Math.min`, không
+  phải cái trần. Hai thay đổi của cùng một đợt đẩy ngược chiều nhau.
+- `nguongTheoChiPhi` 1,0 → 0,8 → 0,6 → 0,5 → 0,2 → 0,05 → 0,01 → 0: cao nhất chạm **4,5%**
+  (giáo viên, bot cân bằng) ở mức 0 — tức coi *bất kỳ* đồng tiền mặt âm nào còn sót sau
+  hai nấc đầu cũng là phá sản. Vẫn dưới sàn 8% của mục J, mà đã phải phá nát định nghĩa
+  "thế nào là vỡ nợ" để tới được đó. Nên `nguongTheoChiPhi` **giữ nguyên 1,0**.
+
+Ràng buộc đang cắn nay đã dời sang **nấc 2**: thanh lý doanh nghiệp cũng không có trần mỗi
+năm, và 45% vốn góp của một người vay lớn thì thừa sức bù phần thiếu hụt. Đó là *đúng cùng
+một khiếm khuyết* "thanh lý không giới hạn" mà đợt 2 vừa sửa ở nấc 1, và cùng một lẽ đời
+thật: sang nhượng một doanh nghiệp cần người mua, mà người mua không xuất hiện trong tuần
+bạn cần tiền. Sửa nó là **đổi engine**, phải là một task riêng có test riêng — không phải
+một con số nhét vào vòng hiệu chỉnh.
+
+Một chỗ cần dịu giọng: chú thích cũ gọi `tyLeBanToiDaMoiNam` là "đòn bẩy chính để hiệu
+chỉnh tỉ lệ phá sản". Đúng về **chiều**, sai về **độ lớn** — một mình nó không kéo nổi tỉ
+lệ phá sản lên khỏi mức lẻ tẻ. Chú thích trong `config.ts` đã sửa lại cho đúng.
+
+### Chênh lệch xuất thân và bậc lương: vì sao đây không còn là chỉ tiêu
+
+Đo ở vòng hiệu chỉnh: 24 điểm giữa bốn xuất thân, 33 điểm giữa năm bậc lương. Đây **không**
+phải game hoá bất công hơn — nó là **hiệu ứng trần** biến mất. Ở v1.6 bot cân bằng thắng
+91–94%, tức mọi xuất thân đều đụng trần và khoảng cách thật bị nén lại. Kéo tỉ lệ thắng về
+45–55% theo đúng chỉ tiêu đầu bảng thì trần biến mất và khoảng cách lộ ra nguyên vẹn.
 
 Đã kiểm chứng bằng cách quét `heSoAnToanTheoTuoi` (n = 200 mỗi điểm):
 
@@ -832,10 +939,38 @@ tiêu này loại trừ nhau**, và việc mục J đòi cả hai là một mâu
 viết. Kẻ lệch nhóm ở cả hai bảng đều là mức nghèo nhất (nhà thuần nông 29%, bậc lương
 0,75 → 20%), đúng như lẽ thường.
 
-### Đòn bẩy nay là nước đi lỗ — một quyết định đang chờ người
+**Đợt 2 đã gỡ hẳn chỉ tiêu ấy khỏi mục J**, chứ không để nó nằm lại dưới dạng một ô đỏ
+vĩnh viễn. Một chỉ tiêu mâu thuẫn với chỉ tiêu khác thì phải bị gỡ, không phải bị trượt
+mãi.
+
+**Phạm vi của kết luận "rộng ra" — đọc cho đúng.** Nó nói về chênh lệch giữa các xuất thân
+và các bậc lương **bên trong một nghề**. Nó **không** đúng với chênh lệch **giữa ba nghề**:
+đại lượng ấy đứng yên ở 43–44,5 điểm suốt cả dải hệ số an toàn, xem bảng bảy mức ở mục con
+"Chênh lệch ba nghề" bên trên. Hai đại lượng cùng tên "chênh lệch" nhưng phản ứng ngược
+nhau với cùng một cần gạt, và lẫn hai thứ đó là lẫn một kết luận đúng với một kết luận sai.
+
+**Bài bốn xuất thân đã chuyển từ giáo viên sang bác sĩ ở đợt 2** — không phải để tìm số
+đẹp, mà vì trên giáo viên nó mất sạch khả năng đo. Sau khi đường lương trả về sự thật, bốn
+xuất thân của giáo viên ra 4,2 / 4,2 / 5,0 / 3,3%: chênh lệch teo còn **1,7 điểm**, không
+phải vì bốn xuất thân đã hoá công bằng mà vì cả bốn cùng bị dồn sát sàn 0, chỗ không còn gì
+để phân biệt. Một bài mà mọi nhánh đều ra "gần như không thắng" thì không đỏ được trước
+bất kỳ hồi quy nào.
+
+Đã quét xem có mức hệ số an toàn nào cứu được bài này trên giáo viên không (n = 120 mỗi ô):
+thấp nhất trong bốn xuất thân là 3,3% ở mức đang cài, 7,5% ở 1,6+1,8, 10,0% ở 1,2+1,3,
+10,8% ở 0,8+0,9 — tức chỉ mức đáy dải mới vượt nổi ngưỡng 10%, mà mức đó lại đẩy kỹ sư lên
+62,5% và phá chỉ tiêu 1. **Không mức nào vừa giữ được chỉ tiêu 1 vừa cứu được bài này trên
+giáo viên.**
+
+Trên bác sĩ, bài đo ra **30,8 / 47,5 / 50,0 / 32,5%** — chênh 19,2 điểm, bốn nhánh tách
+bạch rõ ràng, và đúng điều bài sinh ra để canh lại đo được: xuất thân dịch chuyển cửa thắng
+thật sự mà không xuất thân nào thành nước đi hiển nhiên. Ý định của bài không đổi một chữ;
+chỉ đổi chỗ đứng để nhìn cho thấy.
+
+### Đòn bẩy: từ cái bẫy thuần tuý trở lại thành canh bạc
 
 Test cũ chốt "bot đòn bẩy khi thắng thì về đích sớm hơn — canh bạc có lãi kỳ vọng". Khẳng
-định đó đã **lật hẳn**. Đo trên bác sĩ, n = 200:
+định đó đã **lật hẳn** ở vòng hiệu chỉnh. Đo trên bác sĩ, n = 200:
 
 | | Tỉ lệ thắng | Tuổi về đích |
 |---|---|---|
@@ -856,8 +991,32 @@ mục D muốn, ở đúng thang số mới. Cách còn lại — hạ `laiSuatV
 năm ra 12%/năm — cho kết quả tương tự nhưng đặt lãi suất ngân hàng Việt Nam ở mức phi
 thực tế, trong khi vay 20 năm thì đúng là chuyện thường của một khoản thế chấp.
 
-**Chưa áp dụng.** Đây là quyết định thiết kế chứ không phải một con số cân bằng, nên nó
-chờ người quyết.
+**Đã áp dụng ở đợt 2.** `kyHanVayToiDa` = 20 năm, `laiSuatVay` giữ nguyên 8%. Đo lại trên
+bác sĩ, n = 200:
+
+| | Tỉ lệ thắng | Tuổi về đích |
+|---|---|---|
+| Bot cân bằng | 49,0% | 55,3 |
+| Bot đòn bẩy, kỳ hạn 10 năm | 25,5% | 63,7 |
+| **Bot đòn bẩy, kỳ hạn 20 năm** | **29,5%** | **67,3** |
+
+Đòn bẩy khá lên 4 điểm nhưng **chưa lật được thứ hạng** — vẫn thua bot cân bằng cả tỉ lệ
+thắng lẫn tốc độ. Điều đó đúng như mong muốn, và lý do rất sạch: chi phí vay 13% nằm giữa
+dải thực nhận 9,6–14,4%, nên vay để rót vào cơ hội **tốt** thì có lãi mỏng, còn bot đòn bẩy
+lại rót vào **mọi** cơ hội, kể cả đám nằm dưới 13%. Vay hết không còn là lỗ chắc chắn,
+nhưng vay bừa vẫn là nước đi kém. Đó chính là cái cân não mà mục D muốn.
+
+`balance.test.ts` vì vậy đổi khẳng định: bài không còn chốt "vay là lỗ chắc chắn" — câu ấy
+**cố ý** không còn đúng — mà chốt "chi phí vay nằm giữa dải sinh lời sau thuế", tính thẳng
+từ `CONFIG` chứ không viết cứng. Hai vế còn lại (đòn bẩy thua cả tỉ lệ thắng lẫn tốc độ)
+giữ nguyên, không nới.
+
+**Một phát hiện ngoài dự kiến, đáng ghi lại.** Trên **giáo viên** thì dấu đảo ngược: bot
+đòn bẩy thắng **11,5%** so với 6,0% của bot cân bằng. Với một nghề nghèo vốn tới mức thặng
+dư hàng năm gần như không tích luỹ được gì, đi vay là con đường duy nhất chạm tới quy mô
+góp vốn có ý nghĩa — rủi ro phá sản 0,5% của nó rẻ hơn cái chắc chắn không bao giờ tới
+đích. **Đòn bẩy là cái bẫy của người đã khá, và là chiếc phao của người không có gì.**
+Đúng như ngoài đời, và không ai thiết kế điều đó — nó rơi ra từ số học của bộ số.
 
 ### Một bất biến cũ đã rơi xuống mức nhiễu
 
@@ -866,9 +1025,15 @@ hiệu ứng ghép cặp của nó vốn đã được ghi nhận là nhiễu �
 đổi dấu theo từng tham số không liên quan), và ở thang số mới nó không còn đo được nữa.
 
 Test "liệu trình tâm lý cứu được ván bí bách" **giữ nhưng đổi khẳng định**. Vế "có trị
-liệu thắng nhiều hơn" nay đo ra 12,0% so với 13,4% trên 500 ván — lệch 1,4 điểm trong khi
-sai số chuẩn của hiệu hai tỉ lệ đã là 2,1 điểm. Ghép cặp từng ván cho thấy liệu trình lật
-34 ván sang thắng và làm mất 41 ván, vì khoản phí bằng 25% chi phí sinh hoạt một năm nay
-là con số đáng kể so với thặng dư đã mỏng đi. Phần còn vững của bất biến — và là phần
-quan trọng — vẫn được chốt: liệu trình lật được ván sang thắng, nhưng không mua đứt được
-điều kiện thua.
+liệu thắng nhiều hơn" đo ở vòng hiệu chỉnh ra 12,0% so với 13,4% trên 500 ván — lệch 1,4
+điểm trong khi sai số chuẩn của hiệu hai tỉ lệ đã là 2,1 điểm. Ghép cặp từng ván cho thấy
+liệu trình lật 34 ván sang thắng và làm mất 41 ván, vì khoản phí bằng 25% chi phí sinh
+hoạt một năm nay là con số đáng kể so với thặng dư đã mỏng đi. Phần còn vững của bất biến
+— và là phần quan trọng — vẫn được chốt: liệu trình lật được ván sang thắng, nhưng không
+mua đứt được điều kiện thua.
+
+Sau đợt 2, bài này đứng ở cảnh ngặt nghèo nhất dựng được — giáo viên trên đường lương thật,
+chơi theo lối bot khó tính — nên cả hai con số cùng tụt: **1,2% so với 1,6%**, ghép cặp lật
+thắng 5 ván và lật thua 7 ván. Bức tranh không đổi, chỉ đậm hơn. Và đó chính là chỗ nên đặt
+bài: nếu một gói dịch vụ nhỏ mua đứt được điều kiện thua duy nhất của game, nó phải lộ ra ở
+đây trước tiên.

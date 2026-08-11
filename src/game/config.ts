@@ -791,9 +791,25 @@ export const CONFIG = {
      * quét 1,0 → 0,4 → 0,25 → 0,15 → 0,05: số năm chạm nấc 2 của bot đòn bẩy leo
      * đều 5 → 11 → 15 → 16 → 19, nhưng nấc 3 vẫn nổ ĐÚNG 0 lần ở mọi mức. Ràng
      * buộc đang cắn nay nằm ở nấc 2 — thanh lý doanh nghiệp cũng không có trần
-     * mỗi năm, và 45% vốn góp của một người vay lớn thì thừa sức bù. Một mình
-     * con số này không kéo nổi tỉ lệ phá sản lên khỏi 0. Mục tiêu mục J là 8–18%
-     * cho bot cân bằng và trên 30% cho bot đòn bẩy.
+     * mỗi năm, và 45% vốn góp của một người vay lớn thì thừa sức bù.
+     *
+     * ---------- Đo lại ở Task 5, trên CẢ BA NGHỀ ----------
+     * Dòng "không kéo nổi tỉ lệ phá sản lên khỏi 0" của bản trước suy ra từ phép
+     * đo chỉ chạy trên bác sĩ — nghề dư dả nhất — nên nó nói quá. Đo lại cả ba
+     * nghề × hai chiến lược ở bộ số đang cài: giáo viên chơi đòn bẩy đổ 0,5%, năm
+     * ô còn lại 0,0%. Trần này VẪN là thứ duy nhất từng đưa phá sản ra khỏi con
+     * số 0 — chỉ là nó đưa tới 0,5% chứ không tới dải 8–18% mà mục J muốn.
+     *
+     * Và ở bộ số hiện tại nó đã HẾT CẮN: quét tiếp 0,4 → 0,15 cho ra mười sáu ô
+     * giống nhau tới từng chữ số thập phân, kể cả tỉ lệ thắng. Lý do là kỳ hạn
+     * vay 20 năm của cùng đợt ấy — khoản trả nợ nhẹ đi tới mức khoản hụt tiền nhỏ
+     * hơn hẳn phần danh mục được phép bán, nên `Math.ceil(-tienMat / gia)` mới là
+     * vế thắng trong `Math.min` ở nấc 1, không phải cái trần này. Hai thay đổi
+     * của cùng một đợt đẩy ngược chiều nhau.
+     *
+     * Muốn tới dải của mục J (8–18% cho bot cân bằng, trên 30% cho bot đòn bẩy)
+     * thì phải áp trần mỗi năm cho cả NẤC 2 — một thay đổi engine, phải có task
+     * riêng và test riêng. Vặn con số này thêm là vặn vào chỗ không còn cắn.
      */
     tyLeBanToiDaMoiNam: 0.4,
     hanhPhuc: 15,
