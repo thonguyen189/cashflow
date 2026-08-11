@@ -606,9 +606,10 @@ export const CONFIG = {
   },
 
   /** ---------- Phá sản ----------
-   * Không phải dấu chấm hết. Ngoài đời phá sản là mất tài sản, bị bán giải chấp
-   * và làm lại với uy tín sứt mẻ — luật phá sản cũng chừa lại nhà ở và phương
-   * tiện đi lại thiết yếu, nên ước nguyện đã mua KHÔNG bị đụng tới.
+   * Lần đầu không phải dấu chấm hết. Ngoài đời phá sản là mất tài sản, bị bán
+   * giải chấp và làm lại với uy tín sứt mẻ — luật phá sản chừa lại nhà ở nhưng
+   * KHÔNG chừa xe (v1.7): ước nguyện xe máy/ô tô đã mua bị bán giải chấp ngay ở
+   * lần phá sản đầu tiên, còn căn hộ thì giữ.
    *
    * ---------- Vì sao vẫn là mối đe doạ thật ----------
    * Quãng đường từ mức khởi điểm 70 xuống ngưỡng thua 50 dài đúng 20 điểm. 15
@@ -616,11 +617,11 @@ export const CONFIG = {
    * hạnh phúc ở mức khởi điểm vẫn còn 55 điểm, TRÊN ngưỡng thua, nên còn đường
    * gượng lại chứ không bị đẩy thẳng xuống thua ngay năm đó (25 điểm — con số
    * cũ — làm phép trừ ra 45, dưới ngưỡng 50, tức phá sản gần như luôn kéo theo
-   * thua ngay lập tức, mâu thuẫn với câu "không phải dấu chấm hết" ngay bên
-   * dưới). Cộng thêm mất sạch dòng tiền thụ động, mất khả năng vay để gây dựng
-   * lại, và khoản phạt khát vọng vẫn tiếp tục chảy máu nếu chưa mua được món của
-   * nghề — phá sản vẫn rất dễ kéo theo một cái thua vì hạnh phúc chỉ vài năm sau
-   * nếu không gượng lại kịp, nên đây vẫn là biến cố đáng sợ nhất game.
+   * thua ngay lập tức, mâu thuẫn với câu "lần đầu không phải dấu chấm hết" ngay
+   * bên trên). Cộng thêm mất sạch dòng tiền thụ động, mất khả năng vay để gây
+   * dựng lại, và khoản phạt khát vọng vẫn tiếp tục chảy máu nếu chưa mua được
+   * món của nghề — phá sản vẫn rất dễ kéo theo một cái thua vì hạnh phúc chỉ vài
+   * năm sau nếu không gượng lại kịp, nên đây vẫn là biến cố đáng sợ nhất game.
    *
    * ---------- Con đường dẫn tới đây ----------
    * Vay tối đa để góp vốn quy mô lớn → khủng hoảng ập tới, thu nhập doanh nghiệp
@@ -628,6 +629,11 @@ export const CONFIG = {
    * phát 11% → bán tài sản ở giá đáy vẫn không đủ → thanh lý doanh nghiệp với 45%
    * vốn → vẫn không đủ. Đó chính xác là cách người ta phá sản ngoài đời: không
    * phải vì một quyết định ngu ngốc, mà vì đòn bẩy gặp đúng chu kỳ xấu.
+   *
+   * ---------- Lần hai là hết (v1.7) ----------
+   * Ngã một lần ở tuổi bốn mươi còn đứng dậy được; ngã lần nữa sau khi đã mất
+   * năm năm cấm vay và ba năm cấm cơ hội thì không. Đây là cửa thua TÀI CHÍNH
+   * đầu tiên của game — suốt v1.6, 100% ván thua là do hạnh phúc.
    */
   phaSan: {
     /** doanh nghiệp kém thanh khoản: bán gấp chỉ thu lại được ngần này vốn góp */
@@ -638,6 +644,14 @@ export const CONFIG = {
     soNamCamVay: 5,
     /** uy tín cần thời gian dựng lại */
     soNamCamCoHoi: 3,
+    /** phá sản lần thứ mấy thì thua hẳn */
+    soLanToiDa: 2,
+    /**
+     * Ước nguyện bị bán giải chấp khi phá sản. Luật phá sản ngoài đời chừa lại
+     * nhà ở nhưng KHÔNG chừa xe — và về mặt lối chơi, khoản hạnh phúc hàng năm
+     * từ căn hộ chính là thứ giúp người chơi gượng dậy.
+     */
+    uocNguyenBiMat: ['xeMay', 'oTo'] as string[],
   },
 
   /** ---------- Biểu đồ giá ----------

@@ -2828,13 +2828,18 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     expect(sau.soLanPhaSan).toBe(0)
   })
 
-  it('phá sản xoá sạch nợ, đưa tiền mặt về 0 và giữ nguyên ước nguyện đã mua', () => {
-    const s = vanVoNo({ uocNguyenDaMua: ['xeMay'] })
+  it('phá sản xoá sạch nợ, đưa tiền mặt về 0 và giữ nguyên ước nguyện không phải xe', () => {
+    // v1.7 (Task 13) siết thêm: ước nguyện XE bị bán giải chấp khi phá sản
+    // (xem describe('v1.7 — phá sản lần hai là hết') cho phép thử riêng của
+    // hành vi đó). Bài này đổi từ 'xeMay' sang 'canHo' để giữ đúng tinh thần
+    // gốc — kiểm ước nguyện KHÔNG nằm trong `uocNguyenBiMat` vẫn nguyên vẹn
+    // sau phá sản — mà không còn mâu thuẫn với luật mới.
+    const s = vanVoNo({ uocNguyenDaMua: ['canHo'] })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
     expect(sau.soLanPhaSan).toBe(1)
     expect(sau.khoanVay).toHaveLength(0)
     expect(sau.tienMat).toBe(0)
-    expect(sau.uocNguyenDaMua).toEqual(['xeMay'])
+    expect(sau.uocNguyenDaMua).toEqual(['canHo'])
   })
 
   it('phá sản trừ đúng 15 hạnh phúc và cấm vay 5 năm, cấm cơ hội 3 năm', () => {
@@ -3163,5 +3168,67 @@ describe('v1.7 — hệ số an toàn theo tuổi', () => {
     const nam30 = { ...s, nam: 30 - CONFIG.cotTruyen.tuoiBatDau + 1 }
     const nam65 = { ...s, nam: 65 - CONFIG.cotTruyen.tuoiBatDau + 1 }
     expect(mucTieuTuDo(nam30)).toBeGreaterThan(mucTieuTuDo(nam65) * 1.25)
+  })
+})
+
+describe('v1.7 — phá sản lần hai là hết', () => {
+  /**
+   * Trả chi phí, duyệt hết thẻ tiêu dùng, rồi bấm Kết thúc năm.
+   *
+   * Khi tiền mặt của tình huống thử đã bị ép âm sâu để dựng thẳng nấc phá sản,
+   * MỌI thẻ tiêu dùng đều bị buộc từ chối (không đủ tiền), và mỗi lần từ chối
+   * tự trừ hạnh phúc — đủ trừ để chạm cửa thua HẠNH PHÚC trước khi kịp chạy tới
+   * `chuyenNam` và nấc phá sản đang muốn kiểm, làm sai lệch phép thử. Đây đúng
+   * là cái bẫy mà `diTronMotNam` (describe('v1.6 — ba nấc vỡ nợ')) né bằng cách
+   * ép lại hạnh phúc trước khi gọi 'ketThucNam' — lặp lại đúng cách đó ở đây,
+   * ép về mức mà tình huống thử đã khai báo trong `s.hanhPhuc` thay vì để nó
+   * trôi theo hệ quả phụ của vòng thẻ.
+   */
+  const choiHetNam = (s: GameState): GameState => {
+    const sau = duyetHetThe(reducer(s, { type: 'traChiPhi' }), true)
+    return reducer({ ...sau, hanhPhuc: s.hanhPhuc }, { type: 'ketThucNam' })
+  }
+
+  it('phá sản lần đầu còn chơi tiếp được', () => {
+    let s = taoGameMoi('giaoVien', 71)
+    s = { ...s, soLanPhaSan: 0, hanhPhuc: 90 }
+    const sau = choiHetNam(s)
+    expect(sau.trangThai).toBe('dangChoi')
+  })
+
+  it('bước sang lần phá sản thứ hai thì thua ngay', () => {
+    let s = taoGameMoi('giaoVien', 72)
+    // Dựng thẳng trạng thái: đã ngã một lần, nay tiền mặt âm sâu và không còn gì để bán
+    s = {
+      ...s,
+      soLanPhaSan: 1,
+      hanhPhuc: 90,
+      tienMat: -s.chiPhiHangNam * 5,
+      soHuu: { traiPhieu: 0, coPhieu: 0, vang: 0, crypto: 0, batDongSan: 0 },
+      doanhNghiep: [],
+      khoanVay: [],
+    }
+    const sau = choiHetNam(s)
+    expect(sau.soLanPhaSan).toBe(2)
+    expect(sau.trangThai).toBe('thua')
+    expect(sau.lyDoKetThuc).toContain('lần thứ hai')
+  })
+
+  it('phá sản lần đầu lấy mất ước nguyện xe nhưng giữ lại căn hộ', () => {
+    let s = taoGameMoi('giaoVien', 73)
+    s = {
+      ...s,
+      soLanPhaSan: 0,
+      hanhPhuc: 90,
+      uocNguyenDaMua: ['xeMay', 'canHo'],
+      tienMat: -s.chiPhiHangNam * 5,
+      soHuu: { traiPhieu: 0, coPhieu: 0, vang: 0, crypto: 0, batDongSan: 0 },
+      doanhNghiep: [],
+      khoanVay: [],
+    }
+    const sau = choiHetNam(s)
+    expect(sau.soLanPhaSan).toBe(1)
+    expect(sau.uocNguyenDaMua).not.toContain('xeMay')
+    expect(sau.uocNguyenDaMua).toContain('canHo')
   })
 })

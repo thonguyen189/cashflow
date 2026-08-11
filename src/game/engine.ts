@@ -1949,10 +1949,9 @@ function chuyenNam(s: GameState): GameState {
 
   if (tienMat < 0 && -tienMat > chiPhiHangNam * CONFIG.phaSan.nguongTheoChiPhi) {
     /* --- Nấc 3: phá sản ---
-     * Toà xoá sạch nợ nhưng cũng lấy sạch tiền mặt còn âm về 0. Ước nguyện đã
-     * mua không bị đụng tới — luật phá sản chừa lại nhà ở và phương tiện đi lại
-     * thiết yếu. Đổi lại là cấm vay và cấm cơ hội kinh doanh một thời gian: uy
-     * tín cần thời gian dựng lại, không phải một cái nút bấm là xong. */
+     * Toà xoá sạch nợ nhưng cũng lấy sạch tiền mặt còn âm về 0. Đổi lại là cấm
+     * vay và cấm cơ hội kinh doanh một thời gian: uy tín cần thời gian dựng
+     * lại, không phải một cái nút bấm là xong. */
     const xoaNo = khoanVaySauCung.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0)
     khoanVaySauCung = []
     tienMat = 0
@@ -1962,14 +1961,31 @@ function chuyenNam(s: GameState): GameState {
     // năm sau nghĩa là banned trọn namMoi .. s.nam + soNamCamVay.
     camVayDenNam = s.nam + CONFIG.phaSan.soNamCamVay
     camCoHoiDenNam = s.nam + CONFIG.phaSan.soNamCamCoHoi
+
+    // Bán giải chấp phương tiện đi lại (v1.7). Món bị mất đi vào `uocNguyenDaMat`
+    // nên nếu muốn có lại thì phải trả theo giá hôm nay, đúng khuôn của cú mất
+    // trộm xe ở v1.4. Nhà ở (căn hộ) không nằm trong `uocNguyenBiMat` nên luôn
+    // được giữ lại — luật phá sản chừa lại nhà ở nhưng không chừa xe.
+    const biMat = uocNguyenDaMua.filter((id) =>
+      CONFIG.phaSan.uocNguyenBiMat.includes(id),
+    )
+    uocNguyenDaMua = uocNguyenDaMua.filter((id) => !biMat.includes(id))
+    uocNguyenDaMat = [...uocNguyenDaMat, ...biMat]
+
     const hpPhaSan = apHanhPhuc(-CONFIG.phaSan.hanhPhuc)
+    const tenXeBiMat = biMat
+      .map((id) => timUocNguyen(id)?.ten)
+      .filter((ten): ten is string => !!ten)
     suKien.push({
       loai: 'phaSan',
       tieuDe: '💀 Phá sản',
       moTa:
         'Bán sạch mọi thứ vẫn không trả nổi. Toà tuyên phá sản, ' +
         `${dinhDangTien(xoaNo)} tiền nợ được xoá nhưng bạn cũng trắng tay. ` +
-        `Nhà cửa và xe cộ thì luật chừa lại. ${CONFIG.phaSan.soNamCamVay} năm tới ` +
+        (tenXeBiMat.length > 0
+          ? `${tenXeBiMat.join(', ')} bị bán giải chấp — luật chỉ chừa lại nhà ở, không chừa xe. `
+          : 'Nhà cửa thì luật chừa lại. ') +
+        `${CONFIG.phaSan.soNamCamVay} năm tới ` +
         `không ngân hàng nào cho vay, và ${CONFIG.phaSan.soNamCamCoHoi} năm tới ` +
         'cũng chẳng ai mời bạn góp vốn — uy tín cần thời gian dựng lại.',
       tienThayDoi: 0,
@@ -2396,6 +2412,21 @@ export function reducer(s: GameState, a: Action): GameState {
       }
 
       const sau = chuyenNam(s)
+
+      // Phá sản lần thứ hai là thua (v1.7) — cửa thua TÀI CHÍNH đầu tiên của
+      // game. Đứng TRƯỚC phép kiểm tự do tài chính vì hai điều kiện loại trừ
+      // nhau: năm vừa ngã lần hai không thể đồng thời là năm về đích.
+      if (sau.soLanPhaSan >= CONFIG.phaSan.soLanToiDa) {
+        return {
+          ...sau,
+          phase: 'ketThuc',
+          trangThai: 'thua',
+          lyDoKetThuc:
+            `Phá sản lần thứ hai ở tuổi ${tuoiTaiNam(sau.nam)}.` +
+            ` Ngã một lần còn đứng dậy được, nhưng sau năm năm không được vay và` +
+            ` ba năm không ai mời làm ăn, cú ngã thứ hai là cú cuối cùng.`,
+        }
+      }
 
       if (!sau.daTuDo && daTuDoTaiChinh(sau)) {
         return {
