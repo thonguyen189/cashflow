@@ -2027,21 +2027,37 @@ function chuyenNam(s: GameState): GameState {
     /* --- Nấc 1: bán tài sản đầu tư --- */
     soHuu = { ...s.soHuu }
     let tienBanDuoc = 0
+    // Trần bán tháo mỗi năm (v1.7 đợt 2): tính trên giá trị danh mục ĐẦU khi
+    // vào nấc, không tính lại sau mỗi lần bán — nếu tính lại thì trần tự co
+    // theo phần đã bán và người chơi vẫn bán được gần sạch qua đủ nhiều bước.
+    const giaTriDanhMuc = TAI_SAN.reduce(
+      (tong, ts) => tong + soHuu[ts.id] * giaMoi[ts.id],
+      0,
+    )
+    let conDuocBan = Math.round(giaTriDanhMuc * CONFIG.phaSan.tyLeBanToiDaMoiNam)
     const thuTuBan: AssetId[] = ['traiPhieu', 'vang', 'coPhieu', 'crypto', 'batDongSan']
     for (const id of thuTuBan) {
-      if (tienMat >= 0) break
+      if (tienMat >= 0 || conDuocBan <= 0) break
       const gia = giaMoi[id]
-      const canBan = Math.min(Math.ceil(-tienMat / gia), soHuu[id])
+      const canBan = Math.min(
+        Math.ceil(-tienMat / gia),
+        soHuu[id],
+        Math.floor(conDuocBan / gia),
+      )
       if (canBan <= 0) continue
       soHuu[id] -= canBan
       tienMat += canBan * gia
       tienBanDuoc += canBan * gia
+      conDuocBan -= canBan * gia
     }
     if (tienBanDuoc > 0) {
       suKien.push({
         loai: 'banTaiSan',
         tieuDe: 'Bán tài sản trang trải',
-        moTa: 'Chi tiêu trong năm vượt số tiền mặt đang có, đành bán bớt tài sản để cân đối.',
+        moTa:
+          'Chi tiêu trong năm vượt số tiền mặt đang có, đành bán bớt tài sản để cân đối. ' +
+          `Bán gấp thì mỗi năm cũng chỉ ra hàng được chừng ${soPhanTram(CONFIG.phaSan.tyLeBanToiDaMoiNam)}% danh mục — ` +
+          'không ai mua cả gia tài trong một tuần.',
         tienThayDoi: tienBanDuoc,
         hanhPhucThayDoi: 0,
       })
@@ -2135,7 +2151,9 @@ function chuyenNam(s: GameState): GameState {
     suKien.push({
       loai: 'banTaiSan',
       tieuDe: 'Túng thiếu',
-      moTa: 'Bán hết tài sản vẫn chưa đủ bù chi tiêu, phải giật gấu vá vai qua ngày.',
+      moTa:
+        'Bán được tới mức thị trường nuốt nổi trong một năm mà vẫn chưa đủ bù chi tiêu, ' +
+        'phải giật gấu vá vai qua ngày. Tài sản còn đó, chỉ là không kịp hoá thành tiền.',
       tienThayDoi: 0,
       hanhPhucThayDoi: hpTung,
     })

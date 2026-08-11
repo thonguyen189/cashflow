@@ -1242,13 +1242,21 @@ describe('bán tài sản khi tiền mặt âm', () => {
   }
 
   it('đủ tài sản: tự bán trái phiếu bù âm, tiền mặt về không âm', () => {
-    const s = ketThucVoiTienAm(-800 * TRIEU, 1200)
+    // v1.7 đợt 2 nâng số trái phiếu của tình huống thử từ 1200 lên 3000. Nấc 1
+    // nay chỉ bán được 40% giá trị danh mục mỗi năm, nên 1200 phần chỉ cho ra
+    // ~480 triệu trong khi khoản âm sau lương còn tới ~713 triệu — ván rơi
+    // thẳng xuống nấc 3 và "đủ tài sản" không còn đúng nghĩa. 3000 phần cho
+    // trần ~1,2 tỷ, thừa sức bù, đúng tinh thần gốc của bài.
+    const s = ketThucVoiTienAm(-800 * TRIEU, 3000)
+    // Chốt luôn là KHÔNG phá sản: nấc 3 cũng kéo tiền mặt về 0, nên một mình
+    // `tienMat >= 0` không phân biệt nổi "bán đủ để bù" với "toà xoá sạch nợ".
+    expect(s.soLanPhaSan).toBe(0)
     expect(s.tongKet!.suKien.some((k) => k.loai === 'banTaiSan')).toBe(true)
     expect(s.tienMat).toBeGreaterThanOrEqual(0)
-    expect(s.soHuu.traiPhieu).toBeLessThan(1200)
+    expect(s.soHuu.traiPhieu).toBeLessThan(3000)
   })
 
-  it('bán sạch vẫn không đủ: thêm sự kiện Túng thiếu, mất 10 hạnh phúc', () => {
+  it('bán tới trần vẫn không đủ: thêm sự kiện Túng thiếu, mất 10 hạnh phúc', () => {
     // Thiếu hụt phải ở dưới ngưỡng phá sản — quá ngưỡng thì rơi sang nấc 3, xem
     // describe('v1.6 — ba nấc vỡ nợ') cho ca thiếu hụt nặng. Ngưỡng phá sản của
     // giáo viên ở v1.7 chỉ còn ~81 triệu (chiPhiHangNam năm sau × 1, so với
@@ -1256,10 +1264,18 @@ describe('bán tài sản khi tiền mặt âm', () => {
     // content.ts). Lương của năm (~90tr, đã đo bằng seed cố định) bù bớt phần
     // lớn khoản âm 150 triệu, còn dư âm khoảng 53,5 triệu — vẫn dưới ngưỡng
     // phá sản nên chỉ rơi vào Túng thiếu.
+    //
+    // Tên bài đổi từ "bán sạch" sang "bán tới trần" ở v1.7 đợt 2: nấc 1 nay
+    // chặn ở `tyLeBanToiDaMoiNam` nên KHÔNG bao giờ bán sạch được trong một
+    // năm, dù có bán bao nhiêu cũng vậy. Giữ nguyên 10 phần trái phiếu để số
+    // dư âm không đổi, chỉ đổi kỳ vọng cho khớp cơ chế mới.
     const s = ketThucVoiTienAm(-150 * TRIEU, 10)
     const cacSuKienBan = s.tongKet!.suKien.filter((k) => k.loai === 'banTaiSan')
     expect(cacSuKienBan.some((k) => k.tieuDe === 'Túng thiếu')).toBe(true)
-    expect(s.soHuu.traiPhieu).toBe(0)
+    // Trần tính trên giá trị danh mục nên số phần bán được không phụ thuộc giá:
+    // 40% của 10 phần là 4 phần, còn lại 6.
+    const daBan = Math.floor(10 * CONFIG.phaSan.tyLeBanToiDaMoiNam)
+    expect(s.soHuu.traiPhieu).toBe(10 - daBan)
     expect(s.tienMat).toBeLessThan(0)
   })
 })
@@ -1949,8 +1965,9 @@ describe('chuyên gia đồng hành', () => {
 
   it('kiệt sức xét SAU bước bán tài sản: tụt xuống dưới ngưỡng vì túng thiếu thì phải kể', () => {
     const goc = vanDuTien(70)
-    // Tiền mặt âm mà trong tay chỉ còn dúm trái phiếu: bán sạch vẫn không đủ,
-    // nên năm này vừa có "Bán tài sản trang trải" vừa lãnh 10 điểm trừ "Túng thiếu".
+    // Tiền mặt âm mà trong tay chỉ còn dúm trái phiếu: bán tới trần mỗi năm của
+    // nấc 1 vẫn không đủ, nên năm này vừa có "Bán tài sản trang trải" vừa lãnh
+    // 10 điểm trừ "Túng thiếu".
     // Thiếu hụt phải ở dưới ngưỡng phá sản: lương của năm bù lại một phần, còn
     // dư âm phải nằm dưới ngưỡng phá sản để không rơi sang nấc 3. Cùng phép
     // tính với describe('bán tài sản khi tiền mặt âm') phía trên — v1.7 hạ
@@ -3571,5 +3588,67 @@ describe('v1.7 — bảo lãnh cho người thân', () => {
     const co = timCoHoi('baoLanhNguoiThan')!
     s = { ...s, nam: 15, namVoBaoLanh: s.nam + CONFIG.baoLanh.voSauItNhat }
     expect(coHoiHopLe(co, s)).toBe(false)
+  })
+})
+
+describe('v1.7 đợt 2 — nấc 1 không còn bán tháo vô hạn', () => {
+  /** Ván âm tiền nặng: không tiền mặt, nợ lớn phải trả ngay năm nay. */
+  const vanVoNo = (them: Partial<GameState> = {}): GameState => ({
+    ...moiVan(),
+    nam: 12,
+    tienMat: 0,
+    lichBienCo: [],
+    khoanVay: [
+      { id: 'v1', goc: 3 * TY, kyHan: 20, thanhToanMoiNam: 900 * TRIEU, namConLai: 8 },
+    ],
+    ...them,
+  })
+
+  it('một năm chỉ bán được tối đa phần danh mục mà config cho phép', () => {
+    // 1000 phần trái phiếu × 1 triệu = 1 tỷ danh mục, thiếu hụt ~900 triệu.
+    // Trước thay đổi này: bán 900 phần, hết âm, không hề hấn gì. Nay trần 40%
+    // chỉ cho bán 400 phần, nên ít nhất 599 phần phải còn lại trong tay.
+    const s = vanVoNo({ soHuu: { ...moiVan().soHuu, traiPhieu: 1000 } })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.soHuu.traiPhieu).toBeGreaterThanOrEqual(599)
+  })
+
+  it('còn tài sản đầy trong tay mà vẫn phá sản được — điều v1.7 chưa làm nổi', () => {
+    // Đây là toàn bộ lý do của task này. Trạng thái "nghèo thanh khoản mà nặng
+    // nợ" là trạng thái DUY NHẤT dẫn tới nấc 3, và trước thay đổi này nó không
+    // bao giờ xuất hiện vì người có tài sản thì luôn bán được sạch.
+    const s = vanVoNo({ soHuu: { ...moiVan().soHuu, traiPhieu: 1000 } })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.soLanPhaSan).toBe(1)
+    expect(sau.soHuu.traiPhieu).toBeGreaterThan(0)
+  })
+
+  it('thiếu hụt nhỏ hơn trần thì vẫn bán đủ như cũ, không phá sản', () => {
+    // Trần không được phép biến mọi cú hụt tiền thành thảm hoạ: 5 tỷ danh mục
+    // cho phép bán tới 2 tỷ trong năm, thừa sức bù 900 triệu.
+    const s = vanVoNo({ soHuu: { ...moiVan().soHuu, traiPhieu: 5000 } })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.soLanPhaSan).toBe(0)
+    expect(sau.soHuu.traiPhieu).toBeGreaterThan(4000)
+  })
+
+  it('bán tháo bị chặn nay đẩy thiếu hụt xuống tận nấc 2', () => {
+    const s = vanVoNo({
+      soHuu: { ...moiVan().soHuu, traiPhieu: 1000 },
+      doanhNghiep: [
+        {
+          coHoiId: 'quanCaPhe',
+          ten: 'Mở quán cà phê nhỏ',
+          thuNhapNen: 1,
+          chiSoGiaLucMua: 1,
+          vonGoc: 400 * TRIEU,
+          namGop: 12,
+        },
+      ],
+    })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    // Trước thay đổi này: 1 tỷ trái phiếu thừa sức bù 900 triệu nên doanh
+    // nghiệp không bị đụng tới. Nay nấc 1 dừng ở 400 triệu và nấc 2 vào cuộc.
+    expect(sau.doanhNghiep).toHaveLength(0)
   })
 })

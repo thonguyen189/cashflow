@@ -726,6 +726,33 @@ export const CONFIG = {
     tyLeThanhLyDoanhNghiep: 0.45,
     /** thiếu hụt vượt tỉ lệ này × chi phí sinh hoạt thì tuyên phá sản */
     nguongTheoChiPhi: 1,
+    /**
+     * Nấc 1 mỗi năm chỉ được bán ngần này phần GIÁ TRỊ DANH MỤC đầu năm.
+     *
+     * ---------- Vì sao con số này tồn tại ----------
+     * Trước v1.7 đợt 2, nấc 1 bán không giới hạn, bán tới khi tiền mặt hết âm.
+     * Mà nấc 3 lại đòi khoản thiếu hụt còn vượt trọn một năm chi phí SAU KHI đã
+     * bán sạch tài sản và thanh lý hết doanh nghiệp. Hệ quả: ai đem tiền đi đầu
+     * tư thì luôn có cái để bán, nên trạng thái "nghèo thanh khoản mà nặng nợ" —
+     * trạng thái DUY NHẤT dẫn tới nấc 3 — không bao giờ xuất hiện. Đo thật trên
+     * 450 ván mỗi chiến lược: bot đòn bẩy vay 15–27 tỷ mỗi ván mà nấc 3 chỉ nổ
+     * đúng một lần, bot cân bằng không lần nào. Phá sản 0% suốt hai bản liền.
+     *
+     * Quét `xacSuatPhaSanCoBan` từ 0,02 tới 0,15 không tạo nổi một ván phá sản
+     * nào — đây là giới hạn CẤU TRÚC, không phải con số chưa vặn tới.
+     *
+     * ---------- Vì sao 0,4 ----------
+     * Bán tháo trong hoảng loạn không bao giờ thanh khoản tức thì ngoài đời: một
+     * mảnh đất cần vài tháng tới vài năm mới ra hàng, cổ phiếu nhỏ bán gấp thì
+     * tự dìm giá của chính mình. 0,4 nghĩa là trong một năm bết bát nhất người
+     * chơi vẫn xoay được gần nửa danh mục — rộng rãi so với đời thật, nhưng đủ
+     * hẹp để một cú hụt tiền nặng đi tới được nấc 2 và nấc 3.
+     *
+     * Đây là đòn bẩy chính để hiệu chỉnh tỉ lệ phá sản: hạ xuống thì phá sản
+     * nhiều hơn, nâng lên thì hiếm đi. Mục tiêu mục J là 8–18% cho bot cân bằng
+     * và trên 30% cho bot đòn bẩy.
+     */
+    tyLeBanToiDaMoiNam: 0.4,
     hanhPhuc: 15,
     soNamCamVay: 5,
     /** uy tín cần thời gian dựng lại */
