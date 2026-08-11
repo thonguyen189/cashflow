@@ -2514,11 +2514,13 @@ describe('v1.6 — góp vốn theo quy mô', () => {
     expect(lon.some((c) => coHoiHopLe(c, giau))).toBe(true)
   })
 
-  it('cơ hội tầm lớn vẫn nằm trong dải sinh lời 18,75–22,5% mỗi năm', () => {
+  it('cơ hội tầm lớn vẫn nằm trong dải sinh lời 12–18% mỗi năm', () => {
+    // v1.7 hạ cả dải xuống 12–18% (xem content.ts, chú thích đầu mảng CO_HOI) —
+    // ba cơ hội tầm lớn hạ theo cùng nguyên tắc chứ không còn neo ở 18,75–22,5%.
     for (const c of CO_HOI.filter((x) => x.taiSanToiThieu !== undefined)) {
       const tyLe = (c.thuNhapMoiNam ?? 0) / c.gia
-      expect(tyLe).toBeGreaterThanOrEqual(0.1875)
-      expect(tyLe).toBeLessThanOrEqual(0.225)
+      expect(tyLe).toBeGreaterThanOrEqual(0.1195)
+      expect(tyLe).toBeLessThanOrEqual(0.1805)
     }
   })
 })
@@ -2868,5 +2870,37 @@ describe('v1.7 — thang tiền đặt lại theo thực tế 2026', () => {
         expect(s.tienMat).toBeGreaterThan(s.chiPhiHangNam * 1.05)
       }
     }
+  })
+})
+
+describe('v1.7 — cơ hội kinh doanh sát thực tế hơn', () => {
+  it('mọi cơ hội kinh doanh nằm trong dải sinh lời 12–18%', () => {
+    for (const c of CO_HOI) {
+      if (c.loai !== 'kinhDoanh') continue
+      const sinhLoi = (c.thuNhapMoiNam ?? 0) / c.gia
+      expect(sinhLoi).toBeGreaterThanOrEqual(0.1195)
+      expect(sinhLoi).toBeLessThanOrEqual(0.1805)
+    }
+  })
+
+  it('có cơ hội đủ nhỏ để giáo viên với tới trong vài năm đầu', () => {
+    const nhoNhat = Math.min(
+      ...CO_HOI.filter((c) => c.loai === 'kinhDoanh').map((c) => c.gia),
+    )
+    // Giáo viên tiết kiệm 14tr/năm — suất đầu tiên phải với tới trong ~2 năm,
+    // nếu không thì mười năm đầu người chơi không có quyết định nào để ra.
+    expect(nhoNhat).toBeLessThanOrEqual(30_000_000)
+  })
+
+  it('rủi ro cao thì sinh lời cao — nhà trọ chắc nhất và lãi thấp nhất', () => {
+    const nhaTro = CO_HOI.find((c) => c.id === 'nhaTroCongNhan')!
+    const quanCaPhe = CO_HOI.find((c) => c.id === 'quanCaPhe')!
+    const loiNhaTro = nhaTro.thuNhapMoiNam! / nhaTro.gia
+    const loiQuanCaPhe = quanCaPhe.thuNhapMoiNam! / quanCaPhe.gia
+    expect(loiNhaTro).toBeLessThan(loiQuanCaPhe)
+    const bienDoNhaTro = nhaTro.bienDongThuNhapMax! - nhaTro.bienDongThuNhapMin!
+    const bienDoQuanCaPhe =
+      quanCaPhe.bienDongThuNhapMax! - quanCaPhe.bienDongThuNhapMin!
+    expect(bienDoNhaTro).toBeLessThan(bienDoQuanCaPhe)
   })
 })

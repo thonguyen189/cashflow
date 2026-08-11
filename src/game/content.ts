@@ -347,11 +347,60 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
  * `ngheId` để trống nghĩa là mọi nghề đều gặp. Các cơ hội gắn nghề đều có
  * `namToiThieu` vì chúng đòi thâm niên mới mở được.
  *
- * Mọi cơ hội kinh doanh đều nằm trong dải sinh lời 18,75–22,5% mỗi năm trên vốn,
- * nên không kênh nào trội hẳn so với phần còn lại.
+ * ---------- Dải sinh lời, hạ ở v1.7 ----------
+ * Dải 18,75–22,5% của v1.6 xa thực tế: "dãy nhà trọ cho công nhân" 1 tỷ thu
+ * 195tr mỗi năm là 19,5%, trong khi nhà trọ ngoài đời tính cả tiền đất chỉ sinh
+ * lời 6–9%. Quán cà phê nhỏ thì đa số hoà vốn hoặc lỗ.
+ *
+ * Dải mới là 12–18%, và CỐ Ý PHÂN TÁN THEO RỦI RO thay vì gom vào một dải hẹp:
+ * nhà trọ 12% nhưng biến động chỉ ±10%, quán cà phê 18% nhưng có năm mất 35%.
+ * Có vậy người chơi mới có quyết định thật giữa chắc chắn và béo bở — v1.6 gom
+ * hết vào một dải nên chọn cơ hội nào cũng như nhau.
+ *
+ * Sau thuế thu nhập doanh nghiệp 20% (v1.7), dải thực nhận còn 9,6–14,4%. So
+ * với bất động sản 4,95% sau thuế, doanh nghiệp vẫn là con đường nhanh nhất
+ * tới tự do tài chính — nhưng hệ số không còn 3,6 lần mà xuống ~2,6 lần.
+ *
+ * Ba bậc nhỏ nhất — bán hàng online, một chiếc xe máy, góp vốn quán ăn — được
+ * thêm ở v1.7 vì cơ hội rẻ nhất trước đó là 200tr: giáo viên tiết kiệm 14tr một
+ * năm sẽ mất mười bốn năm mới với tới suất đầu tiên, quá lâu để có quyết định
+ * nào trong những năm đầu ván chơi.
  */
 export const CO_HOI: CoHoi[] = [
   /* ---------- Chung: kinh doanh ---------- */
+  {
+    id: 'banHangOnline',
+    ten: 'Bán hàng online tại nhà',
+    moTa: 'Nhập ít hàng về bán trên mạng, tự đóng gói tự gửi. Vốn nhỏ, lời mỏng, nhưng là bước đầu tiên.',
+    emoji: '📦',
+    loai: 'kinhDoanh',
+    gia: 25 * TRIEU,
+    thuNhapMoiNam: 4.5 * TRIEU,
+    bienDongThuNhapMin: -0.4,
+    bienDongThuNhapMax: 0.45,
+  },
+  {
+    id: 'motXeMayChoThue',
+    ten: 'Một chiếc xe máy cho thuê',
+    moTa: 'Mua một chiếc xe cũ cho khách du lịch thuê theo ngày. Nhỏ thôi, nhưng tiền về đều.',
+    emoji: '🛵',
+    loai: 'kinhDoanh',
+    gia: 60 * TRIEU,
+    thuNhapMoiNam: 9 * TRIEU,
+    bienDongThuNhapMin: -0.2,
+    bienDongThuNhapMax: 0.22,
+  },
+  {
+    id: 'gopVonQuanAn',
+    ten: 'Góp vốn quán ăn với bạn',
+    moTa: 'Bạn cũ mở quán cơm bình dân gần khu trọ, rủ góp một phần vốn ăn chia.',
+    emoji: '🍜',
+    loai: 'kinhDoanh',
+    gia: 120 * TRIEU,
+    thuNhapMoiNam: 20.4 * TRIEU,
+    bienDongThuNhapMin: -0.35,
+    bienDongThuNhapMax: 0.38,
+  },
   {
     id: 'choThueXe',
     ten: 'Đội xe máy cho thuê',
@@ -359,7 +408,7 @@ export const CO_HOI: CoHoi[] = [
     emoji: '🛵',
     loai: 'kinhDoanh',
     gia: 200 * TRIEU,
-    thuNhapMoiNam: 40 * TRIEU,
+    thuNhapMoiNam: 30 * TRIEU,
     bienDongThuNhapMin: -0.15,
     bienDongThuNhapMax: 0.18,
   },
@@ -370,7 +419,7 @@ export const CO_HOI: CoHoi[] = [
     emoji: '☕',
     loai: 'kinhDoanh',
     gia: 400 * TRIEU,
-    thuNhapMoiNam: 90 * TRIEU,
+    thuNhapMoiNam: 72 * TRIEU,
     bienDongThuNhapMin: -0.35,
     bienDongThuNhapMax: 0.4,
   },
@@ -381,7 +430,7 @@ export const CO_HOI: CoHoi[] = [
     emoji: '🏪',
     loai: 'kinhDoanh',
     gia: 800 * TRIEU,
-    thuNhapMoiNam: 150 * TRIEU,
+    thuNhapMoiNam: 120 * TRIEU,
     bienDongThuNhapMin: -0.25,
     bienDongThuNhapMax: 0.28,
   },
@@ -392,7 +441,7 @@ export const CO_HOI: CoHoi[] = [
     emoji: '🧵',
     loai: 'kinhDoanh',
     gia: 1.5 * TY,
-    thuNhapMoiNam: 300 * TRIEU,
+    thuNhapMoiNam: 240 * TRIEU,
     bienDongThuNhapMin: -0.22,
     bienDongThuNhapMax: 0.25,
   },
@@ -403,7 +452,7 @@ export const CO_HOI: CoHoi[] = [
     emoji: '🚚',
     loai: 'kinhDoanh',
     gia: 600 * TRIEU,
-    thuNhapMoiNam: 126 * TRIEU,
+    thuNhapMoiNam: 96 * TRIEU,
     bienDongThuNhapMin: -0.2,
     bienDongThuNhapMax: 0.24,
   },
@@ -414,7 +463,7 @@ export const CO_HOI: CoHoi[] = [
     emoji: '🏘️',
     loai: 'kinhDoanh',
     gia: 1 * TY,
-    thuNhapMoiNam: 195 * TRIEU,
+    thuNhapMoiNam: 120 * TRIEU,
     bienDongThuNhapMin: -0.08,
     bienDongThuNhapMax: 0.12,
   },
@@ -425,7 +474,7 @@ export const CO_HOI: CoHoi[] = [
     emoji: '🌳',
     loai: 'kinhDoanh',
     gia: 700 * TRIEU,
-    thuNhapMoiNam: 154 * TRIEU,
+    thuNhapMoiNam: 126 * TRIEU,
     bienDongThuNhapMin: -0.85,
     bienDongThuNhapMax: 0.95,
   },
@@ -500,6 +549,13 @@ export const CO_HOI: CoHoi[] = [
     chiMotLan: true,
   },
 
+  /* ---------- Giáo viên, bác sĩ, kỹ sư phần mềm: cơ hội riêng nghề ----------
+   * Cũng nằm trong dải 12–18% hạ ở v1.7 (xem chú thích đầu mảng) — trước bản
+   * này chúng ngồi ở 19–22,2%, tức vẫn còn trong cái dải 18,75–22,5% cũ dù
+   * không được liệt trong bảng bảy cơ hội chung. "Mọi cơ hội kinh doanh" ở
+   * chú thích đầu mảng có nghĩa là mọi cơ hội, không chỉ nhóm dùng chung.
+   */
+
   /* ---------- Giáo viên ---------- */
   {
     id: 'lopDayThem',
@@ -510,7 +566,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'giaoVien',
     namToiThieu: 2,
     gia: 60 * TRIEU,
-    thuNhapMoiNam: 13 * TRIEU,
+    thuNhapMoiNam: 9 * TRIEU,
     bienDongThuNhapMin: -0.2,
     bienDongThuNhapMax: 0.25,
   },
@@ -523,7 +579,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'giaoVien',
     namToiThieu: 4,
     gia: 150 * TRIEU,
-    thuNhapMoiNam: 30 * TRIEU,
+    thuNhapMoiNam: 25.5 * TRIEU,
     bienDongThuNhapMin: -0.3,
     bienDongThuNhapMax: 0.35,
   },
@@ -536,7 +592,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'giaoVien',
     namToiThieu: 6,
     gia: 400 * TRIEU,
-    thuNhapMoiNam: 84 * TRIEU,
+    thuNhapMoiNam: 64 * TRIEU,
     bienDongThuNhapMin: -0.2,
     bienDongThuNhapMax: 0.25,
   },
@@ -550,7 +606,7 @@ export const CO_HOI: CoHoi[] = [
     namToiThieu: 12,
     chiMotLan: true,
     gia: 1.2 * TY,
-    thuNhapMoiNam: 228 * TRIEU,
+    thuNhapMoiNam: 168 * TRIEU,
     bienDongThuNhapMin: -0.15,
     bienDongThuNhapMax: 0.2,
   },
@@ -578,7 +634,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'bacSi',
     namToiThieu: 2,
     gia: 90 * TRIEU,
-    thuNhapMoiNam: 20 * TRIEU,
+    thuNhapMoiNam: 13.5 * TRIEU,
     bienDongThuNhapMin: -0.15,
     bienDongThuNhapMax: 0.2,
   },
@@ -591,7 +647,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'bacSi',
     namToiThieu: 5,
     gia: 450 * TRIEU,
-    thuNhapMoiNam: 94 * TRIEU,
+    thuNhapMoiNam: 72 * TRIEU,
     bienDongThuNhapMin: -0.18,
     bienDongThuNhapMax: 0.22,
   },
@@ -604,7 +660,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'bacSi',
     namToiThieu: 8,
     gia: 900 * TRIEU,
-    thuNhapMoiNam: 171 * TRIEU,
+    thuNhapMoiNam: 153 * TRIEU,
     bienDongThuNhapMin: -0.2,
     bienDongThuNhapMax: 0.24,
   },
@@ -618,7 +674,7 @@ export const CO_HOI: CoHoi[] = [
     namToiThieu: 10,
     chiMotLan: true,
     gia: 1.8 * TY,
-    thuNhapMoiNam: 342 * TRIEU,
+    thuNhapMoiNam: 252 * TRIEU,
     bienDongThuNhapMin: -0.15,
     bienDongThuNhapMax: 0.22,
   },
@@ -646,7 +702,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'kySuPhanMem',
     namToiThieu: 2,
     gia: 100 * TRIEU,
-    thuNhapMoiNam: 22 * TRIEU,
+    thuNhapMoiNam: 18 * TRIEU,
     bienDongThuNhapMin: -0.3,
     bienDongThuNhapMax: 0.35,
   },
@@ -659,7 +715,7 @@ export const CO_HOI: CoHoi[] = [
     ngheId: 'kySuPhanMem',
     namToiThieu: 4,
     gia: 350 * TRIEU,
-    thuNhapMoiNam: 73 * TRIEU,
+    thuNhapMoiNam: 63 * TRIEU,
     bienDongThuNhapMin: -0.7,
     bienDongThuNhapMax: 0.9,
   },
@@ -686,7 +742,7 @@ export const CO_HOI: CoHoi[] = [
     namToiThieu: 12,
     chiMotLan: true,
     gia: 2 * TY,
-    thuNhapMoiNam: 380 * TRIEU,
+    thuNhapMoiNam: 300 * TRIEU,
     bienDongThuNhapMin: -0.25,
     bienDongThuNhapMax: 0.3,
   },
@@ -707,7 +763,8 @@ export const CO_HOI: CoHoi[] = [
   /* ---------- Tầm lớn: chỉ mở khi tài sản ròng đã đủ ----------
    * Thanh trượt quy mô đã lo phần "cơ hội nhỏ vẫn dùng được khi giàu", nhưng
    * nửa sau ván chơi vẫn cần nội dung MỚI để còn cảm giác thăng tiến. Cả ba nằm
-   * trong dải sinh lời 18,75–22,5% mà game vẫn giữ, nên không kênh nào trội hẳn.
+   * trong dải sinh lời 12–18% mà game vẫn giữ (hạ ở v1.7), nên không kênh nào
+   * trội hẳn.
    */
   {
     id: 'khuNhaXuong',
@@ -717,7 +774,7 @@ export const CO_HOI: CoHoi[] = [
     loai: 'kinhDoanh',
     taiSanToiThieu: 20 * TY,
     gia: 12 * TY,
-    thuNhapMoiNam: 2.3 * TY,
+    thuNhapMoiNam: 1.92 * TY,
     bienDongThuNhapMin: -0.18,
     bienDongThuNhapMax: 0.22,
   },
@@ -729,7 +786,7 @@ export const CO_HOI: CoHoi[] = [
     loai: 'kinhDoanh',
     taiSanToiThieu: 35 * TY,
     gia: 20 * TY,
-    thuNhapMoiNam: 4.2 * TY,
+    thuNhapMoiNam: 3.6 * TY,
     bienDongThuNhapMin: -0.45,
     bienDongThuNhapMax: 0.5,
   },
@@ -741,7 +798,7 @@ export const CO_HOI: CoHoi[] = [
     loai: 'kinhDoanh',
     taiSanToiThieu: 70 * TY,
     gia: 40 * TY,
-    thuNhapMoiNam: 8 * TY,
+    thuNhapMoiNam: 6 * TY,
     bienDongThuNhapMin: -0.35,
     bienDongThuNhapMax: 0.4,
   },
