@@ -863,7 +863,40 @@ Giữ nguyên khuôn bài, thay dải `52–62` bằng dải bao trọn ba con s
 
 Nếu tỉ lệ phá sản của bot cân bằng rơi vào 8–18% và của bot đòn bẩy vượt 30% thì **trả lại đúng ngưỡng mục J** và đổi tên bài thành khẳng định dương (`'CHỈ TIÊU 5 và 6 — phá sản hiếm ở bot cân bằng, thường xuyên ở bot đòn bẩy'`).
 
-Nếu chưa đạt, `CONFIG.phaSan.tyLeBanToiDaMoiNam` là đòn bẩy đúng để vặn: hạ dần theo bước 0,05 và chạy lại. **Tối đa bốn vòng.** Sau bốn vòng chưa đạt thì dừng, chốt ngưỡng theo số thật và ghi lý do vào mục L — đúng tinh thần "nới ngưỡng cho xanh mà không hiểu vì sao là tự lừa mình".
+> **CẬP NHẬT SAU KHI TASK 3 CHẠY XONG — đọc trước khi vặn bất cứ thứ gì.** Agent thực hiện Task 3 đã đo bằng bộ đếm tạm (200 ván mỗi chiến lược, bác sĩ, đếm số năm mỗi nấc nổ, bộ đếm đã gỡ bỏ sau khi đo):
+>
+> | Trần nấc 1 | nấc 1 | nấc 2 | còn âm sau nấc 2 | **nấc 3** | thiếu hụt còn sót |
+> |---|---|---|---|---|---|
+> | 1,0 (hành vi cũ) | 25 | 5 | 1 | **0** | `0,32` |
+> | **0,4 (đang dùng)** | 25 | **11** | 1 | **0** | `0,52` |
+> | 0,25 | 25 | 14 | 1 | **0** | `0,58` |
+> | 0,15 | 25 | 16 | 2 | **0** | `0,61 · 0,01` |
+> | 0,05 | 25 | 18 | 3 | **0** | `0,65 · 0,13 · 0,3` |
+>
+> (Bảng đo lại sau vòng sửa duyệt mã — trần theo số đơn vị và nấc 3 thu danh mục. Cột cuối là bội số một năm chi phí sinh hoạt; nấc 3 nổ khi vượt 1,0.)
+>
+> **Hai cơ chế trần gần như trùng nhau TRONG MÔ PHỎNG**, vì danh mục của bot luôn có nhiều đơn vị mỗi loại nên không bao giờ rơi vào bẫy làm tròn — bẫy đó là thật với người chơi thật (một hai căn nhà, một hai đơn vị tiền mã hoá), không thật với bot. Nghĩa là việc đổi sang trần theo đơn vị là **sửa lỗi đúng đắn mà không tốn gì về cân bằng**. Sai lệch đo được duy nhất: tỉ lệ thắng của bot đòn bẩy nhích 25,5% → 26,0% ở các trần ≤ 0,4, do luôn được bán một đơn vị.
+>
+> **Việc nấc 3 thu danh mục không hiện ra trong số nào cả**, vì nấc 3 vẫn chưa từng nổ trong mô phỏng. Nó chỉ bắt đầu có ý nghĩa đúng vào lúc nấc 3 chạm tới được — tức đúng lúc mà lỗ hổng "phá sản là lối thoát nợ có lãi" lẽ ra sẽ lộ ra. Đây là sửa lỗi phòng xa, và nó phải có mặt TRƯỚC khi vòng hiệu chỉnh chạm được tới nấc 3, nếu không mọi số đo sau đó đều là số của một cơ chế bị hỏng.
+>
+> Trần nấc 1 làm đúng việc của nó — nấc 2 nổ gấp đôi (5 → 11) — nhưng **bức tường đã dời từ nấc 1 sang nấc 2, chứ chưa đổ**. Lý do: nấc 2 thanh lý doanh nghiệp **cũng không có trần của riêng nó**, và vốn doanh nghiệp của bot đòn bẩy nhân 45% thì nuốt gần trọn phần thiếu hụt còn lại. Đo khoản thiếu hụt còn sót **sau** nấc 2, tính theo bội số một năm chi phí sinh hoạt (nấc 3 nổ khi vượt 1,0):
+>
+> - trần 0,4 — bác sĩ `[0,52]` · giáo viên `[0,05 · 0,85 · 0,42]`
+> - trần 0,15 — bác sĩ `[0,61 · 0,01]` · giáo viên `[0,3 · **1,05** · 0,52]`
+>
+> Nghĩa là phá sản nay đã **nằm trong tầm với** (0,85 và 1,05 so với ngưỡng 1,0) ở chỗ trước đây bất khả thi về mặt cấu trúc — nhưng ở trần 0,4 thì chưa nổ.
+
+Nếu chưa đạt, ba đòn bẩy dưới đây xếp theo mức độ **được số liệu trên ủng hộ**, mạnh nhất trước:
+
+1. **Áp trần mỗi năm cho cả nấc 2** — đây nay mới là ràng buộc thật sự chặn đường. Nó là đúng cùng một khiếm khuyết "thanh lý không giới hạn" mà Task 3 vừa sửa ở nấc 1, và đúng cùng một lý lẽ đời thật: sang nhượng một doanh nghiệp cần người mua, mà người mua thì không xuất hiện trong tuần bạn cần tiền. Đây là **thay đổi engine**, không phải vặn số — nếu chọn hướng này thì mở một task riêng có test riêng chứ đừng nhét vào vòng hiệu chỉnh.
+2. **Hạ `CONFIG.phaSan.tyLeBanToiDaMoiNam`** theo bước 0,05. Số liệu cho thấy nó dời khoản thiếu hụt còn sót đi đúng hướng (0,85 → 1,05 khi hạ từ 0,4 xuống 0,15) nhưng chậm, và hạ quá tay thì mọi cú hụt tiền nhỏ cũng hoá thảm hoạ.
+3. **Hạ `CONFIG.phaSan.nguongTheoChiPhi`** từ 1,0 xuống. Thô nhất, và nó đổi định nghĩa "thế nào là vỡ nợ" chứ không đổi cơ chế — để cuối cùng.
+
+**Tối đa bốn vòng** cho hướng 2 và 3. Sau bốn vòng chưa đạt thì dừng, chốt ngưỡng theo số thật và ghi lý do vào mục L — đúng tinh thần "nới ngưỡng cho xanh mà không hiểu vì sao là tự lừa mình".
+
+**Hai lưu ý về thứ tự đo:**
+- **Task 2 đẩy ngược chiều.** Kỳ hạn vay 20 năm làm khoản trả nợ mỗi năm nhẹ đi, tức ít cú hụt tiền hơn, tức ít cửa vào ba nấc hơn. Mọi số phá sản đo trước Task 2 đều lạc hậu — phải đo lại sau khi Task 2 vào.
+- **Câu quảng cáo trong chú thích `tyLeBanToiDaMoiNam` cần dịu lại.** Nó đang viết "đòn bẩy chính để hiệu chỉnh tỉ lệ phá sản" — đúng về **chiều** nhưng chưa đúng về **độ lớn**, vì bản thân nó không đưa được tỉ lệ phá sản lên khỏi 0. Sửa câu đó khi viết mục L.
 
 - [ ] **Step 5: Xem lại `CHỈ TIÊU 3` và `CHỈ TIÊU 4`**
 
@@ -878,7 +911,10 @@ Trong `docs/07-thiet-ke-v1-7.md`, mục L cần:
 3. **Mục con "Vì sao phá sản vẫn là 0%"** nay đã lỗi thời một phần: giữ nguyên toàn bộ phần chẩn đoán (nó vẫn đúng và là công sức đắt nhất của bản này), thêm một đoạn kết `**Đã sửa ở đợt 2.**` nói rõ trần bán tháo là cách sửa, kèm số phá sản đo được sau khi sửa.
 4. **Mục con "Đòn bẩy nay là nước đi lỗ — một quyết định đang chờ người"**: đổi tiêu đề thành `### Đòn bẩy: từ cái bẫy thuần tuý trở lại thành canh bạc`, thay câu `**Chưa áp dụng.**` bằng ghi nhận đã áp dụng kỳ hạn 20 năm và số đo mới của cặp cân bằng/đòn bẩy.
 5. **Mục con "Chênh lệch ba nghề"**: thêm đoạn kết ghi rằng đợt 2 đã chọn hướng ngược lại với vòng hiệu chỉnh — trả đường cong về số thật, bỏ chỉ tiêu chênh lệch — và số đo mới.
-6. **Mục con "Trần 15 điểm…"**: cập nhật cho khớp việc chỉ tiêu đã được gỡ khỏi mục J ở Task 1.
+6. **Ba dấu vết của chỉ tiêu 15 điểm còn sót trong mục L** — Task 1 cố ý không đụng tới vì nằm ngoài phạm vi của nó, agent thực hiện Task 1 đã khoanh sẵn vị trí (số dòng tính theo bản sau khi Task 1 commit):
+   - **Dòng 682–683**, hai dòng bảng còn ghi `| ≤ 15 điểm | giữ ≤ 15 điểm | 24 điểm | ❌ |`. Nay không còn mục tiêu nào để mà trượt — bỏ cột mục tiêu và bỏ dấu ❌, giữ lại con số đo được.
+   - **Dòng 813**, tiêu đề mục con `### Trần 15 điểm cho xuất thân và bậc lương không còn giữ được` → đổi thành `### Chênh lệch xuất thân và bậc lương: vì sao đây không còn là chỉ tiêu`.
+   - **Dòng 830**, câu kết `hai chỉ tiêu này loại trừ nhau` → nối thêm rằng mục J đã gỡ chỉ tiêu ấy ở đợt 2 chứ không phải để nó nằm đó dưới dạng một ô đỏ vĩnh viễn.
 
 - [ ] **Step 7: Chạy toàn bộ, biên dịch, dựng bản**
 
