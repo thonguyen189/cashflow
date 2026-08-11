@@ -345,9 +345,10 @@ describe('cân bằng game', () => {
   })
 
   /**
-   * ---------- Trần 15 điểm KHÔNG còn giữ được, và đây là lý do ----------
-   * Mục J muốn giữ chênh lệch giữa bốn xuất thân và giữa năm bậc lương ở mức ≤ 15
-   * điểm như v1.6. Đo thật sau vòng hiệu chỉnh: 24 điểm và 33 điểm.
+   * ---------- Vì sao ở đây không có trần chênh lệch cứng ----------
+   * Mục J bản đầu muốn giữ chênh lệch giữa bốn xuất thân và giữa năm bậc lương ở
+   * mức ≤ 15 điểm như v1.6. Chỉ tiêu đó đã được GỠ khỏi mục J, vì nó loại trừ
+   * nhau với chỉ tiêu tỉ lệ thắng 45–55% ở đầu bảng. Đo thật: 24 điểm và 33 điểm.
    *
    * Đây KHÔNG phải chuyện game hoá bất công hơn — nó là HIỆU ỨNG TRẦN biến mất.
    * Ở v1.6 bot cân bằng thắng 91–94%, tức mọi xuất thân đều đụng trần: nhà thuần
@@ -366,7 +367,7 @@ describe('cân bằng game', () => {
    * bắt được hồi quy: nó sẽ đỏ ngay nếu một xuất thân nào đó hoá thành lựa chọn
    * áp đảo. Xem mục L của docs/07-thiet-ke-v1-7.md.
    */
-  it('bốn xuất thân chênh nhau 24 điểm — trần 15 điểm của v1.6 không còn giữ được', () => {
+  it('bốn xuất thân chênh nhau 24 điểm — không xuất thân nào là nước đi hiển nhiên', () => {
     const ty: number[] = []
     for (const x of XUAT_THAN) {
       const r = moPhongNhieuVan('giaoVien', 120, CHIEN_LUOC_CAN_BANG, {
@@ -383,7 +384,7 @@ describe('cân bằng game', () => {
     expect(Math.max(...ty)).toBeLessThan(0.9)
   })
 
-  it('năm bậc lương chênh nhau 33 điểm — trần 15 điểm của v1.6 không còn giữ được', () => {
+  it('năm bậc lương chênh nhau 33 điểm — không bậc nào là nước đi hiển nhiên', () => {
     const ty: number[] = []
     for (const bac of CONFIG.xuatThan.bacLuong) {
       const r = moPhongNhieuVan('bacSi', 120, CHIEN_LUOC_CAN_BANG, {

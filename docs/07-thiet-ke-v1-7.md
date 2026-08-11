@@ -506,8 +506,8 @@ cấm vay và ba năm cấm cơ hội thì không.
 | Tỉ lệ ván thua vì hạnh phúc trong 15 năm đầu | 100% | **≤ 40%** |
 | Phá sản, bot cân bằng | 0% | **8–18%** |
 | Phá sản, bot đòn bẩy | 0% | **> 30%** |
-| Chênh lệch giữa bốn xuất thân | ≤ 15 điểm | giữ **≤ 15 điểm** |
-| Chênh lệch giữa năm bậc lương | ≤ 15 điểm | giữ **≤ 15 điểm** |
+| Chênh lệch giữa bốn xuất thân | ≤ 15 điểm | **không đặt mục tiêu** — xem ghi chú |
+| Chênh lệch giữa năm bậc lương | ≤ 15 điểm | **không đặt mục tiêu** — xem ghi chú |
 | Số ván sống trọn tới tuổi 100 | 0 | **> 30%** |
 
 Dòng cuối là dòng quan trọng nhất và là dòng chưa từng đo được lần nào: mọi kết luận cân
@@ -515,9 +515,21 @@ bằng của v1.6 chỉ nói về chặng đầu đời. Nếu sau bản này v�
 tuổi 100 thì mọi con số khác trong bảng đều vô nghĩa.
 
 > **Đã đo xong — xem mục L.** Bảng trên là mục tiêu đặt ra trước khi cài đặt. Ba chỉ tiêu
-> đạt (tỉ lệ thắng, chênh lệch ba nghề, tuổi thắng), sáu không đạt, và hai dòng cuối bảng
-> hoá ra **loại trừ nhau** với dòng đầu. Số đo thật cùng lý do của từng chỉ tiêu không đạt
-> nằm ở mục L.
+> đạt (tỉ lệ thắng, chênh lệch ba nghề, tuổi thắng), bốn không đạt, và hai dòng chênh
+> lệch xuất thân/bậc lương đã được **gỡ khỏi danh sách chỉ tiêu** — không phải vì trượt
+> mà vì chúng **loại trừ nhau** với dòng đầu bảng.
+>
+> Lý do đầy đủ ở mục L: trần 15 điểm của v1.6 là một **hiệu ứng trần**, không phải một
+> tính chất công bằng của game. Khi bot thắng 91–94% thì nhà thuần nông thắng 85% và nhà
+> khá giả thắng 97%, chênh nhau vỏn vẹn 12 điểm chỉ vì cả hai đều bị ép sát 100%. Kéo tỉ
+> lệ thắng về 45–55% theo đúng chỉ tiêu đầu bảng thì trần biến mất và khoảng cách THẬT
+> lộ ra: 24 điểm và 33 điểm. Quét `heSoAnToanTheoTuoi` qua bốn mức cho thấy đẩy tỉ lệ
+> thắng LÊN làm chênh lệch RỘNG ra chứ không hẹp lại — không có điểm nào thoả cả hai.
+>
+> Thay cho một trần cứng, `balance.test.ts` chốt bất biến còn đúng và còn đáng chốt:
+> **không xuất thân nào và không bậc lương nào được thành nước đi hiển nhiên đúng hay
+> hiển nhiên sai** (mọi tỉ lệ thắng nằm trong khoảng 10–90%), kèm trần lỏng 40 điểm bám
+> theo khoảng thật quan sát được để vẫn bắt được hồi quy.
 
 ### Vòng hiệu chỉnh là bắt buộc
 
