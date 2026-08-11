@@ -4,6 +4,8 @@
 
 **Goal:** Kéo tỉ lệ thắng của bot cân bằng từ 91–94% xuống 45–55% đều cả ba nghề, đẩy tuổi thắng trung bình từ 33–42 lên 52–62, và tạo ra cửa thua tài chính thật (phá sản 8–18%) — bằng cách đặt lại mọi con số tiền tệ về đúng thực tế Việt Nam 2026 thay vì vặn tham số cho khó lên.
 
+> **Trạng thái: đã thực hiện xong toàn bộ 15 task.** Số đo thật ở mục L của `docs/07-thiet-ke-v1-7.md`. Bốn việc còn lại sau vòng hiệu chỉnh nằm ở `2026-08-11-v1-7-viec-con-lai.md`.
+
 **Architecture:** Game là một reducer thuần (`src/game/engine.ts`) trên `GameState`, với toàn bộ số cân bằng tập trung ở `src/game/config.ts` và dữ liệu nội dung ở `src/game/content.ts`. Mọi thay đổi của bản này đi theo ba tầng: (1) đổi số trong `config.ts`/`content.ts`, (2) thêm hàm thuần vào `engine.ts` rồi gọi từ `chuyenNam`, (3) hiển thị ở tầng `src/ui/`. Mười lăm nhiệm vụ dưới đây xếp theo thứ tự phụ thuộc: nền số liệu trước, cơ chế sau, giao diện và hiệu chỉnh cuối cùng.
 
 **Tech Stack:** TypeScript 5.7 · React 19 · Vite 6 · Vitest 3 · không có backend, trạng thái lưu ở localStorage.
@@ -50,7 +52,7 @@
 - Consumes: không có (task đầu tiên)
 - Produces: `NGHE` với `luong`/`chiPhi` mới; hằng số chi phí gốc của bác sĩ (**102 × TRIEU**) sẽ là `CHI_PHI_CHUAN` của Task 9.
 
-- [ ] **Step 1: Viết test thất bại cho thang tiền mới**
+- [x] **Step 1: Viết test thất bại cho thang tiền mới**
 
 Thêm vào cuối `src/game/engine.test.ts`:
 
@@ -88,12 +90,12 @@ describe('v1.7 — thang tiền đặt lại theo thực tế 2026', () => {
 
 Bổ sung `XUAT_THAN` vào dòng `import` từ `./content` ở đầu file nếu chưa có.
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — thang tiền"`
 Kỳ vọng: FAIL — `expected 180000000 to be 90000000`.
 
-- [ ] **Step 3: Đổi ba nghề trong `content.ts`**
+- [x] **Step 3: Đổi ba nghề trong `content.ts`**
 
 Trong mảng `NGHE`, đổi đúng hai trường của mỗi nghề (giữ nguyên `moTa`, `emoji`, `khatVongId`):
 
@@ -141,7 +143,7 @@ Thêm chú thích ngay trên mảng `NGHE`:
  */
 ```
 
-- [ ] **Step 4: Nâng vốn ban đầu của bốn xuất thân**
+- [x] **Step 4: Nâng vốn ban đầu của bốn xuất thân**
 
 Trong mảng `XUAT_THAN`, đổi `tyLeVonBanDau`: `thuanNong` 0.85 → **1.05**, `vienChuc` 1.0 → **1.25**, `buonBan` 2.0 → **2.4**, `khaGia` 3.5 → **4.2**.
 
@@ -161,22 +163,22 @@ Thêm chú thích trên mảng:
  */
 ```
 
-- [ ] **Step 5: Nâng khoá lưu**
+- [x] **Step 5: Nâng khoá lưu**
 
 `config.ts`: `luuKey: 'dong-tien-luu-v1-7'`.
 `luu.ts:5-12`: thêm `'dong-tien-luu-v1-6',` vào cuối mảng `KHOA_LUU_CU`.
 
-- [ ] **Step 6: Chạy test để xác nhận xanh**
+- [x] **Step 6: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — thang tiền"`
 Kỳ vọng: PASS, cả hai test.
 
-- [ ] **Step 7: Chạy toàn bộ test và ghi nhận cái nào đỏ**
+- [x] **Step 7: Chạy toàn bộ test và ghi nhận cái nào đỏ**
 
 Chạy: `npm test`
 Kỳ vọng: `balance.test.ts` có thể đỏ (ngưỡng 85–95% không còn đúng — đó chính là mục tiêu của bản này). **Ghi lại tên từng test đỏ vào phần cuối task này, KHÔNG sửa ngưỡng** — Task 15 sẽ viết lại toàn bộ `balance.test.ts`. Nếu `engine.test.ts` đỏ thì phải sửa: đó là test cơ chế, không phải test cân bằng.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/game/content.ts src/game/config.ts src/game/luu.ts src/game/engine.test.ts
@@ -214,7 +216,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `NGHE` với lương mới (Task 1)
 - Produces: `CO_HOI` có ba mục mới id `banHangOnline`, `motXeMayChoThue`, `gopVonQuanAn`
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — cơ hội kinh doanh sát thực tế hơn', () => {
@@ -250,12 +252,12 @@ describe('v1.7 — cơ hội kinh doanh sát thực tế hơn', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — cơ hội"`
 Kỳ vọng: FAIL — sinh lời hiện là 0,20 nên vượt trần 0,1805.
 
-- [ ] **Step 3: Thêm ba cơ hội nhỏ vào đầu nhóm "Chung: kinh doanh"**
+- [x] **Step 3: Thêm ba cơ hội nhỏ vào đầu nhóm "Chung: kinh doanh"**
 
 ```ts
   {
@@ -293,7 +295,7 @@ Kỳ vọng: FAIL — sinh lời hiện là 0,20 nên vượt trần 0,1805.
   },
 ```
 
-- [ ] **Step 4: Hạ `thuNhapMoiNam` của bảy cơ hội cũ**
+- [x] **Step 4: Hạ `thuNhapMoiNam` của bảy cơ hội cũ**
 
 | id | `gia` | `thuNhapMoiNam` mới | sinh lời |
 |---|---|---|---|
@@ -325,12 +327,12 @@ Sửa chú thích đầu mảng `CO_HOI` — câu "Mọi cơ hội kinh doanh đ
  * tới tự do tài chính — nhưng hệ số không còn 3,6 lần mà xuống ~2,6 lần.
 ```
 
-- [ ] **Step 5: Chạy test để xác nhận xanh**
+- [x] **Step 5: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — cơ hội"`
 Kỳ vọng: PASS, cả ba test.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/game/content.ts src/game/engine.test.ts
@@ -365,7 +367,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `NGHE` (Task 1)
 - Produces: `export function tangLuongThucTheoTuoi(nghe: Nghe, tuoi: number): number` — trả tỉ lệ tăng lương thực của năm, có thể **âm**.
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
@@ -420,12 +422,12 @@ describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — đường cong"`
 Kỳ vọng: FAIL — `tangLuongThucTheoTuoi is not defined`.
 
-- [ ] **Step 3: Thêm kiểu `BacSuNghiep` vào `types.ts`**
+- [x] **Step 3: Thêm kiểu `BacSuNghiep` vào `types.ts`**
 
 Ngay trên `interface Nghe`:
 
@@ -453,7 +455,7 @@ Và thêm vào `interface Nghe`:
   duongCongSuNghiep: BacSuNghiep[]
 ```
 
-- [ ] **Step 4: Thêm đường cong cho ba nghề trong `content.ts`**
+- [x] **Step 4: Thêm đường cong cho ba nghề trong `content.ts`**
 
 ```ts
 // giaoVien — lên bậc ba năm một lần, hệ số 2,34 → 4,98 sau hai mươi bốn năm.
@@ -487,7 +489,7 @@ duongCongSuNghiep: [
 ],
 ```
 
-- [ ] **Step 5: Thêm `tangLuongThucTheoTuoi` vào `engine.ts`**
+- [x] **Step 5: Thêm `tangLuongThucTheoTuoi` vào `engine.ts`**
 
 Đặt ngay trước hàm `chuyenNam`:
 
@@ -506,7 +508,7 @@ export function tangLuongThucTheoTuoi(nghe: Nghe, tuoi: number): number {
 
 Bổ sung `BacSuNghiep` vào import kiểu nếu TypeScript đòi.
 
-- [ ] **Step 6: Nối vào bước 8 của `chuyenNam`**
+- [x] **Step 6: Nối vào bước 8 của `chuyenNam`**
 
 Trong nhánh `else` của bước 8 (dòng ~1653), thay:
 
@@ -530,7 +532,7 @@ bằng:
 
 Ngay trước bước 8 thêm `const nghe8 = timNghe(s.ngheId)!` (bước 10 đã có biến `nghe` riêng, đặt tên khác để không đụng nhau).
 
-- [ ] **Step 7: Bỏ `tangLuongThucMin/Max` khỏi `config.ts`**
+- [x] **Step 7: Bỏ `tangLuongThucMin/Max` khỏi `config.ts`**
 
 Xoá hai dòng `tangLuongThucMin: 0.0,` và `tangLuongThucMax: 0.025,`, giữ `luongBamLamPhat: true`, và đổi chú thích khối `---------- Lương ----------` thành:
 
@@ -548,17 +550,17 @@ Xoá hai dòng `tangLuongThucMin: 0.0,` và `tangLuongThucMax: 0.025,`, giữ `l
    */
 ```
 
-- [ ] **Step 8: Chạy test để xác nhận xanh**
+- [x] **Step 8: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — đường cong"`
 Kỳ vọng: PASS, cả năm test.
 
-- [ ] **Step 9: Chạy toàn bộ test và biên dịch**
+- [x] **Step 9: Chạy toàn bộ test và biên dịch**
 
 Chạy: `npm test` rồi `npx tsc -b --noEmit` → **KHÔNG dùng npx**, dùng `./node_modules/.bin/tsc -b --noEmit`.
 Kỳ vọng: không lỗi biên dịch. `balance.test.ts` có thể vẫn đỏ — ghi nhận, không sửa.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add src/game/types.ts src/game/content.ts src/game/config.ts src/game/engine.ts src/game/engine.test.ts
@@ -595,7 +597,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `tangLuongThucTheoTuoi` (Task 3)
 - Produces: `export function thueThuNhapCaNhan(luongNam: Tien, soNguoiPhuThuoc: number, chiSoGia: number): Tien`
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — thuế thu nhập cá nhân', () => {
@@ -644,12 +646,12 @@ describe('v1.7 — thuế thu nhập cá nhân', () => {
 
 > Hàm trợ giúp `choiHetNam` đã có sẵn trong `engine.test.ts` — tìm và dùng lại đúng tên hiện có; nếu tên khác thì thay cho khớp.
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — thuế thu nhập"`
 Kỳ vọng: FAIL — `thueThuNhapCaNhan is not defined`.
 
-- [ ] **Step 3: Thêm khối `thue` vào `config.ts`**
+- [x] **Step 3: Thêm khối `thue` vào `config.ts`**
 
 Đặt ngay sau khối `---------- Ngân hàng ----------`:
 
@@ -696,7 +698,7 @@ Kỳ vọng: FAIL — `thueThuNhapCaNhan is not defined`.
   },
 ```
 
-- [ ] **Step 4: Thêm `thueThuNhapCaNhan` vào `engine.ts`**
+- [x] **Step 4: Thêm `thueThuNhapCaNhan` vào `engine.ts`**
 
 Đặt cạnh các hàm tính tiền khác, trước `chuyenNam`:
 
@@ -733,7 +735,7 @@ export function thueThuNhapCaNhan(
 
 > `Number.POSITIVE_INFINITY * chiSoGia` vẫn là `Infinity`, nên bậc cuối luôn nuốt trọn phần còn lại — đúng ý.
 
-- [ ] **Step 5: Trừ thuế trong bước 8 của `chuyenNam`**
+- [x] **Step 5: Trừ thuế trong bước 8 của `chuyenNam`**
 
 Ngay sau dòng `tienMat += luongThucNhan`, thêm:
 
@@ -764,14 +766,14 @@ Ngay sau dòng `tienMat += luongThucNhan`, thêm:
 
 Ngay trước khối trên, thêm `const namMoiChoThue = s.nam + 1` (bước 10 mới khai báo `namMoi`, mà bước 8 đứng trước nó).
 
-- [ ] **Step 6: Thêm `'thueThuNhap'` vào `SuKienLoai` trong `types.ts`**
+- [x] **Step 6: Thêm `'thueThuNhap'` vào `SuKienLoai` trong `types.ts`**
 
-- [ ] **Step 7: Chạy test để xác nhận xanh**
+- [x] **Step 7: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — thuế thu nhập"`
 Kỳ vọng: PASS, cả năm test.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.ts src/game/types.ts src/game/engine.test.ts
@@ -805,7 +807,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `CONFIG.thue.thueDoanhNghiep` (Task 4)
 - Produces: `TaiSan.thueLoiTuc: number`; `dongTienThuDong` nay trả về con số **sau thuế**
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — thuế trên thu nhập thụ động', () => {
@@ -847,12 +849,12 @@ describe('v1.7 — thuế trên thu nhập thụ động', () => {
 
 > Trường `namGop` được thêm ở Task 6. Nếu Task 5 chạy trước, bỏ dòng `namGop` khỏi vật thể trên và thêm lại ở Task 6.
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — thuế trên thu nhập thụ động"`
 Kỳ vọng: FAIL — `thueLoiTuc` là `undefined`.
 
-- [ ] **Step 3: Thêm `thueLoiTuc` vào `TaiSan` trong `types.ts`**
+- [x] **Step 3: Thêm `thueLoiTuc` vào `TaiSan` trong `types.ts`**
 
 ```ts
   /**
@@ -866,13 +868,13 @@ Kỳ vọng: FAIL — `thueLoiTuc` là `undefined`.
   thueLoiTuc: number
 ```
 
-- [ ] **Step 4: Gán `thueLoiTuc` cho năm tài sản trong `content.ts`**
+- [x] **Step 4: Gán `thueLoiTuc` cho năm tài sản trong `content.ts`**
 
 `traiPhieu: 0` · `coPhieu: 0.05` · `vang: 0` · `crypto: 0` · `batDongSan: 0.1`.
 
 Với vàng và tiền mã hoá thêm chú thích `// không sinh lợi tức nên con số này không bao giờ được dùng tới`.
 
-- [ ] **Step 5: Trừ thuế ở bước 2 của `chuyenNam`**
+- [x] **Step 5: Trừ thuế ở bước 2 của `chuyenNam`**
 
 Đổi dòng tính `loiTuc` (dòng ~1037):
 
@@ -888,7 +890,7 @@ Thêm chú thích trên đó:
     // trong đầu để biết mình có bao nhiêu.
 ```
 
-- [ ] **Step 6: Trừ thuế doanh nghiệp ở bước 3**
+- [x] **Step 6: Trừ thuế doanh nghiệp ở bước 3**
 
 Đổi phép tính `soTien` (dòng ~1073):
 
@@ -901,7 +903,7 @@ Thêm chú thích trên đó:
     )
 ```
 
-- [ ] **Step 7: Sửa `dongTienThuDong` để tính sau thuế**
+- [x] **Step 7: Sửa `dongTienThuDong` để tính sau thuế**
 
 ```ts
 /**
@@ -932,12 +934,12 @@ export function dongTienThuDong(s: GameState): Tien {
 }
 ```
 
-- [ ] **Step 8: Chạy test để xác nhận xanh**
+- [x] **Step 8: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — thuế trên thu nhập thụ động"`
 Kỳ vọng: PASS, cả ba test.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/game/types.ts src/game/content.ts src/game/engine.ts src/game/engine.test.ts
@@ -971,7 +973,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `dongTienThuDong` sau thuế (Task 5)
 - Produces: `export function heSoBaoHoa(s: GameState, d: DoanhNghiep): number`; `DoanhNghiep.namGop: number`
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — doanh nghiệp bão hoà theo thời gian', () => {
@@ -1014,12 +1016,12 @@ describe('v1.7 — doanh nghiệp bão hoà theo thời gian', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — doanh nghiệp bão hoà"`
 Kỳ vọng: FAIL — `heSoBaoHoa is not defined`.
 
-- [ ] **Step 3: Thêm `namGop` vào `DoanhNghiep` trong `types.ts`**
+- [x] **Step 3: Thêm `namGop` vào `DoanhNghiep` trong `types.ts`**
 
 ```ts
   /**
@@ -1030,7 +1032,7 @@ Kỳ vọng: FAIL — `heSoBaoHoa is not defined`.
   namGop: number
 ```
 
-- [ ] **Step 4: Thêm khối `doanhNghiep` vào `config.ts`**
+- [x] **Step 4: Thêm khối `doanhNghiep` vào `config.ts`**
 
 Đặt ngay sau khối `quyMoGopVon`:
 
@@ -1054,7 +1056,7 @@ Kỳ vọng: FAIL — `heSoBaoHoa is not defined`.
   },
 ```
 
-- [ ] **Step 5: Thêm `heSoBaoHoa` và nối vào `thuNhapNenNamNay`**
+- [x] **Step 5: Thêm `heSoBaoHoa` và nối vào `thuNhapNenNamNay`**
 
 Trong `engine.ts`, ngay trước `thuNhapNenNamNay`:
 
@@ -1080,11 +1082,11 @@ export function thuNhapNenNamNay(s: GameState, d: DoanhNghiep): Tien {
 }
 ```
 
-- [ ] **Step 6: Ghi `namGop` khi tạo doanh nghiệp**
+- [x] **Step 6: Ghi `namGop` khi tạo doanh nghiệp**
 
 Ở dòng ~2221 trong `reducer` (`case 'quyetDinhCoHoi'`), thêm `namGop: s.nam,` vào vật thể `DoanhNghiep` mới.
 
-- [ ] **Step 7: Chặn ván cũ trong `luu.ts`**
+- [x] **Step 7: Chặn ván cũ trong `luu.ts`**
 
 Thêm vào `taiVan`, sau kiểm tra `heSoLuongDiChung`:
 
@@ -1094,12 +1096,12 @@ Thêm vào `taiVan`, sau kiểm tra `heSoLuongDiChung`:
     if (s.doanhNghiep?.some((d) => typeof d.namGop !== 'number')) return null
 ```
 
-- [ ] **Step 8: Chạy test để xác nhận xanh**
+- [x] **Step 8: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — doanh nghiệp bão hoà"`
 Kỳ vọng: PASS, cả ba test.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/game/types.ts src/game/config.ts src/game/engine.ts src/game/luu.ts src/game/engine.test.ts
@@ -1133,7 +1135,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `heSoBaoHoa`, `DoanhNghiep.namGop` (Task 6); `vonDoanhNghiepNamNay` (đã có, `engine.ts:116`)
 - Produces: `export function xacSuatDoanhNghiepPhaSan(s: GameState, d: DoanhNghiep): number`
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — doanh nghiệp có thể phá sản hẳn', () => {
@@ -1204,12 +1206,12 @@ describe('v1.7 — doanh nghiệp có thể phá sản hẳn', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — doanh nghiệp có thể phá sản"`
 Kỳ vọng: FAIL — `xacSuatDoanhNghiepPhaSan is not defined`.
 
-- [ ] **Step 3: Bổ sung khối `doanhNghiep` trong `config.ts`**
+- [x] **Step 3: Bổ sung khối `doanhNghiep` trong `config.ts`**
 
 Thêm vào khối đã tạo ở Task 6:
 
@@ -1241,7 +1243,7 @@ Thêm vào khối đã tạo ở Task 6:
     matHanhPhuc: 6,
 ```
 
-- [ ] **Step 4: Thêm `xacSuatDoanhNghiepPhaSan` vào `engine.ts`**
+- [x] **Step 4: Thêm `xacSuatDoanhNghiepPhaSan` vào `engine.ts`**
 
 ```ts
 /**
@@ -1264,7 +1266,7 @@ export function xacSuatDoanhNghiepPhaSan(
 }
 ```
 
-- [ ] **Step 5: Dời khai báo `doanhNghiep` lên trước và thêm bước 3b**
+- [x] **Step 5: Dời khai báo `doanhNghiep` lên trước và thêm bước 3b**
 
 Trong `chuyenNam`: **xoá** dòng `let doanhNghiep = s.doanhNghiep` ở dòng ~1510 (trong bước 7b), rồi thêm ngay sau bước 3 (sau `tienMat += thuNhapBanDoi`):
 
@@ -1309,14 +1311,14 @@ Bổ sung `DoanhNghiep` vào import kiểu ở đầu `engine.ts` nếu chưa c�
 
 > Bước 7b (biến cố 🏚️ doanh nghiệp đóng cửa) và bước 11 (thanh lý khi vỡ nợ) vẫn đọc và gán cùng biến `doanhNghiep` này — không phải sửa gì thêm ở đó.
 
-- [ ] **Step 6: Thêm `'doanhNghiepPhaSan'` vào `SuKienLoai`**
+- [x] **Step 6: Thêm `'doanhNghiepPhaSan'` vào `SuKienLoai`**
 
-- [ ] **Step 7: Chạy test để xác nhận xanh**
+- [x] **Step 7: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — doanh nghiệp có thể phá sản"`
 Kỳ vọng: PASS, cả bốn test.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/game/config.ts src/game/types.ts src/game/engine.ts src/game/engine.test.ts
@@ -1353,7 +1355,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: không có phụ thuộc mới
 - Produces: không có API mới — chỉ đổi số
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — chu kỳ kinh tế khắc nghiệt hơn', () => {
@@ -1390,12 +1392,12 @@ describe('v1.7 — chu kỳ kinh tế khắc nghiệt hơn', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — chu kỳ kinh tế"`
 Kỳ vọng: FAIL — tỉ lệ khủng hoảng đo ra ~0,099 và `doLechGia` là −0,3.
 
-- [ ] **Step 3: Đổi ma trận và tác động**
+- [x] **Step 3: Đổi ma trận và tác động**
 
 ```ts
     maTranChuyen: {
@@ -1432,12 +1434,12 @@ Sửa đoạn chú thích "Ma trận này cho ra nhịp nào" cho khớp số m�
    * ngõ chính vào khủng hoảng.
 ```
 
-- [ ] **Step 4: Chạy test để xác nhận xanh**
+- [x] **Step 4: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — chu kỳ kinh tế"`
 Kỳ vọng: PASS, cả bốn test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.test.ts
@@ -1468,7 +1470,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `NGHE` với `chiPhi` mới (Task 1)
 - Produces: `export function heSoMatBangSong(s: GameState): number`
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — giá hạnh phúc neo theo mặt bằng sống', () => {
@@ -1515,12 +1517,12 @@ describe('v1.7 — giá hạnh phúc neo theo mặt bằng sống', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — giá hạnh phúc"`
 Kỳ vọng: FAIL — `heSoMatBangSong is not defined`.
 
-- [ ] **Step 3: Thêm khối `matBangSong` vào `config.ts`**
+- [x] **Step 3: Thêm khối `matBangSong` vào `config.ts`**
 
 ```ts
   /** ---------- Mặt bằng sống ----------
@@ -1548,7 +1550,7 @@ Kỳ vọng: FAIL — `heSoMatBangSong is not defined`.
   },
 ```
 
-- [ ] **Step 4: Thêm `heSoMatBangSong` vào `engine.ts`**
+- [x] **Step 4: Thêm `heSoMatBangSong` vào `engine.ts`**
 
 Đặt ngay cạnh `giaThucTe`:
 
@@ -1563,7 +1565,7 @@ export function heSoMatBangSong(s: GameState): number {
 }
 ```
 
-- [ ] **Step 5: Áp hệ số ở ba chỗ gọi**
+- [x] **Step 5: Áp hệ số ở ba chỗ gọi**
 
 **(a) Thẻ tiêu dùng** — tìm nơi `reducer` xử lý `case 'quyetDinhThe'` và trừ tiền thẻ. Bọc giá:
 
@@ -1595,7 +1597,7 @@ export function giaUocNguyen(s: GameState, uocNguyenId: string): Tien {
 
 > **Quan trọng:** tìm mọi chỗ khác đang hiển thị giá thẻ hoặc giá ước nguyện trong `src/ui/` và bọc cùng hệ số, nếu không màn hình sẽ báo một giá còn engine trừ một giá khác. Task 14 rà soát lại lần nữa.
 
-- [ ] **Step 6: Sửa `sim.ts` cho khớp**
+- [x] **Step 6: Sửa `sim.ts` cho khớp**
 
 Bot đọc giá thẻ ở bước `phase === 'theBai'`:
 
@@ -1605,17 +1607,17 @@ Bot đọc giá thẻ ở bước `phase === 'theBai'`:
 
 và giá ước nguyện đã đi qua `giaUocNguyen` nên tự đúng. Bổ sung `heSoMatBangSong` vào danh sách import từ `./engine`.
 
-- [ ] **Step 7: Chạy test để xác nhận xanh**
+- [x] **Step 7: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — giá hạnh phúc"`
 Kỳ vọng: PASS, cả năm test.
 
-- [ ] **Step 8: Chạy toàn bộ test**
+- [x] **Step 8: Chạy toàn bộ test**
 
 Chạy: `npm test`
 Kỳ vọng: `engine.test.ts` và `giao-dien.test.ts` xanh. Nếu một test cũ chốt vào giá thẻ tuyệt đối thì sửa nó cho khớp hệ số mới — đó là test cơ chế, phải đúng.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.ts src/game/sim.ts src/game/engine.test.ts
@@ -1652,7 +1654,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `tinhHeSoChiPhi` (đã có)
 - Produces: `export function heSoChamSocTuoiGia(tuoi: number): number`
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — chi phí chăm sóc tuổi già', () => {
@@ -1680,12 +1682,12 @@ describe('v1.7 — chi phí chăm sóc tuổi già', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — chi phí chăm sóc"`
 Kỳ vọng: FAIL — `heSoChamSocTuoiGia is not defined`.
 
-- [ ] **Step 3: Thêm cấu hình vào khối `cotTruyen` trong `config.ts`**
+- [x] **Step 3: Thêm cấu hình vào khối `cotTruyen` trong `config.ts`**
 
 Đặt cạnh khối bảo hiểm tuổi già:
 
@@ -1705,7 +1707,7 @@ Kỳ vọng: FAIL — `heSoChamSocTuoiGia is not defined`.
     chamSocToiDa: 0.6,
 ```
 
-- [ ] **Step 4: Thêm `heSoChamSocTuoiGia` và nối vào `tinhHeSoChiPhi`**
+- [x] **Step 4: Thêm `heSoChamSocTuoiGia` và nối vào `tinhHeSoChiPhi`**
 
 ```ts
 /** Phần chi phí sinh hoạt cộng thêm do chăm sóc tuổi già. 0 khi chưa tới tuổi. */
@@ -1724,12 +1726,12 @@ Trong `tinhHeSoChiPhi`, nhân thêm vào kết quả:
 
 > Đặt đúng vị trí: sau mọi hệ số hiện có, trước khi trả về. Đọc lại thân hàm để nối vào biến tích luỹ đang dùng (tên biến có thể khác `heSo`).
 
-- [ ] **Step 5: Chạy test để xác nhận xanh**
+- [x] **Step 5: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — chi phí chăm sóc"`
 Kỳ vọng: PASS, cả ba test.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.ts src/game/engine.test.ts
@@ -1762,7 +1764,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `tuoiTaiNam` (đã có, `engine.ts:529`)
 - Produces: `export function heSoAnToanTheoTuoi(tuoi: number): number`
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — hệ số an toàn theo tuổi', () => {
@@ -1788,12 +1790,12 @@ describe('v1.7 — hệ số an toàn theo tuổi', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — hệ số an toàn"`
 Kỳ vọng: FAIL — `heSoAnToanTheoTuoi is not defined`.
 
-- [ ] **Step 3: Đổi khối `tuDoTaiChinh` trong `config.ts`**
+- [x] **Step 3: Đổi khối `tuDoTaiChinh` trong `config.ts`**
 
 ```ts
   tuDoTaiChinh: {
@@ -1816,7 +1818,7 @@ Kỳ vọng: FAIL — `heSoAnToanTheoTuoi is not defined`.
   },
 ```
 
-- [ ] **Step 4: Thêm `heSoAnToanTheoTuoi` và sửa `mucTieuTuDo`**
+- [x] **Step 4: Thêm `heSoAnToanTheoTuoi` và sửa `mucTieuTuDo`**
 
 ```ts
 /** Bội số nghĩa vụ mà dòng tiền thụ động phải phủ, giảm dần theo tuổi. */
@@ -1836,18 +1838,18 @@ export function mucTieuTuDo(s: GameState): Tien {
 }
 ```
 
-- [ ] **Step 5: Sửa `nghiaVuNamDau` nếu nó dùng hệ số cũ**
+- [x] **Step 5: Sửa `nghiaVuNamDau` nếu nó dùng hệ số cũ**
 
 Đọc `nghiaVuNamDau` (dòng ~265) và mọi chỗ trong `src/ui/` đang nhân `CONFIG.tuDoTaiChinh.heSoAnToan`. Thay bằng `heSoAnToanTheoTuoi(CONFIG.cotTruyen.tuoiBatDau)` ở màn chọn nghề — người chơi đang ở tuổi 21 nên đó là con số đúng để hiện.
 
 Chạy `grep -rn "heSoAnToan" src/` để chắc không sót chỗ nào.
 
-- [ ] **Step 6: Chạy test để xác nhận xanh**
+- [x] **Step 6: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — hệ số an toàn"` rồi `npm test`
 Kỳ vọng: PASS. Không còn lỗi biên dịch về `CONFIG.tuDoTaiChinh.heSoAnToan`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.ts src/ui src/game/engine.test.ts
@@ -1884,7 +1886,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `vayToiDa` (đã có) — **không dùng**, xem lý do bên dưới
 - Produces: `GameState.namVoBaoLanh: number` (−1 nghĩa là không có khoản bảo lãnh nào đang treo)
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — bảo lãnh cho người thân', () => {
@@ -1948,12 +1950,12 @@ describe('v1.7 — bảo lãnh cho người thân', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — bảo lãnh"`
 Kỳ vọng: FAIL — `namVoBaoLanh` là `undefined`.
 
-- [ ] **Step 3: Mở rộng kiểu trong `types.ts`**
+- [x] **Step 3: Mở rộng kiểu trong `types.ts`**
 
 ```ts
 // CoHoiLoai thêm 'baoLanh'
@@ -1971,7 +1973,7 @@ export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien' | 'baoLanh'
   namVoBaoLanh: number
 ```
 
-- [ ] **Step 4: Thêm khối `baoLanh` vào `config.ts`**
+- [x] **Step 4: Thêm khối `baoLanh` vào `config.ts`**
 
 ```ts
   /** ---------- Bảo lãnh cho người thân (v1.7) ----------
@@ -2008,7 +2010,7 @@ export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien' | 'baoLanh'
   },
 ```
 
-- [ ] **Step 5: Thêm mục cơ hội vào `content.ts`**
+- [x] **Step 5: Thêm mục cơ hội vào `content.ts`**
 
 ```ts
   /* ---------- Chung: bảo lãnh ---------- */
@@ -2027,11 +2029,11 @@ export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien' | 'baoLanh'
 
 > `namToiThieu: 10` tương ứng tuổi 30 (năm 1 = tuổi 21). Kiểm tra lại rằng `rutCoHoi` có lọc theo `namToiThieu`; nếu logic lọc khác thì thêm điều kiện tuổi trực tiếp vào chỗ rút.
 
-- [ ] **Step 6: Khởi tạo `namVoBaoLanh` trong `taoGameMoi`**
+- [x] **Step 6: Khởi tạo `namVoBaoLanh` trong `taoGameMoi`**
 
 Thêm `namVoBaoLanh: -1,` vào vật thể `GameState` khởi tạo (dòng ~844 khu vực `trangThai: 'dangChoi'`).
 
-- [ ] **Step 7: Xử lý quyết định trong `case 'quyetDinhCoHoi'`**
+- [x] **Step 7: Xử lý quyết định trong `case 'quyetDinhCoHoi'`**
 
 Thêm nhánh ở đầu, trước phần xử lý kinh doanh:
 
@@ -2060,7 +2062,7 @@ Thêm nhánh ở đầu, trước phần xử lý kinh doanh:
       }
 ```
 
-- [ ] **Step 8: Thêm bước xử lý vỡ bảo lãnh vào `chuyenNam`**
+- [x] **Step 8: Thêm bước xử lý vỡ bảo lãnh vào `chuyenNam`**
 
 Đặt ngay sau bước 7b (biến cố lớn), trước bước 8:
 
@@ -2097,7 +2099,7 @@ Rồi ở bước 4 hiện có, khoản vay mới phải được nối vào **s
 
 > Kiểm tra hình dạng thật của `KhoanVay` trong `types.ts` trước khi viết — nếu nó có thêm trường (ví dụ `laiSuat`), điền cho đủ.
 
-- [ ] **Step 9: Chặn ván cũ trong `luu.ts`**
+- [x] **Step 9: Chặn ván cũ trong `luu.ts`**
 
 ```ts
     // trường của bản v1.7: thiếu nó thì khoản bảo lãnh không bao giờ vỡ và
@@ -2105,7 +2107,7 @@ Rồi ở bước 4 hiện có, khoản vay mới phải được nối vào **s
     if (typeof s.namVoBaoLanh !== 'number') return null
 ```
 
-- [ ] **Step 10: Cho bot biết quyết định**
+- [x] **Step 10: Cho bot biết quyết định**
 
 Trong `sim.ts`, `ChienLuoc` thêm `nhanBaoLanh: boolean`; `CHIEN_LUOC_CAN_BANG` đặt `nhanBaoLanh: true` (hạnh phúc là ràng buộc thật với bot này). Ở bước 7 của `moPhongMotVan`, mở rộng `chapNhanLoai`:
 
@@ -2135,12 +2137,12 @@ và cho nhánh `baoLanh` đi thẳng tới `reducer` mà không qua phép kiểm
 
 Đặt khối này ngay sau khi `coHoi` được lấy ra, trước phần tính đòn bẩy.
 
-- [ ] **Step 11: Chạy test để xác nhận xanh**
+- [x] **Step 11: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — bảo lãnh"` rồi `npm test`
 Kỳ vọng: PASS, cả năm test.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add src/game/types.ts src/game/config.ts src/game/content.ts src/game/engine.ts src/game/luu.ts src/game/sim.ts src/game/engine.test.ts
@@ -2176,7 +2178,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `GameState.soLanPhaSan` (đã có)
 - Produces: không có API mới
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 ```ts
 describe('v1.7 — phá sản lần hai là hết', () => {
@@ -2227,12 +2229,12 @@ describe('v1.7 — phá sản lần hai là hết', () => {
 
 > Đọc `describe('v1.6 — ba nấc vỡ nợ')` sẵn có trong `engine.test.ts` và dùng lại đúng cách nó dựng trạng thái tiền mặt âm; các trường trong `soHuu` phải khớp `AssetId` thật.
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — phá sản lần hai"`
 Kỳ vọng: FAIL — `trangThai` là `'dangChoi'` và `xeMay` vẫn còn.
 
-- [ ] **Step 3: Thêm cấu hình vào khối `phaSan`**
+- [x] **Step 3: Thêm cấu hình vào khối `phaSan`**
 
 ```ts
     /** ---------- Lần hai là hết (v1.7) ----------
@@ -2249,7 +2251,7 @@ Kỳ vọng: FAIL — `trangThai` là `'dangChoi'` và `xeMay` vẫn còn.
     uocNguyenBiMat: ['xeMay', 'oTo'] as string[],
 ```
 
-- [ ] **Step 4: Tịch thu ước nguyện xe ở nấc 3**
+- [x] **Step 4: Tịch thu ước nguyện xe ở nấc 3**
 
 Trong nấc 3 của bước 11, cạnh chỗ đang xoá `khoanVay` và đặt `tienMat = 0`, thêm:
 
@@ -2266,7 +2268,7 @@ Trong nấc 3 của bước 11, cạnh chỗ đang xoá `khoanVay` và đặt `t
 
 Khai báo `let uocNguyenDaMua = s.uocNguyenDaMua` và `let uocNguyenDaMat = s.uocNguyenDaMat` trước bước 11, và gán cả hai vào vật thể trả về cuối `chuyenNam`.
 
-- [ ] **Step 5: Thêm nhánh thua vào `case 'ketThucNam'`**
+- [x] **Step 5: Thêm nhánh thua vào `case 'ketThucNam'`**
 
 Ngay sau `const sau = chuyenNam(s)` (dòng ~2260), **trước** phép kiểm tự do tài chính:
 
@@ -2284,12 +2286,12 @@ Ngay sau `const sau = chuyenNam(s)` (dòng ~2260), **trước** phép kiểm t�
       }
 ```
 
-- [ ] **Step 6: Chạy test để xác nhận xanh**
+- [x] **Step 6: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — phá sản lần hai"` rồi `npm test`
 Kỳ vọng: PASS, cả ba test. `describe('v1.6 — ba nấc vỡ nợ')` phải vẫn xanh.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.ts src/game/engine.test.ts
@@ -2320,11 +2322,11 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `heSoBaoHoa` (Task 6), `heSoMatBangSong` (Task 9), `heSoAnToanTheoTuoi` (Task 11), `thueThuNhapCaNhan` (Task 4)
 - Produces: không có API mới
 
-- [ ] **Step 1: Rà soát giá hiển thị lệch với engine**
+- [x] **Step 1: Rà soát giá hiển thị lệch với engine**
 
 Chạy `grep -rn "giaThucTe\|giaUocNguyen\|\.gia" src/ui/` và với **mỗi** chỗ hiện giá thẻ tiêu dùng hoặc giá ước nguyện, bọc `heSoMatBangSong(s)` cho khớp Task 9. Giá tài sản đầu tư và giá cơ hội **không** bọc.
 
-- [ ] **Step 2: Viết test giao diện thất bại**
+- [x] **Step 2: Viết test giao diện thất bại**
 
 Thêm vào `src/ui/giao-dien.test.ts`, theo đúng khuôn các test sẵn có trong file:
 
@@ -2359,12 +2361,12 @@ describe('v1.7 — giao diện phản ánh cơ chế mới', () => {
 })
 ```
 
-- [ ] **Step 3: Chạy test để xác nhận đỏ**
+- [x] **Step 3: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/ui/giao-dien.test.ts -t "v1.7 — giao diện"`
 Kỳ vọng: FAIL nếu Step 1 còn sót chỗ nào.
 
-- [ ] **Step 4: Màn chọn nghề — thêm bảng đường sự nghiệp**
+- [x] **Step 4: Màn chọn nghề — thêm bảng đường sự nghiệp**
 
 Trong `ChonNghe.tsx`, dưới mỗi thẻ nghề thêm một dòng ba mốc lương (dùng emoji, tiếng Việt đầy đủ):
 
@@ -2391,7 +2393,7 @@ function luongTaiTuoi(nghe: Nghe, denTuoi: number): number {
 
 Vì lương khởi điểm ba nghề nay gần nhau, **đây là thông tin quyết định của màn chọn nghề** — không có nó thì người chơi không phân biệt được ba lựa chọn.
 
-- [ ] **Step 5: Sổ sách — hiện hệ số an toàn theo tuổi và chi phí tuổi già**
+- [x] **Step 5: Sổ sách — hiện hệ số an toàn theo tuổi và chi phí tuổi già**
 
 Trong `TabSoSach.tsx`, ở khối mục tiêu tự do tài chính, thêm dòng giải thích:
 
@@ -2409,7 +2411,7 @@ Và khi `heSoChamSocTuoiGia(tuoiHienTai(s)) > 0`, thêm một dòng trong bảng
 <li>🧓 Chăm sóc tuổi già: +{Math.round(heSoChamSocTuoiGia(tuoiHienTai(s)) * 100)}% chi phí sinh hoạt</li>
 ```
 
-- [ ] **Step 6: Bảng kinh doanh — hiện mức bão hoà**
+- [x] **Step 6: Bảng kinh doanh — hiện mức bão hoà**
 
 Trong `TabKinhDoanh.tsx`, với mỗi doanh nghiệp đang sở hữu, thêm:
 
@@ -2420,20 +2422,20 @@ Trong `TabKinhDoanh.tsx`, với mỗi doanh nghiệp đang sở hữu, thêm:
 </span>
 ```
 
-- [ ] **Step 7: Tổng kết năm — hiện thuế**
+- [x] **Step 7: Tổng kết năm — hiện thuế**
 
 `TongKetModal.tsx` duyệt `tongKet.suKien` nên sự kiện `'thueThuNhap'`, `'doanhNghiepPhaSan'` và `'baoLanh'` **tự hiện**. Kiểm tra xem file có bảng ánh xạ `SuKienLoai` sang icon hoặc màu không; nếu có, thêm ba loại mới vào bảng đó (🧾 thuế, 🏚️ doanh nghiệp đổ, 🤝 bảo lãnh).
 
-- [ ] **Step 8: Chạy test để xác nhận xanh**
+- [x] **Step 8: Chạy test để xác nhận xanh**
 
 Chạy: `npm test` rồi `./node_modules/.bin/tsc -b --noEmit`
 Kỳ vọng: PASS toàn bộ trừ `balance.test.ts` (Task 15 lo).
 
-- [ ] **Step 9: Chạy thử ứng dụng thật**
+- [x] **Step 9: Chạy thử ứng dụng thật**
 
 Chạy: `npm run dev`, mở trình duyệt, chơi năm năm bằng nghề giáo viên. Kiểm bằng mắt: màn chọn nghề hiện ba mốc lương; giá thẻ khớp số tiền bị trừ; tổng kết năm hiện đúng tiếng Việt không viết tắt.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add src/ui src/game/engine.test.ts
@@ -2468,7 +2470,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: mọi thứ từ Task 1–14
 - Produces: `KetQuaSim.lyDoThua: 'hanhPhuc' | 'phaSan' | 'hetDoi' | null`
 
-- [ ] **Step 1: Thêm phân loại lý do thua vào `sim.ts`**
+- [x] **Step 1: Thêm phân loại lý do thua vào `sim.ts`**
 
 ```ts
 export interface KetQuaSim {
@@ -2506,7 +2508,7 @@ và thêm `lyDoThua` vào vật thể trả về. Trong `moPhongNhieuVan`, thêm
     tyLeSongTronDoi: kq.filter((k) => k.soNam >= 79).length / soVan,
 ```
 
-- [ ] **Step 2: Viết bộ test cân bằng mới**
+- [x] **Step 2: Viết bộ test cân bằng mới**
 
 Thay toàn bộ nội dung `balance.test.ts`. Giữ nguyên bốn test sau vì chúng đo bất biến chứ không đo ngưỡng: `'chỉ ôm vàng thì giàu mấy cũng không bao giờ tự do tài chính'`, `'chơi ẩu — từ chối mọi thẻ tiêu dùng — thì thua vì hạnh phúc'`, `'tiêu hoang thì về đích chậm hơn tiêu có chọn lọc'`, `'bốn xuất thân không chênh nhau quá 15 điểm phần trăm'`, `'năm bậc lương không chênh nhau quá 15 điểm phần trăm'`.
 
@@ -2582,12 +2584,12 @@ Thay ba test ngưỡng cũ bằng:
   })
 ```
 
-- [ ] **Step 3: Chạy và ghi lại số đo lần đầu**
+- [x] **Step 3: Chạy và ghi lại số đo lần đầu**
 
 Chạy: `npm test -- src/game/balance.test.ts`
 Kỳ vọng: **nhiều test đỏ**. Chép toàn bộ dòng `console.log` vào một file tạm để so sánh giữa các vòng vặn.
 
-- [ ] **Step 4: Vòng hiệu chỉnh — vặn theo đúng thứ tự ưu tiên**
+- [x] **Step 4: Vòng hiệu chỉnh — vặn theo đúng thứ tự ưu tiên**
 
 Vặn **một** tham số mỗi lần, chạy lại, ghi số. Thứ tự đã biết từ thực nghiệm (mạnh nhất trước):
 
@@ -2600,16 +2602,16 @@ Vặn **một** tham số mỗi lần, chạy lại, ghi số. Thứ tự đã b
 
 Nếu sau năm vòng vẫn không đạt cả năm chỉ tiêu cùng lúc, **dừng lại và ghi nhận giới hạn thật vào `docs/07-thiet-ke-v1-7.md`** thay vì tiếp tục nới — đúng như mục F của v1.6 đã làm. Nới ngưỡng test cho xanh mà không hiểu vì sao là tự lừa mình.
 
-- [ ] **Step 5: Ghi số đo thật vào tài liệu thiết kế**
+- [x] **Step 5: Ghi số đo thật vào tài liệu thiết kế**
 
 Thêm một mục `## L. Số đo sau khi cài đặt` vào cuối `docs/07-thiet-ke-v1-7.md`: bảng số cuối cùng của cả năm chỉ tiêu, những tham số đã phải vặn khác với thiết kế ban đầu và vì sao, và những chỉ tiêu **không** đạt được kèm lý do.
 
-- [ ] **Step 6: Chạy toàn bộ và biên dịch**
+- [x] **Step 6: Chạy toàn bộ và biên dịch**
 
 Chạy: `npm test` rồi `./node_modules/.bin/tsc -b --noEmit` rồi `npm run build`
 Kỳ vọng: tất cả xanh, build thành công.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/game/balance.test.ts src/game/sim.ts src/game/config.ts src/game/content.ts docs/07-thiet-ke-v1-7.md
