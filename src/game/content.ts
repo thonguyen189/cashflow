@@ -236,6 +236,8 @@ export const TAI_SAN: TaiSan[] = [
     bamLamPhat: false,
     /** miễn nhiễm — đây là lý do tồn tại của nó */
     nhayChuKy: 0,
+    /** lãi tiền gửi tiết kiệm cá nhân KHÔNG chịu thuế thu nhập cá nhân */
+    thueLoiTuc: 0,
   },
   {
     id: 'coPhieu',
@@ -251,6 +253,8 @@ export const TAI_SAN: TaiSan[] = [
     bamLamPhat: false,
     /** nhạy hơn nền kinh tế, đúng như chỉ số chứng khoán */
     nhayChuKy: 1.4,
+    /** cổ tức chịu thuế thu nhập cá nhân 5% */
+    thueLoiTuc: 0.05,
   },
   {
     id: 'vang',
@@ -266,6 +270,8 @@ export const TAI_SAN: TaiSan[] = [
     bamLamPhat: true,
     /** NGHỊCH chu kỳ — càng hoảng loạn càng đắt */
     nhayChuKy: -0.5,
+    // không sinh lợi tức nên con số này không bao giờ được dùng tới
+    thueLoiTuc: 0,
   },
   {
     id: 'crypto',
@@ -284,6 +290,8 @@ export const TAI_SAN: TaiSan[] = [
     bamLamPhat: false,
     /** khuếch đại mạnh nhất theo cả hai chiều */
     nhayChuKy: 2.0,
+    // không sinh lợi tức nên con số này không bao giờ được dùng tới
+    thueLoiTuc: 0,
   },
   {
     id: 'batDongSan',
@@ -299,6 +307,8 @@ export const TAI_SAN: TaiSan[] = [
     bamLamPhat: true,
     /** đi cùng nền kinh tế, thêm quán tính từ lạm phát */
     nhayChuKy: 1.0,
+    /** cho thuê nhà chịu 10% (5% giá trị gia tăng + 5% thu nhập cá nhân) */
+    thueLoiTuc: 0.1,
   },
 ]
 

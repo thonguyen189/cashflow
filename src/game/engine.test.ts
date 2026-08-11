@@ -3020,3 +3020,38 @@ describe('v1.7 — thuế thu nhập cá nhân', () => {
     expect(truoc).toBeGreaterThan(0)
   })
 })
+
+describe('v1.7 — thuế trên thu nhập thụ động', () => {
+  it('trái phiếu và tiền gửi miễn thuế, các kênh khác thì không', () => {
+    const thue = Object.fromEntries(TAI_SAN.map((t) => [t.id, t.thueLoiTuc]))
+    expect(thue.traiPhieu).toBe(0)
+    expect(thue.coPhieu).toBe(0.05)
+    expect(thue.batDongSan).toBe(0.1)
+  })
+
+  it('dòng tiền thụ động tính SAU thuế', () => {
+    let s = taoGameMoi('bacSi', 11)
+    s = { ...s, soHuu: { ...s.soHuu, batDongSan: 10 } }
+    const gia = s.giaTaiSan.batDongSan
+    const bds = TAI_SAN.find((t) => t.id === 'batDongSan')!
+    const truocThue = 10 * gia * ((bds.loiTucMin + bds.loiTucMax) / 2)
+    expect(dongTienThuDong(s)).toBeCloseTo(truocThue * 0.9, -3)
+  })
+
+  it('thu nhập doanh nghiệp chịu thuế 20% trong dòng tiền thụ động', () => {
+    let s = taoGameMoi('bacSi', 12)
+    s = {
+      ...s,
+      doanhNghiep: [
+        {
+          coHoiId: 'choThueXe',
+          ten: 'Đội xe máy cho thuê',
+          thuNhapNen: 30 * TRIEU,
+          chiSoGiaLucMua: s.chiSoGia,
+          vonGoc: 200 * TRIEU,
+        },
+      ],
+    }
+    expect(dongTienThuDong(s)).toBe(Math.round(30 * TRIEU * 0.8))
+  })
+})

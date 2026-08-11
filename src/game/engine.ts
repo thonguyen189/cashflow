@@ -214,20 +214,29 @@ export const dangCamCoHoi = (s: GameState): boolean => s.camCoHoiDenNam >= s.nam
 export const loiTucKyVong = (ts: TaiSan): number => (ts.loiTucMin + ts.loiTucMax) / 2
 
 /**
- * Dòng tiền thụ động một năm: thu nhập nền của các doanh nghiệp cộng lợi tức
- * kỳ vọng của danh mục đầu tư.
+ * Dòng tiền thụ động một năm, SAU THUẾ (v1.7): thu nhập nền của các doanh
+ * nghiệp trừ thuế thu nhập doanh nghiệp, cộng lợi tức kỳ vọng của danh mục trừ
+ * thuế riêng của từng kênh.
  *
  * Dùng mức KỲ VỌNG chứ không phải số thực nhận của năm đó, để con số đứng yên
  * cho người chơi lên kế hoạch — thắng hay chưa không được phép nhảy qua lại
  * theo may rủi cổ tức. Hệ quả cố ý: vàng và tiền mã hoá lợi tức bằng 0 nên
  * không mua nổi tự do, dù chúng vẫn là kênh làm giàu và trú ẩn tốt.
+ *
+ * `thuNhapThuDong` cố ý giữ nguyên nghĩa TRƯỚC thuế: nó là "doanh nghiệp của
+ * bạn làm ra bao nhiêu", còn thuế là chuyện của phép so với đích. Tách như vậy
+ * để `bienDoThuNhapThuDong` và bảng kinh doanh vẫn kể đúng chuyện của doanh
+ * nghiệp mà không phải giải thích hai lần.
  */
 export function dongTienThuDong(s: GameState): Tien {
   const tuDanhMuc = TAI_SAN.reduce(
-    (tong, ts) => tong + s.soHuu[ts.id] * s.giaTaiSan[ts.id] * loiTucKyVong(ts),
+    (tong, ts) =>
+      tong +
+      s.soHuu[ts.id] * s.giaTaiSan[ts.id] * loiTucKyVong(ts) * (1 - ts.thueLoiTuc),
     0,
   )
-  return Math.round(thuNhapThuDong(s) + tuDanhMuc)
+  const tuDoanhNghiep = thuNhapThuDong(s) * (1 - CONFIG.thue.thueDoanhNghiep)
+  return Math.round(tuDoanhNghiep + tuDanhMuc)
 }
 
 /**
@@ -1074,7 +1083,10 @@ function chuyenNam(s: GameState): GameState {
     // Một quy tắc, không cần thêm trường nào.
     const heSoLoiTuc = ts.nhayChuKy > 0 ? tacDong.heSoLoiTuc : 1
     const tyLeLoiTuc = rng.khoang(ts.loiTucMin, ts.loiTucMax) * heSoLoiTuc
-    const loiTuc = Math.round(soLuong * giaCu * tyLeLoiTuc)
+    // Trừ thuế ngay tại nguồn (v1.7): con số hiện trong bảng tổng kết là số
+    // THỰC VỀ TÚI, không phải số trước thuế — người chơi không cần làm phép trừ
+    // trong đầu để biết mình có bao nhiêu.
+    const loiTuc = Math.round(soLuong * giaCu * tyLeLoiTuc * (1 - ts.thueLoiTuc))
     tienMat += loiTuc
 
     let bienDong = rng.khoang(ts.bienDongMin, ts.bienDongMax)
@@ -1112,7 +1124,9 @@ function chuyenNam(s: GameState): GameState {
     )
     const soTien = Math.max(
       0,
-      Math.round(nen * (1 + bienDong) * tacDong.heSoLoiTuc),
+      Math.round(
+        nen * (1 + bienDong) * tacDong.heSoLoiTuc * (1 - CONFIG.thue.thueDoanhNghiep),
+      ),
     )
     thuDong += soTien
     thuNhapDoanhNghiep.push({ coHoiId: d.coHoiId, ten: d.ten, soTien, bienDong })

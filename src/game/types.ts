@@ -136,6 +136,15 @@ export interface TaiSan {
    * chính là lý do tồn tại của nó.
    */
   nhayChuKy: number
+  /**
+   * Thuế trên lợi tức nhận được; 0 nghĩa là miễn thuế. Giữ đúng luật Việt Nam:
+   * lãi tiền gửi tiết kiệm của cá nhân KHÔNG chịu thuế thu nhập cá nhân, cổ tức
+   * chịu 5%, cho thuê nhà chịu 10% (5% giá trị gia tăng + 5% thu nhập cá nhân).
+   *
+   * Hệ quả cố ý: kênh an toàn nhất bỗng thành kênh duy nhất không bị đánh thuế,
+   * và lần đầu tiên trái phiếu có lý do tồn tại ngoài việc trú ẩn khi khủng hoảng.
+   */
+  thueLoiTuc: number
 }
 
 export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien'
