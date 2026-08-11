@@ -5,10 +5,25 @@ import {
   apLucTheoBacLuong,
   mocTaiSanCuaNghe,
   nghiaVuNamDau,
+  tangLuongThucTheoTuoi,
   tinhHeSoChiPhi,
 } from '../game/engine'
 import { dinhDangTien } from '../game/format'
-import type { ThietLapNhanVat, XuatThanId } from '../game/types'
+import type { Nghe, ThietLapNhanVat, XuatThanId } from '../game/types'
+
+/**
+ * Lương dự kiến ở một tuổi bất kỳ, cộng dồn từng năm theo `duongCongSuNghiep`
+ * — CHÍNH LÀ công thức `tangLuongThucTheoTuoi` mà engine dùng để tính lương
+ * thật mỗi năm (v1.7). Ba nghề nay khởi điểm gần như nhau (90–144 triệu) nên
+ * đây mới là thông tin quyết định của màn chọn nghề, không phải lương năm đầu.
+ */
+function luongTaiTuoi(nghe: Nghe, denTuoi: number): number {
+  let luong = nghe.luong
+  for (let tuoi = CONFIG.cotTruyen.tuoiBatDau + 1; tuoi <= denTuoi; tuoi++) {
+    luong *= 1 + tangLuongThucTheoTuoi(nghe, tuoi)
+  }
+  return Math.round(luong)
+}
 
 export default function ChonNghe({
   onChon,
@@ -85,6 +100,12 @@ export default function ChonNghe({
                 <span className="hang-gia-tri">
                   {khatVong?.emoji} {khatVong?.ten}
                 </span>
+              </div>
+              <div className="duong-su-nghiep">
+                <span>📈 Lương dự kiến:</span>
+                <span>tuổi 30 · {dinhDangTien(luongTaiTuoi(n, 30))}</span>
+                <span>tuổi 40 · {dinhDangTien(luongTaiTuoi(n, 40))}</span>
+                <span>tuổi 60 · {dinhDangTien(luongTaiTuoi(n, 60))}</span>
               </div>
             </button>
           )

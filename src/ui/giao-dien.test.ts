@@ -14,7 +14,15 @@ import TabSoSach from './TabSoSach'
 import Hud from './Hud'
 import TongKetModal from './TongKetModal'
 import { CONFIG } from '../game/config'
-import { mocTaiSanCuaNghe, reducer, taoGameMoi } from '../game/engine'
+import { NGHE } from '../game/content'
+import {
+  giaThucTe,
+  heSoMatBangSong,
+  mocTaiSanCuaNghe,
+  reducer,
+  tangLuongThucTheoTuoi,
+  taoGameMoi,
+} from '../game/engine'
 import type { GameState } from '../game/types'
 
 function chayToiTuDo(ngheId: string): GameState {
@@ -147,5 +155,34 @@ describe('giao diện kết xuất được', () => {
     expect(html).toContain('🧘')
     expect(html).not.toContain('NaN')
     expect(html).not.toContain('undefined')
+  })
+})
+
+describe('v1.7 — giao diện phản ánh cơ chế mới', () => {
+  it('màn chọn nghề hiện đường cong sự nghiệp của từng nghề', () => {
+    for (const nghe of NGHE) {
+      expect(nghe.duongCongSuNghiep.length).toBeGreaterThan(0)
+    }
+    // Lương tuổi 40 phải khác nhau rõ rệt giữa ba nghề — đó là thứ màn chọn nghề
+    // cần nói ra, vì lương khởi điểm nay gần như nhau.
+    const luongTuoi40 = NGHE.map((nghe) => {
+      let luong = nghe.luong
+      for (let tuoi = 22; tuoi <= 40; tuoi++) {
+        luong *= 1 + tangLuongThucTheoTuoi(nghe, tuoi)
+      }
+      return luong
+    })
+    expect(Math.max(...luongTuoi40) / Math.min(...luongTuoi40)).toBeGreaterThan(3)
+  })
+
+  it('giá thẻ hiển thị bằng đúng giá engine trừ tiền', () => {
+    const s = taoGameMoi('kySuPhanMem', 81)
+    const the = s.theConLai[0]!
+    const giaHienThi = Math.round(giaThucTe(s, the.gia) * heSoMatBangSong(s))
+    const sau = reducer({ ...s, daTraChiPhiNamNay: true, phase: 'theBai' }, {
+      type: 'quyetDinhThe',
+      nhan: true,
+    })
+    expect(s.tienMat - sau.tienMat).toBe(giaHienThi)
   })
 })

@@ -602,3 +602,42 @@ table.bang th:first-child {
   border-color: var(--vang);
   box-shadow: 0 0 0 1px var(--vang);
 }
+
+/* ---------- v1.7: đường sự nghiệp, ghi chú số liệu, mức bão hoà ---------- */
+/* Ba mốc lương dự kiến dưới mỗi thẻ nghề — lương khởi điểm nay gần như nhau
+   giữa ba nghề nên đây mới là thông tin quyết định của màn chọn nghề. */
+.duong-su-nghiep {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 14px;
+  row-gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--vien);
+  font-size: 12.5px;
+  color: var(--chu-mo);
+}
+.duong-su-nghiep span:first-child {
+  flex-basis: 100%;
+  color: var(--chu);
+  font-weight: 700;
+}
+
+/* Ghi chú số liệu giải thích, ví dụ hệ số an toàn theo tuổi ở sổ sách */
+.ghi-chu {
+  color: var(--chu-mo);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+/* Mức bão hoà của một doanh nghiệp — nhạt dần khi thu nhập teo theo tuổi */
+.bao-hoa {
+  display: block;
+  color: var(--chu-mo);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.bao-hoa.bao-hoa-thap {
+  color: var(--vang);
+}

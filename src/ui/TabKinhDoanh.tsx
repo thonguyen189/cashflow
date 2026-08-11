@@ -5,12 +5,14 @@ import {
   bienDoThuNhapThuDong,
   dangCamCoHoi,
   giaThucTe,
+  heSoBaoHoa,
   quyMoToiDa,
   taiSanRong,
+  thuNhapNenNamNay,
   thuNhapThuDong,
 } from '../game/engine'
 import { dinhDangPhanTram, dinhDangTien } from '../game/format'
-import type { Action, GameState } from '../game/types'
+import type { Action, DoanhNghiep, GameState } from '../game/types'
 
 /** "−20% … +24%" — biên độ dao động thu nhập của một cơ hội kinh doanh. */
 function daoDong(min: number | undefined, max: number | undefined): string {
@@ -29,26 +31,38 @@ export default function TabKinhDoanh({
   const datQuyMo = (coHoiId: string, bac: number) =>
     setQuyMoDaChon((truoc) => ({ ...truoc, [coHoiId]: bac }))
 
-  /** Gộp các doanh nghiệp trùng cơ hội: hiển thị "Tên ×N" + tổng thu nhập nhóm.
-   * Thu nhập nền năm nay bám theo lạm phát kể từ năm góp vốn. */
+  /** Gộp các doanh nghiệp trùng cơ hội VÀ trùng năm góp vốn: hiển thị "Tên ×N" +
+   * tổng thu nhập nhóm. Phải khoá thêm theo `namGop` vì mức bão hoà (v1.7, Task 6)
+   * tính theo tuổi doanh nghiệp — gộp hai suất góp vốn khác năm vào một hàng sẽ
+   * chỉ hiện được một hệ số bão hoà, sai với suất còn lại.
+   *
+   * Thu nhập nền năm nay dùng đúng `thuNhapNenNamNay` của engine (đã nhân cả lạm
+   * phát lẫn hệ số bão hoà) — bản trước tự tính lại công thức lạm phát ở đây và bỏ
+   * sót hệ số bão hoà, khiến bảng hiện thu nhập cao hơn số tiền engine thực trả. */
   const nhomDoanhNghiep: {
     coHoiId: string
+    namGop: number
     ten: string
     soLuong: number
     tongThuNhapNen: number
+    dTieuBieu: DoanhNghiep
   }[] = []
   for (const d of state.doanhNghiep) {
-    const nenNamNay = Math.round(d.thuNhapNen * (state.chiSoGia / d.chiSoGiaLucMua))
-    const daCo = nhomDoanhNghiep.find((n) => n.coHoiId === d.coHoiId)
+    const nenNamNay = thuNhapNenNamNay(state, d)
+    const daCo = nhomDoanhNghiep.find(
+      (n) => n.coHoiId === d.coHoiId && n.namGop === d.namGop,
+    )
     if (daCo) {
       daCo.soLuong += 1
       daCo.tongThuNhapNen += nenNamNay
     } else {
       nhomDoanhNghiep.push({
         coHoiId: d.coHoiId,
+        namGop: d.namGop,
         ten: d.ten,
         soLuong: 1,
         tongThuNhapNen: nenNamNay,
+        dTieuBieu: d,
       })
     }
   }
@@ -317,8 +331,12 @@ export default function TabKinhDoanh({
           </div>
           {nhomDoanhNghiep.map((n) => {
             const c = timCoHoi(n.coHoiId)
+            const baoHoa = heSoBaoHoa(state, n.dTieuBieu)
+            // Ngưỡng 80% chỉ để GỢI Ý người chơi cân nhắc, không khoá tính năng
+            // nào — khớp đúng ngưỡng ví dụ trong đặc tả Task 14.
+            const baoHoaThap = baoHoa < 0.8
             return (
-              <div className="muc-mua" key={n.coHoiId}>
+              <div className="muc-mua" key={`${n.coHoiId}-${n.namGop}`}>
                 <span className="muc-mua-emoji">{c?.emoji ?? '💼'}</span>
                 <div className="muc-mua-than">
                   <div className="muc-mua-ten">
@@ -329,6 +347,10 @@ export default function TabKinhDoanh({
                     {dinhDangTien(n.tongThuNhapNen)} mỗi năm · dao động{' '}
                     {daoDong(c?.bienDongThuNhapMin, c?.bienDongThuNhapMax)}
                   </div>
+                  <span className={`bao-hoa${baoHoaThap ? ' bao-hoa-thap' : ''}`}>
+                    ⏳ Thu nhập còn {Math.round(baoHoa * 100)}% so với ngày đầu
+                    {baoHoaThap && ' — cân nhắc gây dựng thêm chỗ mới'}
+                  </span>
                 </div>
               </div>
             )

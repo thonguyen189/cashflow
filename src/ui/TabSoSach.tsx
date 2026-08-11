@@ -7,6 +7,7 @@ import {
   dongTienThuDong,
   giaTriDauTu,
   heSoAnToanTheoTuoi,
+  heSoChamSocTuoiGia,
   loiTucDanhMucSauThue,
   mocTaiSanCuaNghe,
   mucTieuTuDo,
@@ -113,6 +114,10 @@ export default function TabSoSach({ state }: { state: GameState }) {
     xuatThan.tyLePhungDuong > 0 && tuoiHienTai(state) <= xuatThan.phungDuongDenTuoi
   const heSoBacLuong =
     1 + (state.heSoLuongKhoiDiem - 1) * CONFIG.xuatThan.loiSongTheoLuong
+  // v1.7: chăm sóc tuổi già cộng thêm vào chi phí sinh hoạt sau tuổi
+  // `chamSocTuTuoi` (xem `tinhHeSoChiPhi`) — số 0 nghĩa là chưa tới tuổi, ẩn hẳn
+  // nhãn thay vì hiện "+0%" vô nghĩa.
+  const heSoTuoiGia = heSoChamSocTuoiGia(tuoiHienTai(state))
   const nhanHeSoChiPhi = (
     <>
       {xuatThan.heSoChiPhiSong !== 1 && (
@@ -123,6 +128,9 @@ export default function TabSoSach({ state }: { state: GameState }) {
       )}
       {state.heSoLuongKhoiDiem !== 1 && (
         <span> · 💼 bậc lương ×{heSoBacLuong.toFixed(2).replace('.', ',')}</span>
+      )}
+      {heSoTuoiGia > 0 && (
+        <span> · 🧓 chăm sóc tuổi già +{Math.round(heSoTuoiGia * 100)}%</span>
       )}
     </>
   )
@@ -250,6 +258,12 @@ export default function TabSoSach({ state }: { state: GameState }) {
           nên dù tăng giá bao nhiêu cũng không đóng góp đồng nào vào cột này. Phí bảo
           hiểm y tế tính cả khi bạn chưa mua — tự do mà không có bảo hiểm thì chưa
           phải tự do.
+        </p>
+        <p className="ghi-chu">
+          🎯 Ở tuổi {tuoiHienTai(state)}, dòng tiền thụ động phải phủ{' '}
+          {heSoAnToanTheoTuoi(tuoiHienTai(state)).toFixed(2).replace('.', ',')} lần
+          nghĩa vụ hàng năm. Nghỉ hưu càng sớm thì đòi hỏi càng cao, vì tiền phải
+          nuôi bạn càng lâu.
         </p>
       </div>
 
