@@ -278,6 +278,15 @@ describe('đầu tư', () => {
 })
 
 describe('chuyển năm', () => {
+  // Mặc định kySuPhanMem, KHÔNG giaoVien: hàm này duyệt hết thẻ với nhan=true
+  // (nhận mọi thẻ khi đủ tiền) rồi kết thúc năm ngay, không neo lại hạnh phúc.
+  // Với giáo viên ở v1.7 — vốn khởi điểm thấp hơn nhiều lần trong khi giá thẻ
+  // giữ nguyên — cùng cơ chế ép-từ-chối-mất-điểm đã ghi ở `s0GiauThe` phía
+  // dưới (describe('điều kiện kết thúc')) làm hạnh phúc rớt dưới
+  // `hanhPhucNguongThua`, khiến `ketThucNam` trả về 'thua' thay vì sang được
+  // phase 'tongKet' như mọi test trong khối này cần. kySuPhanMem có đệm tiền
+  // mặt lớn hơn nên không dính lỗi đó (đã đo: hạnh phúc còn 93, so với 47 của
+  // giáo viên, cùng SEED).
   const sangNamSau = (ngheId = 'kySuPhanMem') => {
     let s = duyetHetThe(reducer(moiVan(ngheId), { type: 'traChiPhi' }), true)
     s = reducer(s, { type: 'ketThucNam' })
@@ -1187,6 +1196,10 @@ describe('cột mốc tài sản', () => {
   })
 
   it('mốc leo theo mặt bằng giá để lạm phát không làm rẻ cột mốc', () => {
+    // Mốc suy ra từ chiPhi GỐC của giáo viên (76tr ở v1.7, trước là 108tr ở
+    // v1.6) nhân 25 lần rồi nhân chỉ số giá 2: 76tr × 25 × 2 = 3.800tr đúng
+    // (v1.6: 108tr × 25 × 2 = 5.400tr). Mốc đầu (10%) = 380tr, làm tròn tới
+    // bội số 100tr gần nhất thành 400tr (v1.6: 540tr làm tròn thành 500tr).
     expect(mocTaiSanCuaNghe('giaoVien', 2).at(-1)).toBe(3_800 * TRIEU)
     expect(mocTaiSanCuaNghe('giaoVien', 2)[0]).toBe(400 * TRIEU)
   })
@@ -2831,9 +2844,9 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
 describe('v1.7 — thang tiền đặt lại theo thực tế 2026', () => {
   it('ba nghề có tỉ lệ tiết kiệm năm đầu xấp xỉ 15%', () => {
     const mong: Record<string, [number, number]> = {
-      giaoVien: [90_000_000, 76_000_000],
-      bacSi: [120_000_000, 102_000_000],
-      kySuPhanMem: [144_000_000, 122_000_000],
+      giaoVien: [90 * TRIEU, 76 * TRIEU],
+      bacSi: [120 * TRIEU, 102 * TRIEU],
+      kySuPhanMem: [144 * TRIEU, 122 * TRIEU],
     }
     for (const nghe of NGHE) {
       const [luong, chiPhi] = mong[nghe.id]!

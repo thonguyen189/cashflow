@@ -43,7 +43,7 @@ export const NGHE: Nghe[] = [
   {
     id: 'giaoVien',
     ten: 'Giáo viên',
-    moTa: 'Thu nhập khiêm tốn nhưng chi tiêu gọn. Giữ lại được 40% lương mỗi năm.',
+    moTa: 'Thu nhập khiêm tốn, chi tiêu cũng gọn theo. Giữ lại được 15,6% lương mỗi năm.',
     emoji: '📚',
     luong: 90 * TRIEU,
     chiPhi: 76 * TRIEU,
@@ -52,7 +52,7 @@ export const NGHE: Nghe[] = [
   {
     id: 'bacSi',
     ten: 'Bác sĩ',
-    moTa: 'Lương gấp đôi giáo viên, nhưng chi phí sinh hoạt cũng leo theo. Giữ lại 33%.',
+    moTa: 'Lương cao hơn giáo viên 1,33 lần, nhưng chi phí sinh hoạt cũng leo theo. Giữ lại 15,0% lương mỗi năm.',
     emoji: '🩺',
     luong: 120 * TRIEU,
     chiPhi: 102 * TRIEU,
@@ -61,7 +61,7 @@ export const NGHE: Nghe[] = [
   {
     id: 'kySuPhanMem',
     ten: 'Kỹ sư phần mềm',
-    moTa: 'Lương cao nhất, nhưng lối sống đắt đỏ nhất. Chỉ giữ lại 27% lương.',
+    moTa: 'Lương cao nhất trong ba nghề, nhưng lối sống cũng đắt đỏ nhất. Giữ lại 15,3% lương mỗi năm.',
     emoji: '💻',
     luong: 144 * TRIEU,
     chiPhi: 122 * TRIEU,
@@ -97,7 +97,7 @@ export const XUAT_THAN: XuatThan[] = [
     id: 'vienChuc',
     ten: 'Viên chức tỉnh lẻ',
     emoji: '🏘️',
-    moTa: 'Bố mẹ là công chức nhà nước, đủ ăn đủ mặc. Cho bạn trọn một năm lương làm vốn rồi để bạn tự lo phần còn lại.',
+    moTa: 'Bố mẹ là công chức nhà nước, đủ ăn đủ mặc. Cho bạn 1,25 lần lương năm đầu làm vốn rồi để bạn tự lo phần còn lại.',
     tyLeVonBanDau: 1.25,
     tyLeNoBanDau: 0,
     heSoChiPhiSong: 1,
