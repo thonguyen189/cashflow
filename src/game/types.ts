@@ -17,6 +17,16 @@ export type Phase =
   | 'tongKet' // màn tổng kết cuối năm
   | 'ketThuc' // thắng hoặc thua
 
+/**
+ * Một chặng của đường sự nghiệp: từ sau chặng trước cho tới hết tuổi `denTuoi`,
+ * lương tăng THỰC (trên nền lạm phát) mỗi năm ngần này. `tangThuc` có thể ÂM —
+ * đào thải tuổi trong một số ngành là chuyện thật.
+ */
+export interface BacSuNghiep {
+  denTuoi: number
+  tangThuc: number
+}
+
 export interface Nghe {
   id: string
   ten: string
@@ -26,6 +36,13 @@ export interface Nghe {
   chiPhi: Tien
   /** id của món ước nguyện gắn với nghề này */
   khatVongId: string
+  /**
+   * Hình dạng đường lương theo tuổi, riêng từng nghề. Trước v1.7 mọi nghề dùng
+   * chung `CONFIG.tangLuongThucMin/Max` (0–2,5%), nghĩa là game cho lương khởi
+   * điểm bằng mức đỉnh sự nghiệp rồi tăng đều suốt bốn mươi năm — sai hoàn toàn
+   * so với đời thật, và làm cho việc chọn nghề chỉ là chọn ba con số khác nhau.
+   */
+  duongCongSuNghiep: BacSuNghiep[]
 }
 
 export type XuatThanId = 'thuanNong' | 'vienChuc' | 'buonBan' | 'khaGia'

@@ -48,6 +48,14 @@ export const NGHE: Nghe[] = [
     luong: 90 * TRIEU,
     chiPhi: 76 * TRIEU,
     khatVongId: 'xeMay',
+    // giaoVien — lên bậc ba năm một lần, hệ số 2,34 → 4,98 sau hai mươi bốn năm.
+    // Chậm, đều, không bao giờ bứt phá, nhưng cũng không bao giờ sụp.
+    duongCongSuNghiep: [
+      { denTuoi: 30, tangThuc: 0.035 },
+      { denTuoi: 40, tangThuc: 0.03 },
+      { denTuoi: 50, tangThuc: 0.025 },
+      { denTuoi: 200, tangThuc: 0.02 },
+    ],
   },
   {
     id: 'bacSi',
@@ -57,6 +65,15 @@ export const NGHE: Nghe[] = [
     luong: 120 * TRIEU,
     chiPhi: 102 * TRIEU,
     khatVongId: 'oTo',
+    // bacSi — ì ạch mười năm đầu (sáu năm trường y, mười tám tháng thực hành, bậc
+    // thấp ở bệnh viện công), rồi bứt tốc mạnh nhất từ tuổi 35 khi có danh tiếng và
+    // phòng khám riêng. Nghề thưởng cho sự kiên nhẫn.
+    duongCongSuNghiep: [
+      { denTuoi: 30, tangThuc: 0.05 },
+      { denTuoi: 40, tangThuc: 0.09 },
+      { denTuoi: 50, tangThuc: 0.05 },
+      { denTuoi: 200, tangThuc: 0.02 },
+    ],
   },
   {
     id: 'kySuPhanMem',
@@ -66,6 +83,16 @@ export const NGHE: Nghe[] = [
     luong: 144 * TRIEU,
     chiPhi: 122 * TRIEU,
     khatVongId: 'canHo',
+    // kySuPhanMem — tăng gấp gần ba lần trong chín năm đầu, đạt đỉnh quanh tuổi 50
+    // rồi ĐI XUỐNG. Đào thải tuổi trong ngành công nghệ là chuyện thật, và nó biến
+    // "chọn nghề lương cao" thành canh bạc về thời điểm: bạn có mười lăm năm vàng
+    // để chuyển thu nhập thành tài sản, sau đó cửa hẹp dần.
+    duongCongSuNghiep: [
+      { denTuoi: 30, tangThuc: 0.12 },
+      { denTuoi: 40, tangThuc: 0.05 },
+      { denTuoi: 50, tangThuc: 0.01 },
+      { denTuoi: 200, tangThuc: -0.01 },
+    ],
   },
 ]
 

@@ -144,13 +144,17 @@ export const CONFIG = {
   lamPhatMax: 0.09,
 
   /** ---------- Lương ----------
-   * Lương tăng theo lạm phát CỘNG một phần tăng thực. Nếu bỏ phần bám
-   * lạm phát, chi phí sẽ leo nhanh hơn thu nhập và nghề lương thấp
-   * thành bất khả thi — đã kiểm chứng bằng balance.test.ts.
+   * Lương tăng theo lạm phát CỘNG phần tăng thực. Nếu bỏ phần bám lạm phát, chi
+   * phí sẽ leo nhanh hơn thu nhập và nghề lương thấp thành bất khả thi — đã
+   * kiểm chứng bằng balance.test.ts.
+   *
+   * Phần tăng thực chuyển sang `Nghe.duongCongSuNghiep` ở v1.7 (xem content.ts):
+   * mỗi nghề một hình dạng riêng, và kỹ sư phần mềm có đoạn ÂM sau tuổi 50. Đây
+   * cũng là lần đầu tiên game có một nguồn thu BIẾT SỤP trong lúc còn đi làm —
+   * mục F của docs/06-thiet-ke-v1-6.md kết luận rằng chính việc thiếu điều đó là
+   * lý do phá sản không bao giờ xảy ra được.
    */
   luongBamLamPhat: true,
-  tangLuongThucMin: 0.0,
-  tangLuongThucMax: 0.025,
 
   /** ---------- Ngân hàng ----------
    * v1.2 hạ lãi và kéo dài kỳ hạn để "vay mua doanh nghiệp" thành quyết

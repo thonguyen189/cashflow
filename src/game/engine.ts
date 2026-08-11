@@ -977,6 +977,17 @@ const DANH_SACH_THI_TRUONG: readonly TrangThaiThiTruong[] = [
 
 export const tacDongThiTruong = (t: TrangThaiThiTruong) => CONFIG.thiTruong.tacDong[t]
 
+/**
+ * Tăng lương thực của một năm, theo nghề và tuổi. Trả về tỉ lệ, có thể ÂM.
+ * Chặng cuối cùng của `duongCongSuNghiep` phủ mọi tuổi còn lại (denTuoi: 200).
+ */
+export function tangLuongThucTheoTuoi(nghe: Nghe, tuoi: number): number {
+  for (const bac of nghe.duongCongSuNghiep) {
+    if (tuoi <= bac.denTuoi) return bac.tangThuc
+  }
+  return 0
+}
+
 function chuyenNam(s: GameState): GameState {
   const rng = taoRng(s.seed, s.rngCursor)
   const suKien: SuKien[] = []
@@ -1643,15 +1654,20 @@ function chuyenNam(s: GameState): GameState {
 
   /* --- 8. Lương: đi làm thì bám lạm phát + tăng thực + thăng chức;
    *        năm nghỉ hưu chuyển sang lương hưu; đã hưu thì chỉ bám lạm phát --- */
+  const nghe8 = timNghe(s.ngheId)!
   let luongMoi: Tien
   if (nghiHuuNamNay) {
     luongMoi = Math.round(s.luong * ct.tyLeLuongHuu)
   } else if (daNghiHuu) {
     luongMoi = Math.round(s.luong * (1 + lamPhat))
   } else {
+    // Đường cong sự nghiệp riêng của nghề (v1.7) thay cho dải 0–2,5% chung của
+    // v1.6. `heSoTangLuong` của chu kỳ kinh tế CHỈ nhân vào phần dương: khủng
+    // hoảng làm lương ngừng tăng, nhưng không được biến đoạn đào thải tuổi của
+    // kỹ sư phần mềm thành ra nhẹ đi khi kinh tế xấu — vô lý ngược.
+    const tangCoBan = tangLuongThucTheoTuoi(nghe8, tuoiTaiNam(s.nam))
     const tangThuc =
-      rng.khoang(CONFIG.tangLuongThucMin, CONFIG.tangLuongThucMax) *
-      tacDong.heSoTangLuong
+      tangCoBan > 0 ? tangCoBan * tacDong.heSoTangLuong : tangCoBan
     luongMoi = Math.round(
       s.luong * (1 + (CONFIG.luongBamLamPhat ? lamPhat : 0) + tangThuc + thangChucTang),
     )

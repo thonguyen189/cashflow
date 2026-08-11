@@ -46,6 +46,7 @@ import {
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   thuNhapThuDong,
+  tangLuongThucTheoTuoi,
   tinhHeSoChiPhi,
   tongTaiSan,
   traNoMoiNam,
@@ -2902,5 +2903,56 @@ describe('v1.7 — cơ hội kinh doanh sát thực tế hơn', () => {
     const bienDoQuanCaPhe =
       quanCaPhe.bienDongThuNhapMax! - quanCaPhe.bienDongThuNhapMin!
     expect(bienDoNhaTro).toBeLessThan(bienDoQuanCaPhe)
+  })
+})
+
+describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
+  it('mỗi nghề có đường cong phủ trọn tuổi đi làm', () => {
+    for (const nghe of NGHE) {
+      expect(nghe.duongCongSuNghiep.length).toBeGreaterThan(0)
+      const cuoi = nghe.duongCongSuNghiep[nghe.duongCongSuNghiep.length - 1]!
+      expect(cuoi.denTuoi).toBeGreaterThanOrEqual(CONFIG.cotTruyen.tuoiNghiHuu)
+    }
+  })
+
+  it('kỹ sư phần mềm tăng nhanh lúc trẻ rồi đi xuống sau tuổi 50', () => {
+    const ks = NGHE.find((n) => n.id === 'kySuPhanMem')!
+    expect(tangLuongThucTheoTuoi(ks, 25)).toBeGreaterThan(0.1)
+    expect(tangLuongThucTheoTuoi(ks, 55)).toBeLessThan(0)
+  })
+
+  it('giáo viên tăng chậm nhưng không bao giờ âm', () => {
+    const gv = NGHE.find((n) => n.id === 'giaoVien')!
+    for (const tuoi of [25, 35, 45, 55]) {
+      const t = tangLuongThucTheoTuoi(gv, tuoi)
+      expect(t).toBeGreaterThan(0)
+      expect(t).toBeLessThanOrEqual(0.035)
+    }
+  })
+
+  it('bác sĩ bứt tốc mạnh nhất ở tuổi 35', () => {
+    const bs = NGHE.find((n) => n.id === 'bacSi')!
+    expect(tangLuongThucTheoTuoi(bs, 35)).toBeGreaterThan(
+      tangLuongThucTheoTuoi(bs, 25),
+    )
+    expect(tangLuongThucTheoTuoi(bs, 35)).toBeGreaterThan(
+      tangLuongThucTheoTuoi(bs, 55),
+    )
+  })
+
+  it('lương tuổi 40 của ba nghề phân kỳ đúng như thiết kế', () => {
+    // Mô phỏng thuần số học trên đường cong, không chạy game — đây là kiểm tra
+    // bảng số của thiết kế chứ không phải kiểm tra engine.
+    const luongTaiTuoi = (ngheId: string, denTuoi: number): number => {
+      const nghe = NGHE.find((n) => n.id === ngheId)!
+      let luong = nghe.luong
+      for (let tuoi = 22; tuoi <= denTuoi; tuoi++) {
+        luong *= 1 + tangLuongThucTheoTuoi(nghe, tuoi)
+      }
+      return luong
+    }
+    expect(luongTaiTuoi('giaoVien', 40) / 1e6).toBeCloseTo(165, -1)
+    expect(luongTaiTuoi('bacSi', 40) / 1e6).toBeCloseTo(441, -1)
+    expect(luongTaiTuoi('kySuPhanMem', 40) / 1e6).toBeCloseTo(650, -1)
   })
 })
