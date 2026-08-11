@@ -46,6 +46,7 @@ import {
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   thuNhapThuDong,
+  thueThuNhapCaNhan,
   tangLuongThucTheoTuoi,
   tinhHeSoChiPhi,
   tongTaiSan,
@@ -2954,5 +2955,64 @@ describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
     expect(luongTaiTuoi('giaoVien', 40) / TRIEU).toBeCloseTo(165, -1)
     expect(luongTaiTuoi('bacSi', 40) / TRIEU).toBeCloseTo(441, -1)
     expect(luongTaiTuoi('kySuPhanMem', 40) / TRIEU).toBeCloseTo(650, -1)
+  })
+})
+
+describe('v1.7 — thuế thu nhập cá nhân', () => {
+  /**
+   * Đi trọn một năm từ một trạng thái đã chỉnh sẵn (ví dụ lương), để kiểm
+   * khoản thuế bị trừ vào cuối năm. Khác `sangNamSau` ở chỗ nhận thẳng một
+   * `GameState` đã sửa thay vì luôn dựng game mới từ đầu.
+   */
+  const choiHetNam = (s: GameState): GameState => {
+    const sau = duyetHetThe(reducer(s, { type: 'traChiPhi' }), true)
+    return reducer(sau, { type: 'ketThucNam' })
+  }
+
+  it('lương khởi điểm của cả ba nghề đều dưới ngưỡng chịu thuế', () => {
+    // Giảm trừ bản thân 186tr/năm theo luật hiệu lực 1/7/2026 — người mới ra
+    // trường ở Việt Nam không nộp thuế thu nhập cá nhân.
+    for (const nghe of NGHE) {
+      expect(thueThuNhapCaNhan(nghe.luong, 0, 1)).toBe(0)
+    }
+  })
+
+  it('tính đúng thuế luỹ tiến từng phần', () => {
+    // 718tr, không người phụ thuộc: chịu thuế 532tr
+    //   120tr × 5% = 6tr · 240tr × 10% = 24tr · 172tr × 20% = 34,4tr → 64,4tr
+    //
+    // `toBeCloseTo` thay vì `toBe`: `64.4 * TRIEU` tự nó đã là
+    // 64400000,00000001 do 64,4 không có biểu diễn nhị phân hữu hạn — sai số
+    // cỡ 1e-8 đồng, không liên quan tới thuật toán tính thuế (đã Math.round về
+    // đúng 64400000). Dùng `toBe` ở đây sẽ khớp sai một lỗi của dấu phẩy động
+    // JavaScript chứ không phải của phép tính thuế.
+    expect(thueThuNhapCaNhan(718 * TRIEU, 0, 1)).toBeCloseTo(64.4 * TRIEU, 0)
+  })
+
+  it('mỗi người phụ thuộc kéo thuế xuống', () => {
+    const khongCon = thueThuNhapCaNhan(650 * TRIEU, 0, 1)
+    const haiCon = thueThuNhapCaNhan(650 * TRIEU, 2, 1)
+    expect(haiCon).toBeLessThan(khongCon)
+    // 650tr − 186tr − 2 × 74,4tr = 315,2tr → 120 × 5% + 195,2 × 10% = 25,52tr
+    expect(haiCon).toBe(25.52 * TRIEU)
+  })
+
+  it('ngưỡng và giảm trừ bám lạm phát', () => {
+    // Nếu ngưỡng đứng yên thì sau vài chục năm lạm phát mọi người đều nộp bậc
+    // cao nhất dù thu nhập THỰC không đổi — thuế hoá thành một khoản phạt vì
+    // sống lâu. Ngoài đời mức giảm trừ cũng được điều chỉnh định kỳ.
+    expect(thueThuNhapCaNhan(200 * TRIEU, 0, 2)).toBe(0)
+    expect(thueThuNhapCaNhan(200 * TRIEU, 0, 1)).toBeGreaterThan(0)
+  })
+
+  it('thuế bị trừ khỏi tiền mặt khi lương đã vượt ngưỡng', () => {
+    let s = taoGameMoi('kySuPhanMem', 7)
+    s = { ...s, luong: 800 * TRIEU }
+    const truoc = s.tienMat
+    s = choiHetNam(s)
+    const suKienThue = s.tongKet?.suKien.find((k) => k.loai === 'thueThuNhap')
+    expect(suKienThue).toBeDefined()
+    expect(suKienThue!.tienThayDoi).toBeLessThan(0)
+    expect(truoc).toBeGreaterThan(0)
   })
 })

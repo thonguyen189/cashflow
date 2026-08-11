@@ -212,6 +212,7 @@ export type SuKienLoai =
   | 'nghiHuu'
   | 'mungTho'
   | 'thangChuc'
+  | 'thueThuNhap'
   | 'suCo'
   | 'banTaiSan'
   | 'mocTaiSan'

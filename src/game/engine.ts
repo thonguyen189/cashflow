@@ -988,6 +988,35 @@ export function tangLuongThucTheoTuoi(nghe: Nghe, tuoi: number): number {
   return 0
 }
 
+/**
+ * Thuế thu nhập cá nhân của một năm, luỹ tiến từng phần. `chiSoGia` nhân vào
+ * mọi ngưỡng và mọi khoản giảm trừ để thuế đo theo thu nhập THỰC — xem chú
+ * thích khối `thue` trong config.ts.
+ */
+export function thueThuNhapCaNhan(
+  luongNam: Tien,
+  soNguoiPhuThuoc: number,
+  chiSoGia: number,
+): Tien {
+  const t = CONFIG.thue
+  const giamTru =
+    (t.giamTruBanThan + t.giamTruPhuThuoc * soNguoiPhuThuoc) * chiSoGia
+  let conLai = luongNam - giamTru
+  if (conLai <= 0) return 0
+
+  let thue = 0
+  let tranTruoc = 0
+  for (const bac of t.bacThue) {
+    const tran = bac.den * chiSoGia
+    const phan = Math.min(conLai, tran - tranTruoc)
+    thue += phan * bac.thueSuat
+    conLai -= phan
+    tranTruoc = tran
+    if (conLai <= 0) break
+  }
+  return Math.round(thue)
+}
+
 function chuyenNam(s: GameState): GameState {
   const rng = taoRng(s.seed, s.rngCursor)
   const suKien: SuKien[] = []
@@ -1690,6 +1719,34 @@ function chuyenNam(s: GameState): GameState {
   // GameState — nó là biến cục bộ, năm sau lương quay lại mức bình thường
   const luongThucNhan = Math.round(luongMoi * heSoLuongBienCo)
   tienMat += luongThucNhan
+
+  // Thuế thu nhập cá nhân, tính trên lương THỰC NHẬN của năm (đã gồm mọi hệ số
+  // cắt lương của biến cố) chứ không phải lương danh nghĩa — ốm nặng nghỉ nửa
+  // năm thì cũng chỉ nộp thuế trên phần thật sự nhận được.
+  //
+  // `namMoiChoThue` = năm SAU (giống cách bước 10 tính `heSoChiPhi` của năm tới)
+  // vì bước 10 — nơi khai báo `namMoi` — đứng SAU bước này; số người phụ thuộc
+  // dùng chung một mốc thời gian với chi phí sinh hoạt của năm kế tiếp.
+  const namMoiChoThue = s.nam + 1
+  const soNguoiPhuThuoc = soConDangNuoi(conCai, namMoiChoThue)
+  const thueLuong = thueThuNhapCaNhan(
+    luongThucNhan,
+    soNguoiPhuThuoc,
+    s.chiSoGia,
+  )
+  if (thueLuong > 0) {
+    tienMat -= thueLuong
+    suKien.push({
+      loai: 'thueThuNhap',
+      tieuDe: '🧾 Quyết toán thuế thu nhập cá nhân',
+      moTa:
+        `Thu nhập năm nay đã vượt mức giảm trừ gia cảnh` +
+        `${soNguoiPhuThuoc > 0 ? ` (bản thân và ${soNguoiPhuThuoc} người phụ thuộc)` : ''}.` +
+        ` Phần vượt phải nộp thuế theo biểu luỹ tiến từng phần.`,
+      tienThayDoi: -thueLuong,
+      hanhPhucThayDoi: 0,
+    })
+  }
 
   /* --- 9. Hạnh phúc: buổi trị liệu, phạt khát vọng và thưởng ước nguyện --- */
 

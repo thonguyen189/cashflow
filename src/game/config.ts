@@ -184,6 +184,47 @@ export const CONFIG = {
    */
   tyLeThanhToanToiDa: 0.65,
 
+  /** ---------- Thuế ----------
+   * Theo Luật Thuế thu nhập cá nhân sửa đổi, hiệu lực 1/7/2026: giảm trừ bản
+   * thân 15,5tr/tháng (186tr/năm), mỗi người phụ thuộc 6,2tr/tháng (74,4tr/năm),
+   * biểu thuế rút gọn từ bảy bậc xuống NĂM bậc.
+   *
+   * ---------- Vì sao thuế TNCN KHÔNG phải đòn bẩy hạ tỉ lệ thắng ----------
+   * Với thang lương của v1.7 (90/120/144tr) và mức giảm trừ 186tr, cả ba nghề
+   * KHÔNG nộp một đồng nào trong khoảng mười lăm năm đầu. Thuế chỉ cắn khi đã
+   * thành công: kỹ sư phần mềm tuổi 40 nộp 3,9% lương, bác sĩ tuổi 60 nộp 10,9%.
+   * Nó là phanh hãm giai đoạn giàu và là một chi tiết đời thật đáng có, không
+   * hơn. Sức nặng cân bằng thật nằm ở thang tiền, đường cong sự nghiệp và thuế
+   * thu nhập doanh nghiệp.
+   *
+   * ---------- Vì sao mọi ngưỡng phải nhân chỉ số giá ----------
+   * Ngưỡng đứng yên trong khi lương bám lạm phát thì sau vài chục năm ai cũng
+   * nộp bậc cao nhất dù thu nhập THỰC không đổi — thuế hoá thành khoản phạt vì
+   * sống lâu, và nó sẽ bóp méo toàn bộ nửa sau ván chơi. Ngoài đời mức giảm trừ
+   * cũng được điều chỉnh định kỳ, đúng như vậy.
+   *
+   * Thu nhập của bạn đời (25% lương người chơi) KHÔNG bị đánh thuế ở đây: họ có
+   * suất giảm trừ bản thân riêng, mà 0,25 × lương chỉ vượt 186tr khi lương người
+   * chơi trên 744tr — tới lúc đó khoản thuế của họ cũng chỉ vài phần nghìn tổng
+   * thu nhập hộ gia đình. Bỏ qua là đơn giản hoá có ý thức.
+   */
+  thue: {
+    /** giảm trừ bản thân mỗi năm, tại mặt bằng giá gốc */
+    giamTruBanThan: 186 * TRIEU,
+    /** giảm trừ mỗi người phụ thuộc (con đang nuôi) mỗi năm */
+    giamTruPhuThuoc: 74.4 * TRIEU,
+    /** biểu luỹ tiến từng phần: `den` là trần thu nhập TÍNH THUẾ của bậc */
+    bacThue: [
+      { den: 120 * TRIEU, thueSuat: 0.05 },
+      { den: 360 * TRIEU, thueSuat: 0.1 },
+      { den: 720 * TRIEU, thueSuat: 0.2 },
+      { den: 1200 * TRIEU, thueSuat: 0.3 },
+      { den: Number.POSITIVE_INFINITY, thueSuat: 0.35 },
+    ],
+    /** thuế thu nhập doanh nghiệp trên lợi nhuận được chia */
+    thueDoanhNghiep: 0.2,
+  },
+
   /** ---------- Bảo hiểm y tế ---------- */
   /** phí bảo hiểm mỗi năm = tỉ lệ này × lương hiện tại */
   baoHiemTyLeLuong: 0.02,

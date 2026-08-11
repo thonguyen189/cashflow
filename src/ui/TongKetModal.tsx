@@ -17,6 +17,7 @@ const BIEU_TUONG_SU_KIEN: Record<SuKienLoai, string> = {
   nghiHuu: '🌇',
   mungTho: '🎊',
   thangChuc: '🏆',
+  thueThuNhap: '🧾',
   suCo: '🔧',
   banTaiSan: '📉',
   mocTaiSan: '🚩',
