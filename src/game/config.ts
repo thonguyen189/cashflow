@@ -456,6 +456,30 @@ export const CONFIG = {
     },
   },
 
+  /** ---------- Mặt bằng sống ----------
+   * Trước v1.7 thẻ tiêu dùng và ước nguyện dùng chung một bảng giá tuyệt đối cho
+   * cả ba nghề: tấm vé Phú Quốc 18 triệu ngốn 10% lương giáo viên nhưng chỉ 3%
+   * lương kỹ sư phần mềm. Hệ quả là người lương cao gần như MIỄN NHIỄM với cửa
+   * thua duy nhất của game, còn giáo viên gánh trọn — đo thực nghiệm cho thấy
+   * siết cách nào cũng ra 48% / 78% / 82%.
+   *
+   * Nay mọi khoản mua hạnh phúc nhân thêm chi phí sinh hoạt của nhân vật chia
+   * cho mốc chuẩn. Vì lấy `chiPhiHangNam` thật nên hệ số tự động gồm cả xuất
+   * thân, bậc lương, cưới xin và số con.
+   *
+   * Bài học kèm theo là bài học tài chính cá nhân quan trọng nhất mà game chưa
+   * hề dạy: LẠM PHÁT LỐI SỐNG. Sống sang thì cùng một niềm vui cũng đắt hơn, và
+   * đó là lý do lương cao không tự động dẫn tới tự do.
+   *
+   * KHÔNG áp cho phí bảo hiểm y tế, bảo hiểm xe, học phí đại học của con và viện
+   * phí: các khoản đó đã neo vào `chiPhiHangNam` hoặc `luong` sẵn rồi, nhân thêm
+   * là nhân hai lần.
+   */
+  matBangSong: {
+    /** chi phí sinh hoạt gốc của bác sĩ — mốc giữa của ba nghề */
+    chuan: 102 * TRIEU,
+  },
+
   /** ---------- Khát vọng ---------- */
   /** hạnh phúc bị trừ mỗi năm khi chưa đạt được khát vọng của nghề */
   phatKhatVongMoiNam: 5,

@@ -423,6 +423,15 @@ export const dangCoBaoHiemXe = (s: GameState, loai: LoaiBaoHiemXe): boolean =>
 export const giaThucTe = (s: GameState, giaGoc: Tien): Tien =>
   Math.round(giaGoc * s.chiSoGia)
 
+/**
+ * Hệ số mặt bằng sống: cùng một niềm vui thì người sống sang phải trả nhiều hơn.
+ * Chia cho `chiSoGia` để KHÔNG nhân đôi lạm phát — mọi chỗ gọi đều đã bọc
+ * `giaThucTe`, vốn đã nhân chỉ số giá rồi.
+ */
+export function heSoMatBangSong(s: GameState): number {
+  return s.chiPhiHangNam / (CONFIG.matBangSong.chuan * s.chiSoGia)
+}
+
 /* ---------- Chuyên gia đồng hành ---------- */
 
 /** Liệu trình tâm lý còn hiệu lực trong năm nay hay không. */
@@ -512,6 +521,8 @@ export const toiUuDaVaoSo = (s: GameState): boolean =>
 export const dangDuocHoTro = (s: GameState): boolean => s.daCanhBaoKietSuc
 
 /** Hệ số phí dùng chung cho cả hai gói: đang được hỗ trợ thì còn một nửa. */
+// Hai gói chuyên gia neo thẳng vào `chiPhiHangNam` nên đã tự bám mặt bằng sống —
+// nhân thêm `heSoMatBangSong` ở đây là nhân hai lần (v1.7).
 const heSoPhiChuyenGia = (s: GameState): number =>
   dangDuocHoTro(s) ? CONFIG.chuyenGia.heSoGiamPhiKhiKietSuc : 1
 
@@ -602,7 +613,12 @@ export const daDatKhatVong = (s: GameState): boolean =>
 export function giaUocNguyen(s: GameState, uocNguyenId: string): Tien {
   const un = timUocNguyen(uocNguyenId)
   if (!un) return 0
-  return s.uocNguyenDaMat.includes(uocNguyenId) ? giaThucTe(s, un.gia) : un.gia
+  // Giá đóng băng thời trẻ vẫn phải nhân mặt bằng sống (v1.7): người sống sang
+  // mua căn hộ ở khu đắt hơn, không phải cùng một căn hộ với giá rẻ hơn.
+  const heSo = heSoMatBangSong(s)
+  return s.uocNguyenDaMat.includes(uocNguyenId)
+    ? Math.round(giaThucTe(s, un.gia) * heSo)
+    : Math.round(un.gia * heSo)
 }
 
 /* ---------- Cốt truyện trăm năm ---------- */
@@ -2267,7 +2283,9 @@ export function reducer(s: GameState, a: Action): GameState {
       if (s.phase !== 'theBai') return s
       const [the, ...con] = s.theConLai
       if (!the) return { ...s, phase: 'tuDo' }
-      const gia = giaThucTe(s, the.gia)
+      // Nhân thêm hệ số mặt bằng sống (v1.7): thẻ tiêu dùng là mua hạnh phúc,
+      // nên người sống sang phải trả nhiều hơn cho cùng một niềm vui.
+      const gia = Math.round(giaThucTe(s, the.gia) * heSoMatBangSong(s))
       // Không đủ tiền thì coi như buộc phải từ chối
       const nhan = a.nhan && s.tienMat >= gia
       return {
