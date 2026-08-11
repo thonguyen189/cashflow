@@ -28,6 +28,7 @@ import {
   giaThucTe,
   giaUocNguyen,
   hanhPhucTuUocNguyen,
+  heSoBaoHoa,
   hoiPhucTriLieu,
   mocTaiSanCuaNghe,
   muaToiDa,
@@ -45,6 +46,7 @@ import {
   taoGameMoi,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
+  thuNhapNenNamNay,
   thuNhapThuDong,
   thueThuNhapCaNhan,
   tangLuongThucTheoTuoi,
@@ -55,6 +57,7 @@ import {
   tyLeDongTra,
   vayToiDa,
   vonDoanhNghiepNamNay,
+  xacSuatDoanhNghiepPhaSan,
   xeDangCo,
 } from './engine'
 import type {
@@ -90,6 +93,27 @@ function diTronMotNam(s: GameState, tienMat = 800 * TRIEU): GameState {
   cur = duyetHetThe(cur, false)
   cur = { ...cur, hanhPhuc: 85 }
   return reducer(cur, { type: 'ketThucNam' })
+}
+
+/**
+ * Đi trọn một năm từ một trạng thái đã chỉnh sẵn, KHÔNG can thiệp tiền mặt hay
+ * hạnh phúc — khác `diTronMotNam` ở chỗ đó, nên dùng được cho các phép thử cần
+ * quan sát đúng con số engine tính ra (thuế, rủi ro nền doanh nghiệp...) thay vì
+ * một ván đã được nắn cho chắc chắn qua ải. Nhận hết mọi thẻ tiêu dùng
+ * (`duyetHetThe(..., true)`) để không phải lo phase 'theBai' làm kẹt luồng.
+ *
+ * Tự đóng bảng tổng kết của lượt gọi TRƯỚC nếu còn treo ở phase 'tongKet' — cho
+ * phép gọi hàm này liên tiếp nhiều năm liền (mô phỏng tần suất rủi ro nền doanh
+ * nghiệp qua nhiều năm) mà không cần người gọi tự chen `dongTongKet` vào giữa.
+ * `reducer` chặn `traChiPhi` khi không ở phase 'chiPhi' (xem case 'traChiPhi'),
+ * nên thiếu bước này thì từ lượt gọi thứ hai trở đi mọi hành động đều là no-op —
+ * ván bị đứng hình ở tổng kết năm đầu tiên mãi mãi. Gọi đơn lẻ một lần (bài kiểm
+ * thử thuế) không đụng nhánh này vì trạng thái đưa vào luôn đang ở phase 'chiPhi'.
+ */
+function choiHetNam(s: GameState): GameState {
+  const dong = s.phase === 'tongKet' ? reducer(s, { type: 'dongTongKet' }) : s
+  const sau = duyetHetThe(reducer(dong, { type: 'traChiPhi' }), true)
+  return reducer(sau, { type: 'ketThucNam' })
 }
 
 /**
@@ -990,41 +1014,63 @@ describe('thu nhập doanh nghiệp biến động từng năm', () => {
   })
 
   it('KHÔNG cố định: chạy nhiều năm cho ra những con số khác nhau', () => {
-    let s = gopVon('quanCaPhe')
-    const soTien: number[] = []
-    const bienDong: number[] = []
-    for (let i = 0; i < 8 && s.trangThai === 'dangChoi'; i++) {
-      const sau = diTronMotNam(s, 5 * TY)
-      const dong = sau.tongKet!.thuNhapDoanhNghiep[0]!
-      soTien.push(dong.soTien)
-      bienDong.push(dong.bienDong)
-      s = reducer(sau, { type: 'dongTongKet' })
+    // Khoá rủi ro nền (v1.7) về 0: bài này đo BIÊN ĐỘ thu nhập của một doanh
+    // nghiệp sống suốt tám năm, không phải phép thử cho khả năng nó đổ hẳn
+    // giữa chừng (đã có bài kiểm riêng ở describe "doanh nghiệp có thể phá sản
+    // hẳn") — không khoá thì đúng seed này doanh nghiệp đổ ở một năm nào đó
+    // trong tám năm, `thuNhapDoanhNghiep` rỗng và `[0]!` đọc ra `undefined`.
+    const goc = CONFIG.doanhNghiep.xacSuatPhaSanCoBan
+    ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = 0
+    try {
+      let s = gopVon('quanCaPhe')
+      const soTien: number[] = []
+      const bienDong: number[] = []
+      for (let i = 0; i < 8 && s.trangThai === 'dangChoi'; i++) {
+        const sau = diTronMotNam(s, 5 * TY)
+        const dong = sau.tongKet!.thuNhapDoanhNghiep[0]!
+        soTien.push(dong.soTien)
+        bienDong.push(dong.bienDong)
+        s = reducer(sau, { type: 'dongTongKet' })
+      }
+      expect(soTien).toHaveLength(8)
+      expect(new Set(soTien).size).toBeGreaterThan(1)
+      // Biên độ dao động thật, chứ không phải chỉ nhích lên theo lạm phát
+      expect(Math.max(...bienDong) - Math.min(...bienDong)).toBeGreaterThan(0.1)
+    } finally {
+      ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = goc
     }
-    expect(soTien).toHaveLength(8)
-    expect(new Set(soTien).size).toBeGreaterThan(1)
-    // Biên độ dao động thật, chứ không phải chỉ nhích lên theo lạm phát
-    expect(Math.max(...bienDong) - Math.min(...bienDong)).toBeGreaterThan(0.1)
   })
 
   it('mức nền bám lạm phát nên vài chục năm sau vẫn còn giá trị thật', () => {
     // Không hẹn biến cố lớn nào — bài này đo độ bám lạm phát của thu nhập
     // doanh nghiệp, không phải phép thử cho "doanh nghiệp đóng cửa" (biến cố
     // đó xoá thẳng doanh nghiệp và có bài kiểm riêng của nó).
-    let s: GameState = { ...gopVon('nhaTroCongNhan'), lichBienCo: [] }
-    const nenLucGopVon = thuNhapThuDong(s)
-    // Từ v1.7, nghĩa vụ hàng năm của kỹ sư phần mềm (~125 triệu) đã thấp hơn
-    // hẳn 195 triệu nền của nhà trọ công nhân — giá cơ hội/thu nhập doanh
-    // nghiệp GIỮ NGUYÊN trong khi lương giảm 2–4 lần (xem content.ts) — nên
-    // nhân vật đã tự do tài chính ngay cuối năm 1, vòng lặp thoát sớm và chưa
-    // đủ 20 năm để lạm phát tích luỹ. Bài này không kiểm điều kiện thắng, nên
-    // hễ thắng giữa chừng thì chơi tiếp (`choiTiepSauThang`) để 20 năm lạm
-    // phát thật sự trôi qua, đúng ý đo ban đầu.
-    for (let i = 0; i < 20 && s.trangThai !== 'thua' && s.trangThai !== 'vienMan'; i++) {
-      s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
-      if (s.trangThai === 'thang') s = reducer(s, { type: 'choiTiepSauThang' })
+    //
+    // Khoá rủi ro nền (v1.7) về 0 cùng lý do với bài test phía trên: hai mươi
+    // năm là đủ dài để doanh nghiệp gần như chắc chắn đổ ít nhất một lần theo
+    // seed cố định của bài này, kéo `thuNhapThuDong` về 0 và làm sai lệch hẳn
+    // phép đo "còn bám lạm phát hay không" mà bài test này thật sự muốn kiểm.
+    const goc = CONFIG.doanhNghiep.xacSuatPhaSanCoBan
+    ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = 0
+    try {
+      let s: GameState = { ...gopVon('nhaTroCongNhan'), lichBienCo: [] }
+      const nenLucGopVon = thuNhapThuDong(s)
+      // Từ v1.7, nghĩa vụ hàng năm của kỹ sư phần mềm (~125 triệu) đã thấp hơn
+      // hẳn 195 triệu nền của nhà trọ công nhân — giá cơ hội/thu nhập doanh
+      // nghiệp GIỮ NGUYÊN trong khi lương giảm 2–4 lần (xem content.ts) — nên
+      // nhân vật đã tự do tài chính ngay cuối năm 1, vòng lặp thoát sớm và chưa
+      // đủ 20 năm để lạm phát tích luỹ. Bài này không kiểm điều kiện thắng, nên
+      // hễ thắng giữa chừng thì chơi tiếp (`choiTiepSauThang`) để 20 năm lạm
+      // phát thật sự trôi qua, đúng ý đo ban đầu.
+      for (let i = 0; i < 20 && s.trangThai !== 'thua' && s.trangThai !== 'vienMan'; i++) {
+        s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
+        if (s.trangThai === 'thang') s = reducer(s, { type: 'choiTiepSauThang' })
+      }
+      expect(s.chiSoGia).toBeGreaterThan(1.5)
+      expect(thuNhapThuDong(s)).toBeGreaterThan(nenLucGopVon * 1.5)
+    } finally {
+      ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = goc
     }
-    expect(s.chiSoGia).toBeGreaterThan(1.5)
-    expect(thuNhapThuDong(s)).toBeGreaterThan(nenLucGopVon * 1.5)
   })
 })
 
@@ -2259,6 +2305,9 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
           thuNhapNen: 195 * TRIEU,
           chiSoGiaLucMua: 1,
           vonGoc: timCoHoi('nhaTroCongNhan')!.gia,
+          // góp vốn đúng năm hiện tại (v1.7): hệ số bão hoà = 1, không làm nhiễu
+          // phép so sánh tỉ lệ bình thường/khủng hoảng mà bài test này muốn đo
+          namGop: moiVan().nam,
         },
       ],
     }
@@ -2378,7 +2427,7 @@ describe('v1.6 — tài sản ròng và trần quy mô góp vốn', () => {
       tienMat: 1 * TY,
       khoanVay: [],
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Quán cà phê', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        { coHoiId: 'quanCaPhe', ten: 'Quán cà phê', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 1 },
       ],
     }
     expect(taiSanRong(s)).toBe(tongTaiSan(s) + 400 * TRIEU)
@@ -2707,12 +2756,12 @@ describe('v1.6 — sáu biến cố lớn', () => {
 
   it('doanh nghiệp đóng cửa nhắm vào cái có vốn góp lớn nhất và hoàn 20% vốn', () => {
     const tru: BienCoId[] = ['benhHiemNgheo', 'matViec', 'boMeNgaBenh', 'voHui', 'baoLu']
-    const quanCaPhe = { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU }
+    const quanCaPhe = { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 15 }
     const s: GameState = {
       ...moiVan(),
       nam: 15,
       doanhNghiep: [
-        { coHoiId: 'choThueXe', ten: 'Đội xe máy cho thuê', thuNhapNen: 40 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 200 * TRIEU },
+        { coHoiId: 'choThueXe', ten: 'Đội xe máy cho thuê', thuNhapNen: 40 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 200 * TRIEU, namGop: 15 },
         quanCaPhe,
       ],
     }
@@ -2750,7 +2799,7 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     const s = vanVoNo({
       soHuu: { ...moiVan().soHuu, traiPhieu: 5000 },
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 12 },
       ],
     })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
@@ -2765,7 +2814,7 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     const s = vanVoNo({
       chiSoGia: 1.3,
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 90 * TRIEU, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 12 },
       ],
     })
     const tk = diTronMotNam(s, 0).tongKet!
@@ -2794,8 +2843,8 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
         { id: 'v1', goc: 1 * TY, kyHan: 10, thanhToanMoiNam: 150 * TRIEU, namConLai: 8 },
       ],
       doanhNghiep: [
-        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
-        { coHoiId: 'xuongMay', ten: 'Góp vốn xưởng may gia công', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 1.5 * TY },
+        { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU, namGop: 12 },
+        { coHoiId: 'xuongMay', ten: 'Góp vốn xưởng may gia công', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 1.5 * TY, namGop: 12 },
       ],
     })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
@@ -2968,16 +3017,6 @@ describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
 })
 
 describe('v1.7 — thuế thu nhập cá nhân', () => {
-  /**
-   * Đi trọn một năm từ một trạng thái đã chỉnh sẵn (ví dụ lương), để kiểm
-   * khoản thuế bị trừ vào cuối năm. Khác `sangNamSau` ở chỗ nhận thẳng một
-   * `GameState` đã sửa thay vì luôn dựng game mới từ đầu.
-   */
-  const choiHetNam = (s: GameState): GameState => {
-    const sau = duyetHetThe(reducer(s, { type: 'traChiPhi' }), true)
-    return reducer(sau, { type: 'ketThucNam' })
-  }
-
   it('lương khởi điểm của cả ba nghề đều dưới ngưỡng chịu thuế', () => {
     // Giảm trừ bản thân 186tr/năm theo luật hiệu lực 1/7/2026 — người mới ra
     // trường ở Việt Nam không nộp thuế thu nhập cá nhân.
@@ -3058,9 +3097,120 @@ describe('v1.7 — thuế trên thu nhập thụ động', () => {
           thuNhapNen: 30 * TRIEU,
           chiSoGiaLucMua: s.chiSoGia,
           vonGoc: 200 * TRIEU,
+          namGop: s.nam,
         },
       ],
     }
     expect(dongTienThuDong(s)).toBe(Math.round(30 * TRIEU * 0.8))
+  })
+})
+
+describe('v1.7 — doanh nghiệp bão hoà theo thời gian', () => {
+  const dungDoanhNghiep = (s: GameState, namGop: number) => ({
+    ...s,
+    doanhNghiep: [
+      {
+        coHoiId: 'choThueXe',
+        ten: 'Đội xe máy cho thuê',
+        thuNhapNen: 30 * TRIEU,
+        chiSoGiaLucMua: 1,
+        vonGoc: 200 * TRIEU,
+        namGop,
+      },
+    ],
+  })
+
+  it('doanh nghiệp mới góp thì chưa bão hoà', () => {
+    let s = taoGameMoi('bacSi', 21)
+    s = { ...dungDoanhNghiep(s, s.nam), chiSoGia: 1 }
+    expect(heSoBaoHoa(s, s.doanhNghiep[0]!)).toBe(1)
+  })
+
+  it('sau mười năm thu nhập còn khoảng 74%', () => {
+    let s = taoGameMoi('bacSi', 22)
+    s = { ...dungDoanhNghiep(s, 1), nam: 11, chiSoGia: 1 }
+    expect(heSoBaoHoa(s, s.doanhNghiep[0]!)).toBeCloseTo(0.737, 3)
+    // So sánh chính xác tuyệt đối (`toBe`), không phải xấp xỉ: nhân thẳng hằng số
+    // bão hoà mười năm liên tiếp qua Math.pow thay vì chép tay một số thập phân
+    // đã làm tròn (0,737424) — 0,97¹⁰ thực ra là 0,7374241268949281, và làm tròn
+    // số đã cắt bớt cho ra 22.122.720 trong khi công thức thật cho 22.122.724.
+    expect(thuNhapNenNamNay(s, s.doanhNghiep[0]!)).toBe(
+      Math.round(30 * TRIEU * Math.pow(1 - CONFIG.doanhNghiep.baoHoaMoiNam, 10)),
+    )
+  })
+
+  it('bão hoà kéo dòng tiền thụ động xuống theo', () => {
+    let moi = taoGameMoi('bacSi', 23)
+    moi = { ...dungDoanhNghiep(moi, moi.nam), chiSoGia: 1 }
+    let cu = taoGameMoi('bacSi', 23)
+    cu = { ...dungDoanhNghiep(cu, 1), nam: 26, chiSoGia: 1 }
+    expect(dongTienThuDong(cu)).toBeLessThan(dongTienThuDong(moi) * 0.5)
+  })
+})
+
+describe('v1.7 — doanh nghiệp có thể phá sản hẳn', () => {
+  const mot = (s: GameState, namGop: number) => ({
+    coHoiId: 'choThueXe',
+    ten: 'Đội xe máy cho thuê',
+    thuNhapNen: 30 * TRIEU,
+    chiSoGiaLucMua: s.chiSoGia,
+    vonGoc: 200 * TRIEU,
+    namGop,
+  })
+
+  it('doanh nghiệp càng già càng dễ đổ, khủng hoảng thì dễ hơn nữa', () => {
+    const s = taoGameMoi('bacSi', 31)
+    const treo = { ...s, nam: 2 }
+    const gia = { ...s, nam: 22 }
+    expect(xacSuatDoanhNghiepPhaSan(gia, mot(s, 1))).toBeGreaterThan(
+      xacSuatDoanhNghiepPhaSan(treo, mot(s, 1)),
+    )
+    const khungHoang = { ...treo, thiTruong: 'khungHoang' as const }
+    expect(xacSuatDoanhNghiepPhaSan(khungHoang, mot(s, 1))).toBeGreaterThan(
+      xacSuatDoanhNghiepPhaSan(treo, mot(s, 1)),
+    )
+  })
+
+  it('xác suất luôn nằm trong khoảng hợp lệ', () => {
+    const s = { ...taoGameMoi('bacSi', 32), nam: 79, thiTruong: 'khungHoang' as const }
+    const p = xacSuatDoanhNghiepPhaSan(s, mot(s, 1))
+    expect(p).toBeGreaterThan(0)
+    expect(p).toBeLessThanOrEqual(1)
+  })
+
+  it('trong một trăm ván có ít nhất một doanh nghiệp đổ', () => {
+    // Đây là phép đo TẦN SUẤT, không phải phép đo một ván — rủi ro nền phải đủ
+    // thường xuyên để người chơi cảm nhận được, nếu không thì nó chỉ là trang trí.
+    let soLanDo = 0
+    for (let seed = 0; seed < 100; seed++) {
+      let s = taoGameMoi('bacSi', seed)
+      s = { ...s, doanhNghiep: [mot(s, 1), mot(s, 1), mot(s, 1)] }
+      for (let i = 0; i < 10 && s.trangThai === 'dangChoi'; i++) {
+        s = choiHetNam(s)
+        if (s.tongKet?.suKien.some((k) => k.loai === 'doanhNghiepPhaSan')) {
+          soLanDo++
+          break
+        }
+      }
+    }
+    expect(soLanDo).toBeGreaterThan(20)
+  })
+
+  it('khi đổ thì thu về đúng 10% vốn và mất doanh nghiệp khỏi danh sách', () => {
+    // Ép xác suất lên 100% để kiểm cơ chế thay vì chờ may rủi.
+    const goc = CONFIG.doanhNghiep.xacSuatPhaSanCoBan
+    ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = 1
+    try {
+      let s = taoGameMoi('bacSi', 33)
+      s = { ...s, doanhNghiep: [mot(s, 1)] }
+      const von = vonDoanhNghiepNamNay(s, s.doanhNghiep[0]!)
+      const sau = choiHetNam(s)
+      expect(sau.doanhNghiep).toHaveLength(0)
+      const sk = sau.tongKet!.suKien.find((k) => k.loai === 'doanhNghiepPhaSan')!
+      expect(sk.tienThayDoi).toBe(Math.round(von * 0.1))
+      expect(sk.hanhPhucThayDoi).toBeLessThan(0)
+    } finally {
+      ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = goc
+    }
   })
 })

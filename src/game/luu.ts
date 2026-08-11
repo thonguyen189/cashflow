@@ -52,6 +52,9 @@ export function taiVan(): GameState | null {
     if (!Array.isArray(s.bienCoDaQua)) return null
     if (typeof s.soLanPhaSan !== 'number') return null
     if (typeof s.heSoLuongDiChung !== 'number') return null
+    // trường của bản v1.7: ván v1.6 thiếu `namGop` nên `heSoBaoHoa` trả NaN,
+    // kéo theo mọi thu nhập doanh nghiệp thành NaN ngay năm đầu tiên
+    if (s.doanhNghiep?.some((d) => typeof d.namGop !== 'number')) return null
     return s
   } catch {
     return null

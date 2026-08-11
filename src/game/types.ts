@@ -205,6 +205,12 @@ export interface DoanhNghiep {
    * quy mô đã chọn.
    */
   vonGoc: Tien
+  /**
+   * Năm góp vốn (theo năm trong game), để tính bão hoà thu nhập theo tuổi doanh
+   * nghiệp. Suy ngược từ `chiSoGiaLucMua` là không đủ: lạm phát mỗi năm mỗi khác
+   * nên chỉ số giá không đơn ánh với năm.
+   */
+  namGop: number
 }
 
 export type SuKienLoai =
@@ -236,6 +242,7 @@ export type SuKienLoai =
   | 'bienCoLon'
   | 'thanhLyDoanhNghiep'
   | 'phaSan'
+  | 'doanhNghiepPhaSan'
 
 /** Sáu biến cố lớn của đời người (v1.6), mỗi cái có một lá chắn riêng. */
 export type BienCoId =
