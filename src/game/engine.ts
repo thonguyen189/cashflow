@@ -214,6 +214,37 @@ export const dangCamCoHoi = (s: GameState): boolean => s.camCoHoiDenNam >= s.nam
 export const loiTucKyVong = (ts: TaiSan): number => (ts.loiTucMin + ts.loiTucMax) / 2
 
 /**
+ * Lợi tức kỳ vọng SAU THUẾ của riêng danh mục đầu tư (không gồm doanh nghiệp).
+ *
+ * Tách khỏi `dongTienThuDong` để nơi khác (Sổ sách) hiển thị đúng riêng thành
+ * phần này mà không phải trừ ngược `dongTienThuDong − thuNhapThuDong` — phép
+ * trừ đó sai vì hai số hạng không cùng mặt bằng thuế (một đã SAU thuế, một còn
+ * TRƯỚC), nên hiệu số ra ÂM bất cứ khi nào người chơi có doanh nghiệp mà chưa
+ * có danh mục đầu tư.
+ */
+export function loiTucDanhMucSauThue(s: GameState): Tien {
+  return Math.round(
+    TAI_SAN.reduce(
+      (tong, ts) =>
+        tong +
+        s.soHuu[ts.id] * s.giaTaiSan[ts.id] * loiTucKyVong(ts) * (1 - ts.thueLoiTuc),
+      0,
+    ),
+  )
+}
+
+/**
+ * Thu nhập doanh nghiệp kỳ vọng SAU thuế thu nhập doanh nghiệp 20%.
+ *
+ * Tách khỏi `dongTienThuDong` vì cùng lý do với `loiTucDanhMucSauThue`: Sổ
+ * sách cần con số doanh nghiệp SAU thuế để cộng đúng ra tổng, trong khi
+ * `thuNhapThuDong` (dùng cho bảng kinh doanh) vẫn cố ý TRƯỚC thuế.
+ */
+export function thuNhapDoanhNghiepSauThue(s: GameState): Tien {
+  return Math.round(thuNhapThuDong(s) * (1 - CONFIG.thue.thueDoanhNghiep))
+}
+
+/**
  * Dòng tiền thụ động một năm, SAU THUẾ (v1.7): thu nhập nền của các doanh
  * nghiệp trừ thuế thu nhập doanh nghiệp, cộng lợi tức kỳ vọng của danh mục trừ
  * thuế riêng của từng kênh.
@@ -227,16 +258,14 @@ export const loiTucKyVong = (ts: TaiSan): number => (ts.loiTucMin + ts.loiTucMax
  * bạn làm ra bao nhiêu", còn thuế là chuyện của phép so với đích. Tách như vậy
  * để `bienDoThuNhapThuDong` và bảng kinh doanh vẫn kể đúng chuyện của doanh
  * nghiệp mà không phải giải thích hai lần.
+ *
+ * Cộng thẳng hai hàm SAU thuế ở trên (thay vì tự tính lại rồi làm tròn một
+ * cục) để tổng này LUÔN đúng bằng tổng hai số Sổ sách hiển thị riêng — bảng
+ * chia nhỏ và dòng tổng phải khớp tuyệt đối, không lệch một đồng vì làm tròn
+ * hai lần khác nhau.
  */
 export function dongTienThuDong(s: GameState): Tien {
-  const tuDanhMuc = TAI_SAN.reduce(
-    (tong, ts) =>
-      tong +
-      s.soHuu[ts.id] * s.giaTaiSan[ts.id] * loiTucKyVong(ts) * (1 - ts.thueLoiTuc),
-    0,
-  )
-  const tuDoanhNghiep = thuNhapThuDong(s) * (1 - CONFIG.thue.thueDoanhNghiep)
-  return Math.round(tuDoanhNghiep + tuDanhMuc)
+  return thuNhapDoanhNghiepSauThue(s) + loiTucDanhMucSauThue(s)
 }
 
 /**

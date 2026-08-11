@@ -951,11 +951,15 @@ describe('thu nhập doanh nghiệp biến động từng năm', () => {
     const dong = tk.thuNhapDoanhNghiep[0]!
     expect(dong.coHoiId).toBe(coHoi.id)
     expect(dong.ten).toBe(coHoi.ten)
+    // `dong.soTien` bị trừ thuế thu nhập doanh nghiệp tại nguồn (v1.7), còn
+    // `nen` (từ `thuNhapThuDong`) cố ý giữ TRƯỚC thuế — phải nhân thêm hệ số
+    // sau thuế thì biên độ mới cùng mặt bằng với số thực nhận.
+    const hSoSauThue = 1 - CONFIG.thue.thueDoanhNghiep
     expect(dong.soTien).toBeGreaterThanOrEqual(
-      Math.floor(nen * (1 + coHoi.bienDongThuNhapMin!)),
+      Math.floor(nen * (1 + coHoi.bienDongThuNhapMin!) * hSoSauThue),
     )
     expect(dong.soTien).toBeLessThanOrEqual(
-      Math.ceil(nen * (1 + coHoi.bienDongThuNhapMax!)),
+      Math.ceil(nen * (1 + coHoi.bienDongThuNhapMax!) * hSoSauThue),
     )
   })
 
@@ -976,8 +980,13 @@ describe('thu nhập doanh nghiệp biến động từng năm', () => {
     const bienDo = bienDoThuNhapThuDong(s)
     expect(bienDo.cao).toBeGreaterThan(bienDo.thap)
     const tk = dongNam(s).tongKet!
-    expect(tk.thuNhapThuDong).toBeGreaterThanOrEqual(bienDo.thap - 1)
-    expect(tk.thuNhapThuDong).toBeLessThanOrEqual(bienDo.cao + 1)
+    // `bienDoThuNhapThuDong` cố ý giữ TRƯỚC thuế (xem docstring `thuNhapThuDong`
+    // trong engine.ts), còn `tk.thuNhapThuDong` là tổng các dòng doanh nghiệp
+    // ĐÃ trừ thuế thu nhập doanh nghiệp tại nguồn — nhân biên độ với hệ số sau
+    // thuế trước khi so sánh, nếu không phép so sẽ lệch đúng bằng phần thuế.
+    const hSoSauThue = 1 - CONFIG.thue.thueDoanhNghiep
+    expect(tk.thuNhapThuDong).toBeGreaterThanOrEqual(bienDo.thap * hSoSauThue - 1)
+    expect(tk.thuNhapThuDong).toBeLessThanOrEqual(bienDo.cao * hSoSauThue + 1)
   })
 
   it('KHÔNG cố định: chạy nhiều năm cho ra những con số khác nhau', () => {

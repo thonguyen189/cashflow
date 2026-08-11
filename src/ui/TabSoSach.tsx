@@ -6,11 +6,13 @@ import {
   daToiUuChiPhi,
   dongTienThuDong,
   giaTriDauTu,
+  loiTucDanhMucSauThue,
   mocTaiSanCuaNghe,
   mucTieuTuDo,
   nghiaVuHangNam,
   phiBaoHiem,
   soNamTriLieuConLai,
+  thuNhapDoanhNghiepSauThue,
   thuNhapThuDong,
   tienDoTuDo,
   toiUuDaVaoSo,
@@ -56,8 +58,18 @@ export default function TabSoSach({ state }: { state: GameState }) {
 
   // Bảng tự do tài chính — chính là điều kiện thắng, nên tách riêng và bày đủ
   // cả hai vế để người chơi biết mình còn thiếu bao nhiêu và thiếu ở đâu.
+  //
+  // Mọi con số trong bảng này phải SAU thuế, khác với `thuDong` ở bảng "Dòng
+  // tiền một năm" phía trên vốn cố ý TRƯỚC thuế (kể chuyện mức nền doanh
+  // nghiệp). Trước đây `loiTucDanhMuc` bị suy ngược bằng `dongTien − thuDong`
+  // — hai số hạng đó KHÔNG cùng mặt bằng thuế (dongTien đã sau thuế, thuDong
+  // còn trước thuế) nên hiệu số ra ÂM bất cứ khi nào người chơi có doanh
+  // nghiệp mà chưa có danh mục đầu tư. Gọi thẳng hai hàm sau thuế của engine
+  // thay vì trừ ngược để dòng "doanh nghiệp" + dòng "danh mục" luôn cộng đúng
+  // ra dòng tổng bên dưới.
+  const thuDoanhNghiepSauThue = thuNhapDoanhNghiepSauThue(state)
+  const loiTucDanhMuc = loiTucDanhMucSauThue(state)
   const dongTien = dongTienThuDong(state)
-  const loiTucDanhMuc = dongTien - thuDong
   const phiYTe = phiBaoHiem(state)
   const nghiaVu = nghiaVuHangNam(state)
   const canDat = mucTieuTuDo(state)
@@ -175,7 +187,7 @@ export default function TabSoSach({ state }: { state: GameState }) {
       <div className="the">
         <div className="hang">
           <span className="hang-nhan">🏪 Thu nhập doanh nghiệp</span>
-          <span className="hang-gia-tri duong">{dinhDangTien(thuDong)}</span>
+          <span className="hang-gia-tri duong">{dinhDangTien(thuDoanhNghiepSauThue)}</span>
         </div>
         <div className="hang">
           <span className="hang-nhan">📊 Lợi tức kỳ vọng của danh mục</span>
