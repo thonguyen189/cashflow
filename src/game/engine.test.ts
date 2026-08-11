@@ -2951,8 +2951,8 @@ describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
       }
       return luong
     }
-    expect(luongTaiTuoi('giaoVien', 40) / 1e6).toBeCloseTo(165, -1)
-    expect(luongTaiTuoi('bacSi', 40) / 1e6).toBeCloseTo(441, -1)
-    expect(luongTaiTuoi('kySuPhanMem', 40) / 1e6).toBeCloseTo(650, -1)
+    expect(luongTaiTuoi('giaoVien', 40) / TRIEU).toBeCloseTo(165, -1)
+    expect(luongTaiTuoi('bacSi', 40) / TRIEU).toBeCloseTo(441, -1)
+    expect(luongTaiTuoi('kySuPhanMem', 40) / TRIEU).toBeCloseTo(650, -1)
   })
 })
