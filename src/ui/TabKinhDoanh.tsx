@@ -332,9 +332,10 @@ export default function TabKinhDoanh({
           {nhomDoanhNghiep.map((n) => {
             const c = timCoHoi(n.coHoiId)
             const baoHoa = heSoBaoHoa(state, n.dTieuBieu)
-            // Ngưỡng 80% chỉ để GỢI Ý người chơi cân nhắc, không khoá tính năng
-            // nào — khớp đúng ngưỡng ví dụ trong đặc tả Task 14.
-            const baoHoaThap = baoHoa < 0.8
+            // Ngưỡng chỉ để GỢI Ý người chơi cân nhắc, không khoá tính năng nào —
+            // đọc từ config.ts thay vì hằng số cứng ở đây (số cân bằng luôn sống ở
+            // config.ts/content.ts, xem `nguongCanhBaoTapTrung` ở trên).
+            const baoHoaThap = baoHoa < CONFIG.doanhNghiep.nguongCanhBaoBaoHoa
             return (
               <div className="muc-mua" key={`${n.coHoiId}-${n.namGop}`}>
                 <span className="muc-mua-emoji">{c?.emoji ?? '💼'}</span>

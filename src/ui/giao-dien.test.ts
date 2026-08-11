@@ -11,19 +11,24 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import TabTrangChu from './TabTrangChu'
 import TabSoSach from './TabSoSach'
+import TabKinhDoanh from './TabKinhDoanh'
+import ChonNghe from './ChonNghe'
 import Hud from './Hud'
 import TongKetModal from './TongKetModal'
-import { CONFIG } from '../game/config'
+import { CONFIG, TRIEU } from '../game/config'
 import { NGHE } from '../game/content'
 import {
   giaThucTe,
+  heSoBaoHoa,
   heSoMatBangSong,
   mocTaiSanCuaNghe,
   reducer,
   tangLuongThucTheoTuoi,
   taoGameMoi,
+  thuNhapNenNamNay,
 } from '../game/engine'
-import type { GameState } from '../game/types'
+import { dinhDangTien } from '../game/format'
+import type { DoanhNghiep, GameState, Nghe } from '../game/types'
 
 function chayToiTuDo(ngheId: string): GameState {
   let s = taoGameMoi(ngheId, 4242)
@@ -188,5 +193,68 @@ describe('v1.7 — giao diện phản ánh cơ chế mới', () => {
       nhan: true,
     })
     expect(s.tienMat - sau.tienMat).toBe(giaHienThi)
+  })
+})
+
+describe('v1.7 fix round 1 — kết xuất khớp đúng hàm engine (không phải chỉ khớp nhau giữa hai công thức)', () => {
+  /**
+   * Cố ý LẶP LẠI công thức cục bộ của `ChonNghe.tsx` (hàm `luongTaiTuoi` không
+   * export) thay vì trích nó ra thành helper dùng chung — đây là khoản nợ nhỏ
+   * đã ghi nhận, để dành cho việc khác, không phải phạm vi của test này. Điều
+   * quan trọng là công thức GỌI THẲNG `tangLuongThucTheoTuoi` của engine, không
+   * bịa số, nên nếu màn hình lệch khỏi engine thì test này phải đỏ.
+   */
+  function luongTaiTuoi(nghe: Nghe, denTuoi: number): number {
+    let luong = nghe.luong
+    for (let tuoi = CONFIG.cotTruyen.tuoiBatDau + 1; tuoi <= denTuoi; tuoi++) {
+      luong *= 1 + tangLuongThucTheoTuoi(nghe, tuoi)
+    }
+    return Math.round(luong)
+  }
+
+  it('màn chọn nghề hiện đúng số lương mà đường cong sự nghiệp của engine tính ra', () => {
+    const html = renderToStaticMarkup(createElement(ChonNghe, { onChon: () => {} }))
+    for (const nghe of NGHE) {
+      for (const denTuoi of [30, 40, 60]) {
+        // dinhDangTien(...) chứ không phải con số nguyên — đúng thứ người chơi
+        // nhìn thấy trên màn hình, làm tròn y hệt cách component làm tròn.
+        expect(html).toContain(dinhDangTien(luongTaiTuoi(nghe, denTuoi)))
+      }
+    }
+  })
+
+  it('bảng kinh doanh hiện đúng thu nhập và mức bão hoà mà engine tính cho đúng doanh nghiệp đó', () => {
+    const goc = taoGameMoi('kySuPhanMem', 4242)
+    // Cấy trực tiếp một doanh nghiệp 10 năm tuổi (namGop = năm 1, đang ở năm 11)
+    // để hệ số bão hoà lệch hẳn khỏi 100% — nếu bằng 1 thì test không phân biệt
+    // được bản có nhân heSoBaoHoa với bản bỏ sót nó.
+    const doanhNghiep: DoanhNghiep = {
+      coHoiId: 'quanCaPhe',
+      ten: 'Mở quán cà phê nhỏ',
+      thuNhapNen: 72 * TRIEU,
+      chiSoGiaLucMua: goc.chiSoGia,
+      vonGoc: 400 * TRIEU,
+      namGop: goc.nam,
+    }
+    const s: GameState = { ...goc, nam: goc.nam + 10, doanhNghiep: [doanhNghiep] }
+    const d = s.doanhNghiep[0]!
+
+    // Giá trị kỳ vọng lấy THẲNG từ hàm engine — không hard-code số nào, để test
+    // bắt được đúng lớp lỗi mà Task 14 dựng ra để ngăn: màn hình suy diễn lại
+    // công thức thay vì gọi hàm, nên lệch khỏi số engine thực trả.
+    const thuNhapKyVong = thuNhapNenNamNay(s, d)
+    const baoHoaKyVong = heSoBaoHoa(s, d)
+    expect(baoHoaKyVong).toBeLessThan(1)
+
+    const html = renderToStaticMarkup(
+      createElement(TabKinhDoanh, { state: s, dispatch: () => {} }),
+    )
+    // Ghim đúng vào cụm chữ của DÒNG DOANH NGHIỆP cụ thể (không phải dòng tổng
+    // "Thu nhập thụ động năm nay" ở trên bảng) — nếu chỉ tìm số trần trụi thì
+    // dòng tổng đúng (gọi thẳng `thuNhapThuDong` → cũng dùng `thuNhapNenNamNay`)
+    // sẽ khiến test XANH GIẢ dù dòng doanh nghiệp phía dưới bị lỗi. Test này đã
+    // thực sự bị bắt quả tang xanh giả kiểu đó khi soạn — xem báo cáo Fix round 1.
+    expect(html).toContain(`${dinhDangTien(thuNhapKyVong)} mỗi năm`)
+    expect(html).toContain(`Thu nhập còn ${Math.round(baoHoaKyVong * 100)}% so với ngày đầu`)
   })
 })

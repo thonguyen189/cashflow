@@ -593,6 +593,16 @@ export const CONFIG = {
     /** thu hồi được ngần này vốn góp khi doanh nghiệp đổ */
     hoanLaiKhiPhaSan: 0.1,
     matHanhPhuc: 6,
+
+    /** ---------- Ngưỡng cảnh báo bão hoà ----------
+     * Dưới mốc này giao diện gợi ý người chơi cân nhắc gây dựng chỗ mới thay vì
+     * ôm mãi cái cũ. 80% tương ứng khoảng 7-8 năm tuổi (0,97^7 ≈ 0,81): mất một
+     * phần năm sức sinh lời ban đầu là điểm mà vốn với công sức bỏ ra gây dựng
+     * lại một chỗ mới bắt đầu thắng việc tiếp tục ôm chỗ cũ đang teo dần — chờ
+     * lâu hơn thì phần thu nhập bỏ lỡ trong lúc "chờ cho đáng" đã vượt quá chi
+     * phí gây dựng lại.
+     */
+    nguongCanhBaoBaoHoa: 0.8,
   },
 
   /** ---------- Biến cố lớn ----------
