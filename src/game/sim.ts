@@ -39,6 +39,12 @@ export interface KetQuaSim {
   soLanPhaSan: number
   /** số biến cố lớn đã gặp trong cả ván (v1.6) */
   soBienCoGap: number
+  /**
+   * Vì sao ván không thắng. `null` khi thắng. Suốt v1.6, 100% ván thua là
+   * 'hanhPhuc' trong mười một năm đầu — phân loại này tồn tại để đo xem v1.7 có
+   * thật sự tạo được cửa thua tài chính hay không.
+   */
+  lyDoThua: 'hanhPhuc' | 'phaSan' | 'hetDoi' | null
 }
 
 export interface ChienLuoc {
@@ -388,6 +394,19 @@ export function moPhongMotVan(
     s = reducer(s, { type: 'ketThucNam' })
   }
 
+  // Thứ tự nhánh KHÔNG tuỳ tiện: engine đặt `trangThai: 'thua'` cho CẢ hai cửa
+  // thua (hạnh phúc và phá sản lần hai), nên phải hỏi `soLanPhaSan` trước rồi
+  // mới tới `trangThai` — hỏi ngược lại thì mọi ván phá sản đều bị đếm nhầm
+  // thành chết vì hạnh phúc, đúng cái nhầm mà phân loại này sinh ra để tránh.
+  const lyDoThua: KetQuaSim['lyDoThua'] =
+    s.trangThai === 'thang'
+      ? null
+      : s.soLanPhaSan >= CONFIG.phaSan.soLanToiDa
+        ? 'phaSan'
+        : s.trangThai === 'thua'
+          ? 'hanhPhuc'
+          : 'hetDoi'
+
   return {
     thang: s.trangThai === 'thang',
     soNam: s.lichSu.length,
@@ -398,8 +417,16 @@ export function moPhongMotVan(
     lyDo: s.lyDoKetThuc ?? 'hết lượt mô phỏng',
     soLanPhaSan: s.soLanPhaSan,
     soBienCoGap: s.bienCoDaQua.length,
+    lyDoThua,
   }
 }
+
+/**
+ * Số năm của một đời trọn vẹn: từ tuổi bắt đầu tới tuổi viên mãn. Suy ra từ
+ * CONFIG chứ không viết cứng, để đổi `tuoiVienMan` là thước đo tự đi theo.
+ */
+export const SO_NAM_TRON_DOI =
+  CONFIG.cotTruyen.tuoiVienMan - CONFIG.cotTruyen.tuoiBatDau
 
 export function moPhongNhieuVan(
   ngheId: string,
@@ -429,6 +456,25 @@ export function moPhongNhieuVan(
       ? thua.reduce((t, k) => t + (k.nghiaVu > 0 ? k.dongTienThuDong / k.nghiaVu : 1), 0) /
         thua.length
       : NaN,
+    /**
+     * Tỉ lệ trên TỔNG số ván (không phải trên số ván thua) của từng cửa thua.
+     * Lấy mẫu số là tổng ván để ba con số cộng lại đúng bằng `1 - tyLeThang`,
+     * nên chia cho `1 - tyLeThang` là ra thị phần của từng cửa trong số ván thua.
+     */
+    tyLeThuaVi: {
+      hanhPhuc: kq.filter((k) => k.lyDoThua === 'hanhPhuc').length / soVan,
+      phaSan: kq.filter((k) => k.lyDoThua === 'phaSan').length / soVan,
+      hetDoi: kq.filter((k) => k.lyDoThua === 'hetDoi').length / soVan,
+    },
+    /**
+     * Tỉ lệ ván đi trọn quãng đời tới tuổi viên mãn. Suốt v1.6 con số này là 0 —
+     * không ván nào sống quá năm thứ 35 — nên mọi kết luận cân bằng của bản đó
+     * chỉ nói về chặng đầu đời.
+     */
+    tyLeSongTronDoi:
+      kq.filter((k) => k.soNam >= SO_NAM_TRON_DOI).length / soVan,
+    /** tỉ lệ ván có ít nhất một lần vỡ nợ tới nấc tuyên phá sản */
+    tyLePhaSan: kq.filter((k) => k.soLanPhaSan > 0).length / soVan,
     ketQua: kq,
   }
 }

@@ -324,8 +324,8 @@ không đủ vì chỉ số giá không đơn ánh với năm.
 
 ## E. Chu kỳ kinh tế khắc nghiệt hơn
 
-Ma trận v1.6 cho khủng hoảng chiếm 9,9% số năm, một đợt mỗi 13,6 năm. Nới lên khoảng
-**17%** và làm sâu hơn:
+Ma trận v1.6 cho khủng hoảng chiếm 9,9% số năm, một đợt mỗi 13,6 năm. Nới lên và làm
+sâu hơn:
 
 | Từ ↓ Sang → | 📈 Thịnh vượng | 😐 Bình thường | 📉 Suy thoái | 💥 Khủng hoảng |
 |---|---|---|---|---|
@@ -340,6 +340,15 @@ Ma trận v1.6 cho khủng hoảng chiếm 9,9% số năm, một đợt mỗi 13
 | 😐 Bình thường | 0,00 | ×1,00 | +0,000 | ×1,0 |
 | 📉 Suy thoái | **−0,18** | **×0,65** | +0,020 | ×0,2 |
 | 💥 Khủng hoảng | **−0,45** | **×0,25** | **+0,070** | ×0,0 |
+
+**Đính chính sau khi cài đặt.** Bản nháp của mục này ghi "nới lên khoảng 17% số năm".
+Con số đó là ước lượng bằng mắt, không phải nghiệm của ma trận. Giải phân phối dừng của
+đúng ma trận trên — bằng hai cách độc lập, lặp luỹ thừa và giải hệ cân bằng — cho
+π ≈ (thịnh vượng 13,96% · bình thường 34,37% · suy thoái 30,56% · **khủng hoảng
+21,11%**). Ma trận giữ nguyên như bảng, còn câu văn 17% là sai và đã bỏ. Nghĩa là bản
+này khắc nghiệt hơn dự tính ban đầu một quãng đáng kể: khủng hoảng chiếm hơn một phần
+năm số năm thay vì một phần sáu. Vòng hiệu chỉnh ở mục J phải đo lại với con số thật
+này, và ma trận chu kỳ vốn đã nằm trong danh sách đòn bẩy được phép vặn ở đó.
 
 Hai tính chất của v1.6 giữ nguyên: khủng hoảng không bao giờ nhảy thẳng về thịnh vượng,
 và suy thoái là cửa ngõ chính vào khủng hoảng.
@@ -505,6 +514,11 @@ Dòng cuối là dòng quan trọng nhất và là dòng chưa từng đo đư�
 bằng của v1.6 chỉ nói về chặng đầu đời. Nếu sau bản này vẫn không có ván nào sống tới
 tuổi 100 thì mọi con số khác trong bảng đều vô nghĩa.
 
+> **Đã đo xong — xem mục L.** Bảng trên là mục tiêu đặt ra trước khi cài đặt. Ba chỉ tiêu
+> đạt (tỉ lệ thắng, chênh lệch ba nghề, tuổi thắng), sáu không đạt, và hai dòng cuối bảng
+> hoá ra **loại trừ nhau** với dòng đầu. Số đo thật cùng lý do của từng chỉ tiêu không đạt
+> nằm ở mục L.
+
 ### Vòng hiệu chỉnh là bắt buộc
 
 Các con số trong tài liệu này là **điểm xuất phát có căn cứ, không phải kết quả**. Bản
@@ -632,3 +646,217 @@ buộc thật với nó), bot đòn bẩy **nhận**.
 
 Viết lại theo bảng mục J. Thêm hai phép đo chưa từng có: tỉ lệ ván sống trọn tới tuổi
 100, và phân loại lý do thua (hạnh phúc / phá sản lần hai / hết đời chưa tự do).
+
+---
+
+## L. Số đo sau khi cài đặt
+
+Đo bằng `balance.test.ts` sau khi cài đủ mục A–I và chạy vòng hiệu chỉnh. Mọi con số ở
+đây **tất định**: `moPhongNhieuVan` sinh seed theo công thức cố định `1000 + i × 7919`,
+nên cùng một bộ tham số luôn cho đúng cùng một dãy kết quả. Mẫu 200 ván mỗi nghề trừ chỗ
+ghi khác.
+
+### Bảng kết quả — ba chỉ tiêu đạt, sáu không
+
+| Chỉ số | v1.6 | Mục tiêu v1.7 | **Đo thật** | |
+|---|---|---|---|---|
+| Tỉ lệ thắng, ba nghề | 91–94% | 45–55% | **48,0 / 49,0 / 50,5%** | ✅ |
+| Chênh lệch ba nghề | 3 điểm | ≤ 10 điểm | **2,5 điểm** | ✅ |
+| Tuổi thắng trung bình | 33–42 | 52–62 | **61,2 / 55,3 / 53,5** | ✅ |
+| Thua vì hạnh phúc, trên số ván thua | 100% | ≤ 40% | **88 / 100 / 95%** | ❌ |
+| Số ván sống trọn tới tuổi 100 | 0% | > 30% | **8,0 / 0,0 / 2,5%** | ❌ |
+| Phá sản, bot cân bằng | 0% | 8–18% | **0,0%** | ❌ |
+| Phá sản, bot đòn bẩy | 0% | > 30% | **0,0%** | ❌ |
+| Chênh lệch bốn xuất thân | ≤ 15 điểm | giữ ≤ 15 điểm | **24 điểm** | ❌ |
+| Chênh lệch năm bậc lương | ≤ 15 điểm | giữ ≤ 15 điểm | **33 điểm** | ❌ |
+
+### Tham số đã vặn
+
+| Tham số | Cũ | Mới | Vì sao |
+|---|---|---|---|
+| `giaoVien.duongCongSuNghiep` | 0,035 / 0,030 / 0,025 | **0,060 / 0,052 / 0,044** | ×1,75 ba bậc đầu — xoá 44,5 điểm chênh lệch giữa ba nghề |
+| `bacSi.duongCongSuNghiep` | 0,050 / 0,090 / 0,050 | **0,060 / 0,108 / 0,060** | ×1,2 — kéo bác sĩ từ 40% về lại trong dải 45–55% |
+| `tuDoTaiChinh.heSoToiThieu` | 1,2 | **2,2** | dời tuổi thắng vào dải 52–62 |
+| `tuDoTaiChinh.heSoPhuThem` | 1,3 | **2,4** | như trên |
+
+`chiPhi` của ba nghề, `xacSuatPhaSanCoBan`, dải sinh lời doanh nghiệp và ma trận chu kỳ
+**giữ nguyên** — lý do ở các phần dưới.
+
+### Chênh lệch ba nghề: thủ phạm là đường cong, không phải tỉ lệ chi phí
+
+Số đo đầu tiên, trước khi vặn gì: **11,5 / 40,0 / 56,0%** — chênh 44,5 điểm, gấp hơn bốn
+lần trần 10 điểm. Tỉ lệ chi phí trên lương của ba nghề vốn đã bằng nhau sẵn (0,844 /
+0,850 / 0,847) nên nó không giải thích được gì; quét tỉ lệ này từ 0,78 tới 0,89 dời tỉ lệ
+thắng rất mạnh nhưng chênh lệch vẫn đứng nguyên 39–47 điểm.
+
+Thí nghiệm đối chứng khoanh đúng thủ phạm — đổi **riêng** đường cong sự nghiệp, giữ mọi
+thứ khác nguyên vẹn:
+
+| Cấu hình | Tỉ lệ thắng |
+|---|---|
+| Giáo viên, đường cong của chính mình | 11% |
+| Giáo viên + đường cong bác sĩ | 49% |
+| Giáo viên + đường cong kỹ sư phần mềm | 79% |
+| Kỹ sư phần mềm + đường cong giáo viên | 19% |
+| Giáo viên + khát vọng căn hộ thay xe máy | 9% |
+
+Bội số lương thực ở tuổi 50 chênh nhau 1 : 2,59 : 2,30 (2,43 / 6,28 / 5,59 lần) — đó là
+toàn bộ câu chuyện. Khát vọng gần như không ảnh hưởng.
+
+Một hướng đã thử và **bỏ**: cân bằng bội số lương thực ở tuổi 50 cho cả ba nghề về ~4,0.
+Kết quả 54 / 17 / 45% — bác sĩ sụp từ 39% xuống 17%. Lý do là tăng trưởng **sớm** cộng
+dồn vào đầu tư mạnh hơn tăng trưởng muộn rất nhiều, nên "bội số cuối đời bằng nhau" không
+hề tương đương "cơ hội bằng nhau". Cách dùng cuối cùng là dò thẳng theo tỉ lệ thắng.
+
+**Sai lệch so với đời thật, ghi rõ ở đây.** 6%/năm tăng thực cao hơn thang lương viên
+chức Việt Nam (lên bậc ba năm một lần ≈ 3,2%/năm). Đây là nhượng bộ có ý thức của mô
+phỏng để chỉ tiêu ≤ 10 điểm đạt được. Lựa chọn còn lại — giữ đường cong thật và chấp nhận
+rằng giáo viên trên đồng lương giáo viên thật thì gần như không bao giờ đạt tự do tài
+chính — cũng là một lựa chọn thiết kế chính đáng, và thành thật hơn về mặt thông điệp.
+Người quyết định nên là người, không phải vòng hiệu chỉnh.
+
+### Vì sao cửa thua hạnh phúc không hạ được
+
+Cơ chế đã dò tới tận gốc: điểm hạnh phúc **nhận** được bị chặn bởi trần mềm 100 và trần
+cứng 130, còn điểm **mất** khi từ chối thẻ thì không bị chặn gì cả. Thanh hạnh phúc vì
+vậy là một bước ngẫu nhiên có trần trên nhưng có **vách hấp thụ** ở dưới, mà ván chơi lại
+dài 79 năm với chừng 355 lượt rút thẻ. Trung vị năm chết là năm thứ 8–15 — đúng quãng
+thanh hạnh phúc mới chỉ có 20 điểm đệm giữa mức khởi điểm 70 và ngưỡng thua 50.
+
+Đã quét và loại trừ từng nghi phạm (thị phần chết vì hạnh phúc trong số ván thua):
+
+| Đòn bẩy | Dải quét | Thị phần |
+|---|---|---|
+| Ngưỡng nhận thẻ của bot | 0,8 → 1000 triệu/điểm | 91–100%, không xu hướng |
+| `hanhPhucBanDau` | 70 → 100 | 90–100%, không xu hướng |
+| `heSoAnToanTheoTuoi` | 1,2+1,3 → 4+4 | 98% → 86% |
+| Tỉ lệ chi phí/lương | 0,89 → 0,78 | 100% → 82% |
+
+Đáng chú ý là **ngưỡng nhận thẻ của bot không đổi được gì**: kể cả khi bot nhận mọi tấm
+thẻ bất kể giá, thị phần vẫn 99–100%. Nghĩa là đây không phải chuyện bot chơi dở, mà là
+tính chất của chính cơ chế.
+
+Hai đòn bẩy **có** tác dụng thật nhưng đều phải trả giá ở chỗ khác:
+
+- **Tỉ lệ chi phí/lương.** Đo riêng cửa thua hạnh phúc (đẩy đích tự do ra xa để ván thắng
+  không che mất con số): tỉ lệ chết vì hạnh phúc là 83/55/59% ở mức 0,845, xuống 27/15/25%
+  ở mức 0,68, và 12/11/21% ở mức 0,62. Muốn đạt chỉ tiêu thì cần **0,62–0,65**, tức tỉ lệ
+  tiết kiệm 35–38%. Như thế là phá vỡ quyết định trung tâm của mục A: cả ba nghề tiết kiệm
+  15% vì ngoài đời con số đó gần bằng 0. Đổi một chỉ tiêu cân bằng lấy điều thật nhất mà
+  game kể được về tài chính cá nhân là không đáng.
+- **Số thẻ mỗi năm.** Hạ từ 4–5 xuống 2–3 kéo tỉ lệ chết vì hạnh phúc từ 81/61/59% xuống
+  50/43/45% — đúng như mô hình bước ngẫu nhiên dự đoán, ít lượt rút thì ít cơ hội chạm
+  vách. Nhưng pha thẻ bài là vòng lặp tương tác chính của mỗi năm; cắt nó đi một nửa là
+  đổi thể loại game chứ không phải chỉnh cân bằng.
+
+Còn `matBangSong.chuan` thì **luỹ thoái**: nâng 102 → 260 triệu kéo tỉ lệ chết vì hạnh
+phúc của bác sĩ và kỹ sư từ 59/43% xuống 10/2%, nhưng giáo viên gần như đứng yên (80% →
+68%), nên chênh lệch ba nghề bung từ 45 lên 83 điểm. Nó cứu người sống đắt đỏ chứ không
+cứu người nghèo — đúng như thiết kế mục F, và đúng ngược cái cần ở đây.
+
+Chỉ tiêu "sống trọn tới tuổi 100 > 30%" là **hệ quả số học** của chỉ tiêu trên: muốn hơn
+30% số ván sống trọn đời trong khi 45–55% số ván kết thúc bằng chiến thắng, thì cửa thua
+hạnh phúc chỉ được phép lấy đi **≤ 20%** tổng số ván. Đo thật con số đó là 45–51%.
+
+**Nhưng đây không phải chỗ đứng yên so với v1.6.** Bản đó dò vết 1000 ván mỗi tổ hợp và
+không ván nào sống quá **năm thứ 35**; nửa sau cuộc đời chưa từng được chơi lấy một lần.
+Nay ván dài nhất chạm trọn 79 năm ở giáo viên và 78 năm ở bác sĩ, tuổi thắng trung bình
+lùi từ 33–42 lên 53–61, và cơ chế tuổi già — chăm sóc, lương hưu, đồng trả bảo hiểm — lần
+đầu tiên thật sự được mô phỏng đi qua. `balance.test.ts` chốt đúng điều đó thay vì chốt
+một con số chưa đạt.
+
+### Vì sao phá sản vẫn là 0% — và vì sao lời giải thích của v1.6 sai
+
+Mục F của v1.6 kết luận phá sản đo ra 0% vì "mô phỏng không bao giờ sống quá năm thứ 35
+nên không chạm tới quãng đời trả giá". **Lời giải thích đó nay đã bị bác bỏ:** ván chạy
+trọn 79 năm mà phá sản vẫn không xảy ra.
+
+Đếm trực tiếp số lần mỗi nấc trong cơ chế ba nấc vỡ nợ nổ (n = 450 ván mỗi chiến lược,
+gộp ba nghề):
+
+| Chiến lược | Nấc 1 bán tài sản | Nấc 2 thanh lý doanh nghiệp | Nấc 3 phá sản |
+|---|---|---|---|
+| Bot cân bằng | 1 lần | 0 lần | **0 lần** |
+| Bot đòn bẩy | 46 lần | 9 lần | **1 lần** |
+
+Bot đòn bẩy vay tổng **15–27 tỷ** mỗi ván ở 149/150 ván mà vẫn không đổ. Nguyên nhân thật
+nằm ở **nấc 1**: nó bán tài sản đầu tư **không giới hạn**, bán tới khi tiền mặt hết âm.
+Mà nấc 3 lại đòi khoản thiếu hụt còn vượt trọn một năm chi phí *sau khi* đã bán sạch tài
+sản và thanh lý hết doanh nghiệp. Người chơi đem tiền đi đầu tư thì luôn có cái để bán,
+nên trạng thái "nghèo tài sản mà nặng nợ" — trạng thái **duy nhất** dẫn tới nấc 3 — không
+bao giờ xuất hiện.
+
+Đòn bẩy được kê trong kế hoạch cho việc này là `xacSuatPhaSanCoBan`, "đòn bẩy duy nhất
+tạo được ván thua tài chính". **Nó không tạo được.** Quét 0,02 → 0,15 cho ra 0 ván phá
+sản ở mọi mức; cái duy nhất nó dời là tỉ lệ thắng của bot đòn bẩy, từ 23% xuống 1%. Nó
+tạo ra sự nghèo đi, không tạo ra sự sụp đổ.
+
+**Kết luận: đây là giới hạn CẤU TRÚC của engine, không phải một con số cân bằng chưa vặn
+tới.** Muốn có phá sản thật thì phải sửa engine — cách tự nhiên nhất là chặn nấc 1 mỗi
+năm chỉ được bán một phần danh mục (bán tháo trong hoảng loạn không bao giờ thanh khoản
+tức thì ngoài đời), để khoản thiếu hụt còn sót lại đủ sức đẩy xuống nấc 2 rồi nấc 3. Đó
+là việc của một task engine, không phải của vòng hiệu chỉnh. Cơ chế ba nấc **tự nó không
+hỏng** — nó vẫn được kiểm trực tiếp bằng cách ép trạng thái trong `engine.test.ts`.
+
+### Trần 15 điểm cho xuất thân và bậc lương không còn giữ được
+
+Đo thật: 24 điểm giữa bốn xuất thân, 33 điểm giữa năm bậc lương. Đây **không** phải game
+hoá bất công hơn — nó là **hiệu ứng trần** biến mất. Ở v1.6 bot cân bằng thắng 91–94%,
+tức mọi xuất thân đều đụng trần và khoảng cách thật bị nén lại. Kéo tỉ lệ thắng về 45–55%
+theo đúng chỉ tiêu đầu bảng thì trần biến mất và khoảng cách lộ ra nguyên vẹn.
+
+Đã kiểm chứng bằng cách quét `heSoAnToanTheoTuoi` (n = 200 mỗi điểm):
+
+| Hệ số an toàn | Tỉ lệ thắng ba nghề | Lệch xuất thân | Lệch bậc lương |
+|---|---|---|---|
+| 1,2 + 1,3 | 53 / 53 / 56% | 35 điểm | 37 điểm |
+| 1,6 + 1,8 | 51 / 51 / 53% | 32 điểm | 36 điểm |
+| 1,9 + 2,1 | 50 / 49 / 52% | 28 điểm | 34 điểm |
+| 2,2 + 2,4 | 48 / 49 / 51% | 24 điểm | 33 điểm |
+
+Hạ hệ số an toàn — tức đẩy tỉ lệ thắng **lên** — làm chênh lệch **rộng ra** chứ không hẹp
+lại. Không có mức nào vừa giữ tỉ lệ thắng 45–55% vừa giữ chênh lệch ≤ 15 điểm: **hai chỉ
+tiêu này loại trừ nhau**, và việc mục J đòi cả hai là một mâu thuẫn chưa ai nhìn ra lúc
+viết. Kẻ lệch nhóm ở cả hai bảng đều là mức nghèo nhất (nhà thuần nông 29%, bậc lương
+0,75 → 20%), đúng như lẽ thường.
+
+### Đòn bẩy nay là nước đi lỗ — một quyết định đang chờ người
+
+Test cũ chốt "bot đòn bẩy khi thắng thì về đích sớm hơn — canh bạc có lãi kỳ vọng". Khẳng
+định đó đã **lật hẳn**. Đo trên bác sĩ, n = 200:
+
+| | Tỉ lệ thắng | Tuổi về đích |
+|---|---|---|
+| Bot cân bằng | 49,0% | 55,3 |
+| Bot đòn bẩy | **25,5%** | **63,7** |
+
+Số học rõ ràng, không cần mô phỏng mới thấy. Trả góp đều gốc cộng lãi đơn nên mỗi năm
+phải trả `(1 + 0,08 × 10) ÷ 10 = 18%` gốc. Dải sinh lời doanh nghiệp hạ xuống 12–18% ở
+mục D, rồi bị thuế thu nhập doanh nghiệp 20% cắn tiếp, nên thực nhận chỉ còn
+**9,6–14,4%**. Vay 18% để kiếm 9,6–14,4% là lỗ chắc chắn **3,6 tới 8,4 điểm mỗi năm, ở
+mọi cơ hội trong bộ bài** — không còn cơ hội nào để đòn bẩy thắng cả. Đòn bẩy không còn
+là canh bạc; nó là cái bẫy thuần tuý, và một bot biết tính sẽ không bao giờ vay.
+
+**Khuyến nghị: kéo dài `kyHanVayToiDa` từ 10 lên 20 năm, giữ nguyên `laiSuatVay` 8%.**
+Chi phí vay khi đó là `(1 + 0,08 × 20) ÷ 20 = 13%`/năm, nằm gọn **giữa** dải thực nhận
+9,6–14,4%: cơ hội tốt thì có lãi mỏng, cơ hội thường thì lỗ. Đó chính là cái cân não mà
+mục D muốn, ở đúng thang số mới. Cách còn lại — hạ `laiSuatVay` xuống 0,02 để kỳ hạn 10
+năm ra 12%/năm — cho kết quả tương tự nhưng đặt lãi suất ngân hàng Việt Nam ở mức phi
+thực tế, trong khi vay 20 năm thì đúng là chuyện thường của một khoản thế chấp.
+
+**Chưa áp dụng.** Đây là quyết định thiết kế chứ không phải một con số cân bằng, nên nó
+chờ người quyết.
+
+### Một bất biến cũ đã rơi xuống mức nhiễu
+
+Test "thuê chuyên gia hoạch định tài chính rút ngắn đường tới tự do tài chính" đã **bỏ**:
+hiệu ứng ghép cặp của nó vốn đã được ghi nhận là nhiễu ở v1.6 (−0,021 năm trên 470 ván,
+đổi dấu theo từng tham số không liên quan), và ở thang số mới nó không còn đo được nữa.
+
+Test "liệu trình tâm lý cứu được ván bí bách" **giữ nhưng đổi khẳng định**. Vế "có trị
+liệu thắng nhiều hơn" nay đo ra 12,0% so với 13,4% trên 500 ván — lệch 1,4 điểm trong khi
+sai số chuẩn của hiệu hai tỉ lệ đã là 2,1 điểm. Ghép cặp từng ván cho thấy liệu trình lật
+34 ván sang thắng và làm mất 41 ván, vì khoản phí bằng 25% chi phí sinh hoạt một năm nay
+là con số đáng kể so với thặng dư đã mỏng đi. Phần còn vững của bất biến — và là phần
+quan trọng — vẫn được chốt: liệu trình lật được ván sang thắng, nhưng không mua đứt được
+điều kiện thua.

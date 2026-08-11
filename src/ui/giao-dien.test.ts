@@ -172,7 +172,11 @@ describe('v1.7 — giao diện phản ánh cơ chế mới', () => {
       }
       return luong
     })
-    expect(Math.max(...luongTuoi40) / Math.min(...luongTuoi40)).toBeGreaterThan(3)
+    // Vòng hiệu chỉnh v1.7 (Task 15) kéo ba nghề lại gần nhau để chênh lệch tỉ lệ
+    // thắng về dưới 10 điểm, nên tỉ lệ phân kỳ tụt từ hơn 3,9 lần xuống 2,58 lần.
+    // Vẫn là chênh lệch màn chọn nghề PHẢI nói ra: lương tuổi 40 của kỹ sư phần
+    // mềm gấp hai lần rưỡi giáo viên trong khi lương khởi điểm chỉ hơn 1,6 lần.
+    expect(Math.max(...luongTuoi40) / Math.min(...luongTuoi40)).toBeGreaterThan(2.5)
   })
 
   it('giá thẻ hiển thị bằng đúng giá engine trừ tiền', () => {

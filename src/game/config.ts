@@ -25,7 +25,7 @@ export const CONFIG = {
     /** ---------- Hệ số an toàn theo tuổi (v1.7) ----------
      * heSoAnToan(tuổi) = heSoToiThieu + heSoPhuThem × (tuổi viên mãn − tuổi) / quãng đời
      *
-     * Tuổi 21 đòi 2,50 · tuổi 40 đòi 2,19 · tuổi 65 đòi 1,78 · tuổi 100 đòi 1,20.
+     * Tuổi 21 đòi 4,60 · tuổi 40 đòi 4,02 · tuổi 65 đòi 3,26 · tuổi 100 đòi 2,20.
      *
      * Đây chính là quy tắc 4% ngoài đời: nghỉ hưu càng sớm thì tỉ lệ rút an toàn
      * phải càng thấp, vì tiền phải nuôi bạn càng lâu và càng nhiều lần đi qua
@@ -35,9 +35,17 @@ export const CONFIG = {
      * Con số cũ là 1,5 cố định. Đo thực nghiệm cho thấy hệ số này chỉ dời TUỔI
      * thắng chứ không hạ TỈ LỆ thắng (nâng lên 4,0 vẫn ra 91–94%), nên nó ở đây
      * với tư cách công cụ NHỊP ĐỘ, không phải công cụ độ khó.
+     *
+     * ---------- Nâng ở vòng hiệu chỉnh v1.7 (Task 15) ----------
+     * Đo lại ở bộ số đã cài đủ A–I: quét 1,2+1,3 → 4,0+4,0 dời tuổi thắng trung
+     * bình của kỹ sư phần mềm từ 48 lên 60 mà tỉ lệ thắng chỉ nhích 56% → 45% —
+     * đúng như dòng trên đã nói, đây là cần gạt nhịp độ chứ không phải độ khó.
+     * Bộ 1,2+1,3 cho tuổi thắng 63/52/49, thấp hơn dải mục tiêu 52–62 ở hai
+     * nghề. Bộ 2,2+2,4 dưới đây kéo cả ba vào dải mà gần như không đụng tới tỉ
+     * lệ thắng; các mốc cụ thể của nó là dòng "Tuổi 21 đòi 4,60..." ngay trên.
      */
-    heSoToiThieu: 1.2,
-    heSoPhuThem: 1.3,
+    heSoToiThieu: 2.2,
+    heSoPhuThem: 2.4,
   },
 
   /** ---------- Cột mốc tài sản ----------

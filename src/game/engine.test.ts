@@ -456,16 +456,21 @@ describe('điều kiện kết thúc', () => {
   })
 
   /**
-   * 5 tỷ trái phiếu, lợi tức kỳ vọng 6% = 300 triệu mỗi năm — thừa sức phủ
+   * 8 tỷ trái phiếu, lợi tức kỳ vọng 6% = 480 triệu mỗi năm — thừa sức phủ
    * nghĩa vụ năm đầu của giáo viên (76 triệu sinh hoạt + phí bảo hiểm y tế,
    * nhân hệ số an toàn) kể cả sau khi lạm phát đẩy chi phí lên.
+   *
+   * Nâng từ 5 tỷ ở vòng hiệu chỉnh v1.7 (Task 15): hệ số an toàn tuổi 21 lên
+   * 4,60 (trước là 2,50) nên nghĩa vụ năm đầu thành ~358 triệu, vượt hẳn khoản
+   * 300 triệu mà 5 tỷ trái phiếu đẻ ra. Đây là dựng lại mốc cho đúng thang số
+   * mới chứ không phải nới điều kiện thắng.
    */
   const dungTrangThaiTuDo = (): GameState => {
     const s0 = s0GiauThe()
     return {
       ...s0,
       tienMat: 200 * TRIEU,
-      soHuu: { ...s0.soHuu, traiPhieu: 5000 },
+      soHuu: { ...s0.soHuu, traiPhieu: 8000 },
     }
   }
 
@@ -3036,11 +3041,24 @@ describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
 
   it('giáo viên tăng chậm nhưng không bao giờ âm', () => {
     const gv = NGHE.find((n) => n.id === 'giaoVien')!
+    const bs = NGHE.find((n) => n.id === 'bacSi')!
+    // Ngưỡng nay là QUAN HỆ chứ không phải con số cứng: vòng hiệu chỉnh v1.7 đã
+    // nâng đường cong giáo viên 1,75 lần nên mọi hằng số viết tay ở đây đều mục.
+    // Điều thật sự cần giữ là hình dạng nghề — luôn dương (không có đoạn sụp như
+    // kỹ sư phần mềm) và luôn thấp hơn đoạn bứt tốc của bác sĩ (không có cú bứt
+    // phá nào).
     for (const tuoi of [25, 35, 45, 55]) {
       const t = tangLuongThucTheoTuoi(gv, tuoi)
       expect(t).toBeGreaterThan(0)
-      expect(t).toBeLessThanOrEqual(0.035)
+      expect(t).toBeLessThan(tangLuongThucTheoTuoi(bs, 35))
     }
+    // Và giảm dần đều theo tuổi, không có bậc nào vọt lên
+    expect(tangLuongThucTheoTuoi(gv, 25)).toBeGreaterThan(
+      tangLuongThucTheoTuoi(gv, 35),
+    )
+    expect(tangLuongThucTheoTuoi(gv, 35)).toBeGreaterThan(
+      tangLuongThucTheoTuoi(gv, 45),
+    )
   })
 
   it('bác sĩ bứt tốc mạnh nhất ở tuổi 35', () => {
@@ -3064,9 +3082,18 @@ describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
       }
       return luong
     }
-    expect(luongTaiTuoi('giaoVien', 40) / TRIEU).toBeCloseTo(165, -1)
-    expect(luongTaiTuoi('bacSi', 40) / TRIEU).toBeCloseTo(441, -1)
+    // Số cập nhật sau vòng hiệu chỉnh v1.7: giáo viên ×1,75 và bác sĩ ×1,2 ở ba
+    // bậc đầu. Ba nghề vẫn phân kỳ rõ (252 / 565 / 650tr) nhưng gần nhau hơn bộ
+    // cũ (165 / 441 / 650) — đó chính là cái đưa chênh lệch tỉ lệ thắng từ 44,5
+    // điểm về 2,5 điểm.
+    expect(luongTaiTuoi('giaoVien', 40) / TRIEU).toBeCloseTo(252, -1)
+    expect(luongTaiTuoi('bacSi', 40) / TRIEU).toBeCloseTo(565, -1)
     expect(luongTaiTuoi('kySuPhanMem', 40) / TRIEU).toBeCloseTo(650, -1)
+    // Thứ tự ba nghề ở tuổi 40 giữ nguyên như thiết kế mục B
+    expect(luongTaiTuoi('giaoVien', 40)).toBeLessThan(luongTaiTuoi('bacSi', 40))
+    expect(luongTaiTuoi('bacSi', 40)).toBeLessThan(
+      luongTaiTuoi('kySuPhanMem', 40),
+    )
   })
 })
 
@@ -3334,10 +3361,13 @@ describe('v1.7 — chi phí chăm sóc tuổi già', () => {
 
 describe('v1.7 — hệ số an toàn theo tuổi', () => {
   it('nghỉ hưu càng sớm thì đòi hỏi càng cao', () => {
-    expect(heSoAnToanTheoTuoi(21)).toBeCloseTo(2.5, 2)
-    expect(heSoAnToanTheoTuoi(50)).toBeCloseTo(2.02, 2)
-    expect(heSoAnToanTheoTuoi(80)).toBeCloseTo(1.53, 2)
-    expect(heSoAnToanTheoTuoi(100)).toBeCloseTo(1.2, 2)
+    // Số nâng ở vòng hiệu chỉnh v1.7 (Task 15): hệ số 1,2+1,3 cho tuổi thắng
+    // trung bình 63/52/49, thấp hơn dải 52–62 của mục J ở hai nghề. Bộ 2,2+2,4
+    // kéo cả ba vào dải mà gần như không đụng tới tỉ lệ thắng.
+    expect(heSoAnToanTheoTuoi(21)).toBeCloseTo(4.6, 2)
+    expect(heSoAnToanTheoTuoi(50)).toBeCloseTo(3.72, 2)
+    expect(heSoAnToanTheoTuoi(80)).toBeCloseTo(2.81, 2)
+    expect(heSoAnToanTheoTuoi(100)).toBeCloseTo(2.2, 2)
   })
 
   it('giảm đơn điệu theo tuổi', () => {
