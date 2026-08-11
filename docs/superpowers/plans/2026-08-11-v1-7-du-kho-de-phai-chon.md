@@ -610,23 +610,23 @@ describe('v1.7 — thuế thu nhập cá nhân', () => {
   it('tính đúng thuế luỹ tiến từng phần', () => {
     // 718tr, không người phụ thuộc: chịu thuế 532tr
     //   120tr × 5% = 6tr · 240tr × 10% = 24tr · 172tr × 20% = 34,4tr → 64,4tr
-    expect(thueThuNhapCaNhan(718_000_000, 0, 1)).toBe(64_400_000)
+    expect(thueThuNhapCaNhan(718 * TRIEU, 0, 1)).toBe(64.4 * TRIEU)
   })
 
   it('mỗi người phụ thuộc kéo thuế xuống', () => {
-    const khongCon = thueThuNhapCaNhan(650_000_000, 0, 1)
-    const haiCon = thueThuNhapCaNhan(650_000_000, 2, 1)
+    const khongCon = thueThuNhapCaNhan(650 * TRIEU, 0, 1)
+    const haiCon = thueThuNhapCaNhan(650 * TRIEU, 2, 1)
     expect(haiCon).toBeLessThan(khongCon)
     // 650tr − 186tr − 2 × 74,4tr = 315,2tr → 120 × 5% + 195,2 × 10% = 25,52tr
-    expect(haiCon).toBe(25_520_000)
+    expect(haiCon).toBe(25.52 * TRIEU)
   })
 
   it('ngưỡng và giảm trừ bám lạm phát', () => {
     // Nếu ngưỡng đứng yên thì sau vài chục năm lạm phát mọi người đều nộp bậc
     // cao nhất dù thu nhập THỰC không đổi — thuế hoá thành một khoản phạt vì
     // sống lâu. Ngoài đời mức giảm trừ cũng được điều chỉnh định kỳ.
-    expect(thueThuNhapCaNhan(200_000_000, 0, 2)).toBe(0)
-    expect(thueThuNhapCaNhan(200_000_000, 0, 1)).toBeGreaterThan(0)
+    expect(thueThuNhapCaNhan(200 * TRIEU, 0, 2)).toBe(0)
+    expect(thueThuNhapCaNhan(200 * TRIEU, 0, 1)).toBeGreaterThan(0)
   })
 
   it('thuế bị trừ khỏi tiền mặt khi lương đã vượt ngưỡng', () => {
@@ -1475,7 +1475,7 @@ describe('v1.7 — giá hạnh phúc neo theo mặt bằng sống', () => {
   it('ba nghề trả cùng một tỉ lệ thu nhập cho cùng một tấm thẻ', () => {
     const tyLe = NGHE.map((nghe) => {
       const s = taoGameMoi(nghe.id, 41)
-      return (18_000_000 * heSoMatBangSong(s)) / nghe.luong
+      return (18 * TRIEU * heSoMatBangSong(s)) / nghe.luong
     })
     // Trước v1.7 ba tỉ lệ này là 10% / 5% / 3% — nghề lương cao gần như miễn
     // nhiễm với cửa thua duy nhất của game.
