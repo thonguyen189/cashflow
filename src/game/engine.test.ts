@@ -278,7 +278,7 @@ describe('đầu tư', () => {
 })
 
 describe('chuyển năm', () => {
-  const sangNamSau = (ngheId = 'giaoVien') => {
+  const sangNamSau = (ngheId = 'kySuPhanMem') => {
     let s = duyetHetThe(reducer(moiVan(ngheId), { type: 'traChiPhi' }), true)
     s = reducer(s, { type: 'ketThucNam' })
     return s
@@ -294,7 +294,7 @@ describe('chuyển năm', () => {
 
   it('lạm phát đẩy chi phí năm sau lên đúng hệ số', () => {
     const s = sangNamSau()
-    const nghe = timNghe('giaoVien')!
+    const nghe = timNghe('kySuPhanMem')!
     expect(s.chiPhiHangNam).toBe(
       Math.round(nghe.chiPhi * s.chiSoGia * s.heSoChiPhi),
     )
@@ -1141,18 +1141,18 @@ describe('cột mốc tài sản', () => {
   it('mốc suy ra từ chi phí sinh hoạt nên khác nhau theo nghề', () => {
     // 25 lần chi phí sinh hoạt là mốc cao nhất, ba mốc dưới là 10% · 25% · 50%
     expect(mocTaiSanCuaNghe('giaoVien')).toEqual([
-      300 * TRIEU,
-      700 * TRIEU,
-      1_400 * TRIEU,
-      2_700 * TRIEU,
+      200 * TRIEU,
+      500 * TRIEU,
+      1_000 * TRIEU,
+      1_900 * TRIEU,
     ])
-    expect(mocTaiSanCuaNghe('bacSi').at(-1)).toBe(6_000 * TRIEU)
-    expect(mocTaiSanCuaNghe('kySuPhanMem').at(-1)).toBe(10_900 * TRIEU)
+    expect(mocTaiSanCuaNghe('bacSi').at(-1)).toBe(2_600 * TRIEU)
+    expect(mocTaiSanCuaNghe('kySuPhanMem').at(-1)).toBe(3_050 * TRIEU)
   })
 
   it('mốc leo theo mặt bằng giá để lạm phát không làm rẻ cột mốc', () => {
-    expect(mocTaiSanCuaNghe('giaoVien', 2).at(-1)).toBe(5_400 * TRIEU)
-    expect(mocTaiSanCuaNghe('giaoVien', 2)[0]).toBe(500 * TRIEU)
+    expect(mocTaiSanCuaNghe('giaoVien', 2).at(-1)).toBe(3_800 * TRIEU)
+    expect(mocTaiSanCuaNghe('giaoVien', 2)[0]).toBe(400 * TRIEU)
   })
 
   it('chạm mốc đầu lần đầu có sự kiện mocTaiSan, năm sau không lặp lại', () => {
@@ -2781,5 +2781,35 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     const s = vanVoNo()
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
     expect(sau.coHoiNamNay.filter((c) => c.loai === 'kinhDoanh')).toHaveLength(0)
+  })
+})
+
+describe('v1.7 — thang tiền đặt lại theo thực tế 2026', () => {
+  it('ba nghề có tỉ lệ tiết kiệm năm đầu xấp xỉ 15%', () => {
+    const mong: Record<string, [number, number]> = {
+      giaoVien: [90_000_000, 76_000_000],
+      bacSi: [120_000_000, 102_000_000],
+      kySuPhanMem: [144_000_000, 122_000_000],
+    }
+    for (const nghe of NGHE) {
+      const [luong, chiPhi] = mong[nghe.id]!
+      expect(nghe.luong).toBe(luong)
+      expect(nghe.chiPhi).toBe(chiPhi)
+      const tietKiem = (nghe.luong - nghe.chiPhi) / nghe.luong
+      expect(tietKiem).toBeGreaterThan(0.14)
+      expect(tietKiem).toBeLessThan(0.16)
+    }
+  })
+
+  it('vốn ban đầu của mọi xuất thân phủ được trọn chi phí năm đầu', () => {
+    // Chi phí bị trừ ở ĐẦU năm còn lương chỉ cộng vào CUỐI năm, nên vốn ban đầu
+    // thấp hơn chi phí năm đầu là một khởi đầu KHÔNG THỂ vượt qua bằng lối chơi
+    // khôn ngoan — xem docs/06-thiet-ke-v1-6.md mục A.
+    for (const nghe of NGHE) {
+      for (const x of XUAT_THAN) {
+        const s = taoGameMoi(nghe.id, 1, { xuatThanId: x.id, heSoLuongKhoiDiem: 1 })
+        expect(s.tienMat).toBeGreaterThan(s.chiPhiHangNam * 1.05)
+      }
+    }
   })
 })

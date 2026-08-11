@@ -9,6 +9,7 @@ const KHOA_LUU_CU = [
   'dong-tien-luu-v1-3',
   'dong-tien-luu-v1-4',
   'dong-tien-luu-v1-5',
+  'dong-tien-luu-v1-6',
 ]
 
 /** Tự động lưu ván đang chơi vào localStorage. */

@@ -15,9 +15,29 @@ import type {
  * Toàn bộ văn bản và số liệu ở đây là nguyên bản, không lấy từ app nào khác.
  */
 
-/** ---------------- Nghề nghiệp ----------------
- * Đánh đổi cố ý: lương càng cao thì thặng dư tuyệt đối càng lớn
- * nhưng TỈ LỆ giữ lại càng thấp, và khát vọng cũng đắt hơn.
+/** ---------- Thang tiền, đặt lại ở v1.7 ----------
+ * Bản v1.6 cho giáo viên 15tr/tháng, bác sĩ 30tr, kỹ sư phần mềm 50tr — cao gấp
+ * 2,1 tới 4,3 lần thực tế người mới ra trường năm 2026 (giáo viên hạng III bậc 1
+ * hệ số 2,34 × lương cơ sở 2,34tr cộng phụ cấp ưu đãi ≈ 7,1–7,4tr; bác sĩ xếp
+ * bậc 2 từ 1/1/2026 thực nhận 8–15tr; lập trình viên fresher 8–15tr).
+ *
+ * Quan trọng hơn con số tuyệt đối là TỈ LỆ TIẾT KIỆM: v1.6 phát cho người 21
+ * tuổi 27–40% thặng dư ngay năm đầu, trong khi ngoài đời con số đó gần bằng 0.
+ * Đó là nguyên nhân sâu xa nhất của việc mọi nghề đều tự do tài chính trước 40.
+ *
+ * Cả ba nghề nay tiết kiệm 15% như nhau — CỐ Ý. Điểm phân biệt ba nghề chuyển
+ * từ mức lương khởi điểm sang HÌNH DẠNG ĐƯỜNG SỰ NGHIỆP (`duongCongSuNghiep`,
+ * Task 3 của v1.7). Ngoài đời cũng vậy: sinh viên mới ra trường của ba ngành
+ * này sống na ná nhau, cái khác nhau là mười lăm năm sau.
+ *
+ * 15% không phải con số thực tế (thực tế gần 0%) mà là mức tối thiểu để ván
+ * chơi tồn tại: 0% thặng dư nghĩa là không bao giờ tích luỹ được gì và game
+ * không có nước đi nào. Đây là nhượng bộ có ý thức của mô phỏng trước hiện
+ * thực, ghi lại ở đây để bản sau không ai tưởng là sơ suất.
+ *
+ * Giá cơ hội, giá tài sản và giá ước nguyện GIỮ NGUYÊN số tuyệt đối. Lương
+ * giảm 2–4 lần trong khi giá đứng yên chính là đòn bẩy độ khó mạnh nhất của cả
+ * bản v1.7 — và nó miễn phí, vì chỉ là sửa cho đúng đời thật.
  */
 export const NGHE: Nghe[] = [
   {
@@ -25,8 +45,8 @@ export const NGHE: Nghe[] = [
     ten: 'Giáo viên',
     moTa: 'Thu nhập khiêm tốn nhưng chi tiêu gọn. Giữ lại được 40% lương mỗi năm.',
     emoji: '📚',
-    luong: 180 * TRIEU,
-    chiPhi: 108 * TRIEU,
+    luong: 90 * TRIEU,
+    chiPhi: 76 * TRIEU,
     khatVongId: 'xeMay',
   },
   {
@@ -34,8 +54,8 @@ export const NGHE: Nghe[] = [
     ten: 'Bác sĩ',
     moTa: 'Lương gấp đôi giáo viên, nhưng chi phí sinh hoạt cũng leo theo. Giữ lại 33%.',
     emoji: '🩺',
-    luong: 360 * TRIEU,
-    chiPhi: 240 * TRIEU,
+    luong: 120 * TRIEU,
+    chiPhi: 102 * TRIEU,
     khatVongId: 'oTo',
   },
   {
@@ -43,55 +63,21 @@ export const NGHE: Nghe[] = [
     ten: 'Kỹ sư phần mềm',
     moTa: 'Lương cao nhất, nhưng lối sống đắt đỏ nhất. Chỉ giữ lại 27% lương.',
     emoji: '💻',
-    luong: 600 * TRIEU,
-    chiPhi: 435 * TRIEU,
+    luong: 144 * TRIEU,
+    chiPhi: 122 * TRIEU,
     khatVongId: 'canHo',
   },
 ]
 
-/** ---------------- Xuất thân ----------------
- * Vốn tính theo TỈ LỆ với lương khởi điểm chứ không phải số tiền tuyệt đối, để
- * cả ba nghề đều cân nhau.
+/** ---------- Vì sao vốn ban đầu nâng ở v1.7 ----------
+ * Tỉ lệ chi phí/lương mới là ~0,85 (v1.6: 0,725 ở nghề khắt khe nhất). Với nhà
+ * thuần nông, chi phí năm đầu ≈ 0,85 × 0,92 × 1,08 = 0,845 × lương, cộng khoản
+ * trả nợ học phí ~0,06 × lương, cộng đệm cho sự kiện phát sinh sớm — nên sàn
+ * thật là ~0,91 và 1,05 là mức có đệm.
  *
- * Nhà thuần nông là trường hợp đáng chú ý nhất: trong những năm còn phụng dưỡng,
- * hai hệ số triệt tiêu nhau gần hết (0,92 × 1,08 ≈ 0,99) — gánh nặng rơi đúng
- * vào quãng đời cần vốn nhất rồi biến mất sau tuổi 55, để lại lợi thế chi phí
- * thấp cho phần đời còn lại. Ngoài đời cũng thế: người xuất thân khó khăn bị níu
- * ở đoạn đầu, nhưng thói quen tằn tiện là tài sản của đoạn sau.
- *
- * ---------- Cân bằng phase 1, fix round 1 ----------
- * Bản đầu của Task 5 đặt `vienChuc.tyLeVonBanDau = 0,4` (chỉ 40% một năm lương)
- * trong khi v1.5 khởi đầu bằng nguyên một năm lương (1,0×) — cắt 60% vốn của
- * chính ván MẶC ĐỊNH. Đó là lỗi đặc tả, không phải lỗi cân bằng thật: nó vừa làm
- * hai test cân bằng cũ (`balance.test.ts`) đỏ vì bot cân bằng vỡ nợ ngay năm
- * đầu, vừa buộc phải vặn `heSoChiPhiSong` lên rất cao (buônBán 1,8, khaGia 2,6)
- * để ép chênh lệch tỉ lệ thắng giữa bốn xuất thân về dưới ngưỡng — phá cả câu
- * chuyện thiết kế (chi phí sống ×2,6 không còn giống "chỉ đắt hơn một chút")
- * lẫn mục tiêu tỉ lệ thắng chung của game.
- *
- * Sửa đúng gốc: đưa `vienChuc.tyLeVonBanDau` về lại 1,0 (khôi phục đúng số vốn
- * khởi đầu của v1.5 cho ván mặc định), rồi giãn ba xuất thân còn lại theo cùng
- * tỉ lệ tương đối quanh mốc đó (thuần nông tạm đặt 0,25, buônBán 2, khaGia 3,5).
- * `heSoChiPhiSong` trả lại nguyên bản đặc tả ban đầu (0,92 / 1 / 1,1 / 1,25).
- *
- * ---------- Cân bằng phase 1, fix round 2 ----------
- * Vòng round 1 để lộ ra thuần nông vẫn thua gần như tuyệt đối (5% thắng, chênh
- * 92,5 điểm phần trăm so với ba xuất thân kia) dù `heSoChiPhiSong` đã hạ hết cỡ
- * xuống sàn cho phép 0,85. Lý do là RÀNG BUỘC CỦA CỖ MÁY chứ không phải một khởi
- * đầu khó khăn thông thường: chi phí sinh hoạt bị trừ ở ĐẦU năm từ tiền mặt
- * đang có, còn lương chỉ về túi ở CUỐI năm (xem `chuyenNam` trong `engine.ts`).
- * Vì vậy `tyLeVonBanDau` phải vượt quá tỉ lệ chi phí/lương của nghề khắt khe
- * nhất, nếu không nhân vật thua ngay năm 1 trước khi kịp làm bất cứ điều gì —
- * không phải một bất lợi có thể bù bằng lối chơi khôn ngoan.
- *
- * Ngưỡng hoà vốn năm 1 theo từng nghề (đã nhân `heSoChiPhiSong` 0,92 của thuần
- * nông): giáo viên 108/180 × 0,92 = 0,552; bác sĩ 240/360 × 0,92 = 0,613; kỹ sư
- * phần mềm 435/600 × 0,92 = 0,667 — khắt khe nhất. `tyLeVonBanDau` sửa thành
- * 0,85 để vượt xa mốc 0,667 đó, chừa đệm cho khoản trả nợ học phí năm đầu và
- * các sự kiện phát sinh sớm. Đo lại: thuần nông 92%, viên chức 94%, buôn bán
- * 97%, khá giả 98% — chênh 6 điểm phần trăm, trong ngưỡng 15. Không đụng tới
- * `tyLeVonBanDau`/`heSoChiPhiSong` của ba xuất thân còn lại. Xem `balance.test.ts`
- * và báo cáo `task-2-4-5-fix-report.md` (mục fix round 2) cho số đo đầy đủ.
+ * Tương phản giữa bốn xuất thân giữ gần nguyên vẹn (1 : 1,19 : 2,29 : 4,00 so
+ * với 1 : 1,18 : 2,35 : 4,12 của v1.6) — vốn là thứ người chơi cảm nhận rõ nhất
+ * nên phải giữ.
  */
 export const XUAT_THAN: XuatThan[] = [
   {
@@ -99,7 +85,7 @@ export const XUAT_THAN: XuatThan[] = [
     ten: 'Nhà thuần nông',
     emoji: '🌾',
     moTa: 'Bố mẹ làm ruộng, bán cả lứa lợn và vay mượn thêm họ hàng mới dồn được cho bạn một khoản nhỏ phòng thân. Đổi lại là khoản nợ học phí phải trả dần và trách nhiệm gửi tiền về quê đỡ đần bố mẹ mỗi tháng, nhưng thói quen tằn tiện thì bạn mang theo suốt đời.',
-    tyLeVonBanDau: 0.85,
+    tyLeVonBanDau: 1.05,
     tyLeNoBanDau: 0.4,
     heSoChiPhiSong: 0.92,
     hanhPhucBanDau: 5,
@@ -112,7 +98,7 @@ export const XUAT_THAN: XuatThan[] = [
     ten: 'Viên chức tỉnh lẻ',
     emoji: '🏘️',
     moTa: 'Bố mẹ là công chức nhà nước, đủ ăn đủ mặc. Cho bạn trọn một năm lương làm vốn rồi để bạn tự lo phần còn lại.',
-    tyLeVonBanDau: 1,
+    tyLeVonBanDau: 1.25,
     tyLeNoBanDau: 0,
     heSoChiPhiSong: 1,
     hanhPhucBanDau: 0,
@@ -125,7 +111,7 @@ export const XUAT_THAN: XuatThan[] = [
     ten: 'Buôn bán ngoài phố',
     emoji: '🏪',
     moTa: 'Nhà mặt phố có cửa hàng, bố mẹ dúi cho một khoản kha khá làm vốn. Đổi lại, bạn lớn lên với mức sống mà giờ khó lòng hạ xuống.',
-    tyLeVonBanDau: 2,
+    tyLeVonBanDau: 2.4,
     tyLeNoBanDau: 0,
     heSoChiPhiSong: 1.1,
     hanhPhucBanDau: 0,
@@ -138,7 +124,7 @@ export const XUAT_THAN: XuatThan[] = [
     ten: 'Nhà có của ăn của để',
     emoji: '🏛️',
     moTa: 'Xuất phát trước người ta cả một quãng dài. Nhưng nếp sống sang trọng đi theo bạn suốt đời, và cái đích tự do vì thế cũng lùi xa hơn.',
-    tyLeVonBanDau: 3.5,
+    tyLeVonBanDau: 4.2,
     tyLeNoBanDau: 0,
     heSoChiPhiSong: 1.25,
     hanhPhucBanDau: 0,
