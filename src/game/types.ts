@@ -242,6 +242,7 @@ export type SuKienLoai =
   | 'bienCoLon'
   | 'thanhLyDoanhNghiep'
   | 'phaSan'
+  | 'doanhNghiepPhaSan'
 
 /** Sáu biến cố lớn của đời người (v1.6), mỗi cái có một lá chắn riêng. */
 export type BienCoId =

@@ -518,6 +518,32 @@ export const CONFIG = {
   doanhNghiep: {
     /** thu nhập nền giảm thực ngần này mỗi năm kể từ năm góp vốn */
     baoHoaMoiNam: 0.03,
+
+    /** ---------- Rủi ro nền ----------
+     * Khác biến cố 🏚️ "doanh nghiệp đóng cửa" của v1.6: cái đó hẹn lịch, một
+     * lần một ván, nhắm đúng cái lớn nhất, có lá chắn là không tập trung vốn.
+     * Cái này là RỦI RO NỀN — thường xuyên, mù quáng, không có lá chắn nào.
+     *
+     * Giữ ba doanh nghiệp suốt mười năm thì xác suất mất ít nhất một cái là
+     * khoảng 50%. Đây là đường mất vốn quan trọng nhất của v1.7, vì nó đánh
+     * thẳng vào nguồn thu nhập thụ động — tức đánh thẳng vào điều kiện thắng.
+     * Không có nó thì phá sản mãi mãi đo ra 0% như suốt bản v1.6.
+     *
+     * Thu hồi 10% — thanh lý vội vàng trong hoảng loạn còn tệ hơn cả thanh lý
+     * có trật tự khi vỡ nợ (45%, xem khối `phaSan`).
+     */
+    xacSuatPhaSanCoBan: 0.02,
+    /** mỗi năm sở hữu cộng thêm ngần này vào hệ số xác suất */
+    tangRuiRoMoiNam: 0.04,
+    heSoRuiRoThiTruong: {
+      thinhVuong: 0.5,
+      binhThuong: 1,
+      suyThoai: 1.6,
+      khungHoang: 2.5,
+    },
+    /** thu hồi được ngần này vốn góp khi doanh nghiệp đổ */
+    hoanLaiKhiPhaSan: 0.1,
+    matHanhPhuc: 6,
   },
 
   /** ---------- Biến cố lớn ----------

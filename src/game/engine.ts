@@ -166,6 +166,25 @@ export function thuNhapNenNamNay(s: GameState, d: DoanhNghiep): Tien {
   )
 }
 
+/**
+ * Xác suất một doanh nghiệp đổ hẳn trong năm nay. Chặn trên ở 1 để hệ số tuổi
+ * doanh nghiệp không bao giờ đẩy xác suất vượt khỏi khoảng hợp lệ trong những
+ * ván sống rất dài.
+ */
+export function xacSuatDoanhNghiepPhaSan(
+  s: GameState,
+  d: DoanhNghiep,
+): number {
+  const dn = CONFIG.doanhNghiep
+  const soNam = Math.max(0, s.nam - d.namGop)
+  return Math.min(
+    1,
+    dn.xacSuatPhaSanCoBan *
+      dn.heSoRuiRoThiTruong[s.thiTruong] *
+      (1 + dn.tangRuiRoMoiNam * soNam),
+  )
+}
+
 /** Tổng thu nhập thụ động nền năm nay, chưa áp biến động của từng ngành. */
 export function thuNhapThuDong(s: GameState): Tien {
   return s.doanhNghiep.reduce((t, d) => t + thuNhapNenNamNay(s, d), 0)
@@ -1180,6 +1199,41 @@ function chuyenNam(s: GameState): GameState {
     : 0
   tienMat += thuNhapBanDoi
 
+  /* --- 3b. Rủi ro nền: doanh nghiệp có thể đổ hẳn (v1.7) ---
+   * Đứng SAU bước 3 nên doanh nghiệp vẫn trả thu nhập của năm rồi mới đóng cửa —
+   * đúng như đời thật, tiền của năm nay đã về túi trước khi cái quán sập.
+   *
+   * Trạng thái thị trường đọc `thiTruongTruoc` gián tiếp qua `s.thiTruong`, tức
+   * đúng trạng thái người chơi đã nhìn thấy suốt năm — cùng quy ước với mọi phép
+   * tính kinh tế khác của bước này (xem chú thích bước 0). */
+  let doanhNghiep = s.doanhNghiep
+  {
+    const dn = CONFIG.doanhNghiep
+    const conLai: DoanhNghiep[] = []
+    for (const d of doanhNghiep) {
+      if (rng.next() >= xacSuatDoanhNghiepPhaSan(s, d)) {
+        conLai.push(d)
+        continue
+      }
+      const hoanLai = Math.round(
+        vonDoanhNghiepNamNay(s, d) * dn.hoanLaiKhiPhaSan,
+      )
+      tienMat += hoanLai
+      const mat = apHanhPhuc(-dn.matHanhPhuc)
+      suKien.push({
+        loai: 'doanhNghiepPhaSan',
+        tieuDe: `🏚️ ${d.ten} đã đóng cửa`,
+        moTa:
+          `Cạnh tranh gay gắt dần, khách quen thưa đi, chi phí mặt bằng thì` +
+          ` năm nào cũng tăng. Cuối cùng phải sang nhượng lại, thu về` +
+          ` ${dinhDangTien(hoanLai)} — một phần nhỏ của số vốn đã bỏ ra.`,
+        tienThayDoi: hoanLai,
+        hanhPhucThayDoi: mat,
+      })
+    }
+    doanhNghiep = conLai
+  }
+
   /* --- 4. Trả nợ --- */
   let khoanVay = s.khoanVay
     .map((v) => ({ ...v, namConLai: v.namConLai - 1 }))
@@ -1604,7 +1658,6 @@ function chuyenNam(s: GameState): GameState {
   // nhưng không còn được nhân vào lương mỗi năm như bản lỗi trước đây, nếu
   // không lương sẽ tiệm cận 0 theo cấp số nhân (0,85 lũy thừa n).
   let diChungApNamNay = 1
-  let doanhNghiep = s.doanhNghiep
 
   if (s.lichBienCo.includes(s.nam)) {
     const bc = CONFIG.bienCo
