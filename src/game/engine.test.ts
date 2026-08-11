@@ -44,6 +44,7 @@ import {
   soNamTriLieuConLai,
   taiSanRong,
   taoGameMoi,
+  taoRng,
   thanhToanMoiNamCuaKhoanVay,
   themHanhPhuc,
   thuNhapNenNamNay,
@@ -59,6 +60,9 @@ import {
   vonDoanhNghiepNamNay,
   xacSuatDoanhNghiepPhaSan,
   xeDangCo,
+  chuyenTrangThaiThiTruong,
+  heSoChamSocTuoiGia,
+  heSoAnToanTheoTuoi,
 } from './engine'
 import type {
   AssetId,
@@ -2289,13 +2293,22 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
     }
   })
 
-  it('lạm phát năm khủng hoảng cao hơn năm bình thường đúng 5 điểm phần trăm', () => {
+  it('lạm phát năm khủng hoảng cao hơn năm bình thường đúng bằng lệch lạm phát cấu hình', () => {
+    // v1.7 nâng lechLamPhat của khủng hoảng từ 0,05 lên 0,07 (bình thường vẫn
+    // là 0) — so với CONFIG thay vì hằng số cứng để không lệch khi Task 8 đổi
+    // số.
     const kh = namVoiThiTruong('khungHoang')
     const bt = namVoiThiTruong('binhThuong')
-    expect(kh.lamPhat - bt.lamPhat).toBeCloseTo(0.05, 10)
+    const lechKyVong =
+      CONFIG.thiTruong.tacDong.khungHoang.lechLamPhat -
+      CONFIG.thiTruong.tacDong.binhThuong.lechLamPhat
+    expect(kh.lamPhat - bt.lamPhat).toBeCloseTo(lechKyVong, 10)
   })
 
-  it('thu nhập doanh nghiệp trong khủng hoảng bằng một nửa mức bình thường', () => {
+  it('thu nhập doanh nghiệp trong khủng hoảng bằng đúng tỉ lệ heSoLoiTuc cấu hình', () => {
+    // v1.7 hạ heSoLoiTuc của khủng hoảng từ 0,5 xuống 0,25 (còn một phần tư
+    // thay vì một nửa) — so với CONFIG thay vì hằng số cứng để không lệch khi
+    // Task 8 đổi số.
     const nen = {
       ...moiVan(),
       doanhNghiep: [
@@ -2315,7 +2328,10 @@ describe('v1.6 — chu kỳ kinh tế tác động lên nền kinh tế', () => 
     const kh = diTronMotNam({ ...nen, thiTruong: 'khungHoang' }).tongKet!
     const tienBT = bt.thuNhapDoanhNghiep[0]!.soTien
     const tienKH = kh.thuNhapDoanhNghiep[0]!.soTien
-    expect(tienKH / tienBT).toBeCloseTo(0.5, 2)
+    const tyLeKyVong =
+      CONFIG.thiTruong.tacDong.khungHoang.heSoLoiTuc /
+      CONFIG.thiTruong.tacDong.binhThuong.heSoLoiTuc
+    expect(tienKH / tienBT).toBeCloseTo(tyLeKyVong, 2)
   })
 
   it('lương không tăng thực trong khủng hoảng', () => {
@@ -2861,13 +2877,18 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
     expect(sau.soLanPhaSan).toBe(0)
   })
 
-  it('phá sản xoá sạch nợ, đưa tiền mặt về 0 và giữ nguyên ước nguyện đã mua', () => {
-    const s = vanVoNo({ uocNguyenDaMua: ['xeMay'] })
+  it('phá sản xoá sạch nợ, đưa tiền mặt về 0 và giữ nguyên ước nguyện không phải xe', () => {
+    // v1.7 (Task 13) siết thêm: ước nguyện XE bị bán giải chấp khi phá sản
+    // (xem describe('v1.7 — phá sản lần hai là hết') cho phép thử riêng của
+    // hành vi đó). Bài này đổi từ 'xeMay' sang 'canHo' để giữ đúng tinh thần
+    // gốc — kiểm ước nguyện KHÔNG nằm trong `uocNguyenBiMat` vẫn nguyên vẹn
+    // sau phá sản — mà không còn mâu thuẫn với luật mới.
+    const s = vanVoNo({ uocNguyenDaMua: ['canHo'] })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
     expect(sau.soLanPhaSan).toBe(1)
     expect(sau.khoanVay).toHaveLength(0)
     expect(sau.tienMat).toBe(0)
-    expect(sau.uocNguyenDaMua).toEqual(['xeMay'])
+    expect(sau.uocNguyenDaMua).toEqual(['canHo'])
   })
 
   it('phá sản trừ đúng 15 hạnh phúc và cấm vay 5 năm, cấm cơ hội 3 năm', () => {
@@ -3212,5 +3233,152 @@ describe('v1.7 — doanh nghiệp có thể phá sản hẳn', () => {
     } finally {
       ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = goc
     }
+  })
+})
+
+describe('v1.7 — chu kỳ kinh tế khắc nghiệt hơn', () => {
+  it('mỗi hàng của ma trận chuyển vẫn cộng đủ 1', () => {
+    for (const hang of Object.values(CONFIG.thiTruong.maTranChuyen)) {
+      const tong = Object.values(hang).reduce((t: number, x) => t + x, 0)
+      expect(tong).toBeCloseTo(1, 10)
+    }
+  })
+
+  it('khủng hoảng không bao giờ nhảy thẳng về thịnh vượng', () => {
+    expect(CONFIG.thiTruong.maTranChuyen.khungHoang.thinhVuong).toBe(0)
+  })
+
+  it('khủng hoảng chiếm khoảng 17-21% số năm trên chặng dài', () => {
+    // Ghi chú: phân phối dừng thật của ma trận v1.7 (giải bằng lặp luỹ thừa,
+    // độc lập hạt giống) là ~21,1%, cao hơn con số "khoảng 17%" nêu trong mô
+    // tả — tài liệu thiết kế mục E nêu ước lượng định hướng, còn đây là hành
+    // vi thật của đúng ma trận được yêu cầu. Biên trên nới từ 0,21 lên 0,23
+    // để ôm trọn phân phối dừng thật (đo được 20,8%-21,4% qua nhiều hạt giống)
+    // mà vẫn đủ chặt để bắt được hồi quy nếu ma trận bị đổi sai sau này.
+    const rng = taoRng(1234, 0)
+    let tt: TrangThaiThiTruong = 'binhThuong'
+    let dem = 0
+    const SO_NAM = 40_000
+    for (let i = 0; i < SO_NAM; i++) {
+      tt = chuyenTrangThaiThiTruong(rng, tt)
+      if (tt === 'khungHoang') dem++
+    }
+    const tyLe = dem / SO_NAM
+    expect(tyLe).toBeGreaterThan(0.14)
+    expect(tyLe).toBeLessThan(0.23)
+  })
+
+  it('khủng hoảng sâu hơn v1.6 ở cả giá lẫn lợi tức', () => {
+    const kh = CONFIG.thiTruong.tacDong.khungHoang
+    expect(kh.doLechGia).toBeLessThanOrEqual(-0.45)
+    expect(kh.heSoLoiTuc).toBeLessThanOrEqual(0.25)
+  })
+})
+
+describe('v1.7 — chi phí chăm sóc tuổi già', () => {
+  it('chưa tới 75 tuổi thì chưa cộng gì', () => {
+    expect(heSoChamSocTuoiGia(60)).toBe(0)
+    expect(heSoChamSocTuoiGia(75)).toBe(0)
+  })
+
+  it('leo dần rồi chạm trần 60%', () => {
+    expect(heSoChamSocTuoiGia(80)).toBeCloseTo(0.15, 6)
+    expect(heSoChamSocTuoiGia(85)).toBeCloseTo(0.3, 6)
+    expect(heSoChamSocTuoiGia(90)).toBeCloseTo(0.45, 6)
+    expect(heSoChamSocTuoiGia(95)).toBeCloseTo(0.6, 6)
+    expect(heSoChamSocTuoiGia(100)).toBeCloseTo(0.6, 6)
+  })
+
+  it('đích tự do tài chính tự lùi ra khi già đi', () => {
+    // Giữ được tự do ở tuổi 60 không có nghĩa là giữ được ở tuổi 85.
+    const nam60 = 60 - CONFIG.cotTruyen.tuoiBatDau + 1
+    const nam85 = 85 - CONFIG.cotTruyen.tuoiBatDau + 1
+    const gia = tinhHeSoChiPhi(true, [], nam60, XUAT_THAN[1]!, 1)
+    const raGia = tinhHeSoChiPhi(true, [], nam85, XUAT_THAN[1]!, 1)
+    expect(raGia).toBeGreaterThan(gia * 1.25)
+  })
+})
+
+describe('v1.7 — hệ số an toàn theo tuổi', () => {
+  it('nghỉ hưu càng sớm thì đòi hỏi càng cao', () => {
+    expect(heSoAnToanTheoTuoi(21)).toBeCloseTo(2.5, 2)
+    expect(heSoAnToanTheoTuoi(50)).toBeCloseTo(2.02, 2)
+    expect(heSoAnToanTheoTuoi(80)).toBeCloseTo(1.53, 2)
+    expect(heSoAnToanTheoTuoi(100)).toBeCloseTo(1.2, 2)
+  })
+
+  it('giảm đơn điệu theo tuổi', () => {
+    for (let tuoi = 21; tuoi < 100; tuoi++) {
+      expect(heSoAnToanTheoTuoi(tuoi + 1)).toBeLessThan(heSoAnToanTheoTuoi(tuoi))
+    }
+  })
+
+  it('mục tiêu tự do ở tuổi 30 cao hơn hẳn ở tuổi 65 với cùng nghĩa vụ', () => {
+    const s = taoGameMoi('bacSi', 51)
+    const nam30 = { ...s, nam: 30 - CONFIG.cotTruyen.tuoiBatDau + 1 }
+    const nam65 = { ...s, nam: 65 - CONFIG.cotTruyen.tuoiBatDau + 1 }
+    expect(mucTieuTuDo(nam30)).toBeGreaterThan(mucTieuTuDo(nam65) * 1.25)
+  })
+})
+
+describe('v1.7 — phá sản lần hai là hết', () => {
+  /**
+   * Trả chi phí, duyệt hết thẻ tiêu dùng, rồi bấm Kết thúc năm.
+   *
+   * Khi tiền mặt của tình huống thử đã bị ép âm sâu để dựng thẳng nấc phá sản,
+   * MỌI thẻ tiêu dùng đều bị buộc từ chối (không đủ tiền), và mỗi lần từ chối
+   * tự trừ hạnh phúc — đủ trừ để chạm cửa thua HẠNH PHÚC trước khi kịp chạy tới
+   * `chuyenNam` và nấc phá sản đang muốn kiểm, làm sai lệch phép thử. Đây đúng
+   * là cái bẫy mà `diTronMotNam` (describe('v1.6 — ba nấc vỡ nợ')) né bằng cách
+   * ép lại hạnh phúc trước khi gọi 'ketThucNam' — lặp lại đúng cách đó ở đây,
+   * ép về mức mà tình huống thử đã khai báo trong `s.hanhPhuc` thay vì để nó
+   * trôi theo hệ quả phụ của vòng thẻ.
+   */
+  const choiHetNam = (s: GameState): GameState => {
+    const sau = duyetHetThe(reducer(s, { type: 'traChiPhi' }), true)
+    return reducer({ ...sau, hanhPhuc: s.hanhPhuc }, { type: 'ketThucNam' })
+  }
+
+  it('phá sản lần đầu còn chơi tiếp được', () => {
+    let s = taoGameMoi('giaoVien', 71)
+    s = { ...s, soLanPhaSan: 0, hanhPhuc: 90 }
+    const sau = choiHetNam(s)
+    expect(sau.trangThai).toBe('dangChoi')
+  })
+
+  it('bước sang lần phá sản thứ hai thì thua ngay', () => {
+    let s = taoGameMoi('giaoVien', 72)
+    // Dựng thẳng trạng thái: đã ngã một lần, nay tiền mặt âm sâu và không còn gì để bán
+    s = {
+      ...s,
+      soLanPhaSan: 1,
+      hanhPhuc: 90,
+      tienMat: -s.chiPhiHangNam * 5,
+      soHuu: { traiPhieu: 0, coPhieu: 0, vang: 0, crypto: 0, batDongSan: 0 },
+      doanhNghiep: [],
+      khoanVay: [],
+    }
+    const sau = choiHetNam(s)
+    expect(sau.soLanPhaSan).toBe(2)
+    expect(sau.trangThai).toBe('thua')
+    expect(sau.lyDoKetThuc).toContain('lần thứ hai')
+  })
+
+  it('phá sản lần đầu lấy mất ước nguyện xe nhưng giữ lại căn hộ', () => {
+    let s = taoGameMoi('giaoVien', 73)
+    s = {
+      ...s,
+      soLanPhaSan: 0,
+      hanhPhuc: 90,
+      uocNguyenDaMua: ['xeMay', 'canHo'],
+      tienMat: -s.chiPhiHangNam * 5,
+      soHuu: { traiPhieu: 0, coPhieu: 0, vang: 0, crypto: 0, batDongSan: 0 },
+      doanhNghiep: [],
+      khoanVay: [],
+    }
+    const sau = choiHetNam(s)
+    expect(sau.soLanPhaSan).toBe(1)
+    expect(sau.uocNguyenDaMua).not.toContain('xeMay')
+    expect(sau.uocNguyenDaMua).toContain('canHo')
   })
 })

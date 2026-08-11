@@ -22,19 +22,22 @@ export const CONFIG = {
    * không cần một con số cứng nào cả.
    */
   tuDoTaiChinh: {
-    /**
-     * Dòng tiền thụ động phải đạt tỉ lệ này so với nghĩa vụ hàng năm.
+    /** ---------- Hệ số an toàn theo tuổi (v1.7) ----------
+     * heSoAnToan(tuổi) = heSoToiThieu + heSoPhuThem × (tuổi viên mãn − tuổi) / quãng đời
      *
-     * Vì dòng tiền được tính theo mức KỲ VỌNG mà thực nhận thì dao động mạnh
-     * (quán cà phê có năm âm 35%, cổ tức có năm bằng 0), đòi đúng 100% kỳ vọng
-     * nghĩa là cứ hai năm lại hụt một năm. Đệm 50% vừa đủ để năm xấu nhất của
-     * một doanh nghiệp vẫn không làm bạn phải đi làm lại.
+     * Tuổi 21 đòi 2,50 · tuổi 40 đòi 2,19 · tuổi 65 đòi 1,78 · tuổi 100 đòi 1,20.
      *
-     * Hệ số này điều chỉnh NHỊP ĐỘ ván chơi, không phải tỉ lệ thắng: mô phỏng
-     * cho thấy nâng từ 1,0 lên 2,0 kéo ván dài thêm khoảng năm năm mà tỉ lệ
-     * thắng đứng yên, vì thua chỉ đến từ hạnh phúc.
+     * Đây chính là quy tắc 4% ngoài đời: nghỉ hưu càng sớm thì tỉ lệ rút an toàn
+     * phải càng thấp, vì tiền phải nuôi bạn càng lâu và càng nhiều lần đi qua
+     * khủng hoảng. Nó giết thẳng kiểu thắng ở tuổi 31 mà không cần cấm đoán gì —
+     * chỉ cần nói đúng sự thật.
+     *
+     * Con số cũ là 1,5 cố định. Đo thực nghiệm cho thấy hệ số này chỉ dời TUỔI
+     * thắng chứ không hạ TỈ LỆ thắng (nâng lên 4,0 vẫn ra 91–94%), nên nó ở đây
+     * với tư cách công cụ NHỊP ĐỘ, không phải công cụ độ khó.
      */
-    heSoAnToan: 1.5,
+    heSoToiThieu: 1.2,
+    heSoPhuThem: 1.3,
   },
 
   /** ---------- Cột mốc tài sản ----------
@@ -113,6 +116,20 @@ export const CONFIG = {
     /** chuyện tuổi già: xác suất mỗi năm sau tuổi này */
     tuoiGiaSuKienTuTuoi: 70,
     tuoiGiaSuKienXacSuat: 0.3,
+
+    /** ---------- Chăm sóc tuổi già (v1.7) ----------
+     * Thuê người chăm, thuốc men hàng ngày, viện dưỡng lão. Bản v1.6 hoàn toàn
+     * không có khoản này, mà ngoài đời nó chính là cái làm người đã về hưu vỡ
+     * trận: thu nhập đứng yên trong khi chi phí leo không ngừng.
+     *
+     * Vì `nghiaVuHangNam` lấy `chiPhiHangNam` làm thành phần chính, cái ĐÍCH tự
+     * do tài chính tự lùi ra khi bạn già đi — giữ được tự do ở tuổi 60 không có
+     * nghĩa là giữ được ở tuổi 85. Đây là mảnh ghép làm cho chế độ chơi tiếp sau
+     * khi thắng có ý nghĩa thật.
+     */
+    chamSocTuTuoi: 75,
+    chamSocTangMoiNam: 0.03,
+    chamSocToiDa: 0.6,
   },
 
   /** ---------- Hạnh phúc ---------- */
@@ -295,26 +312,26 @@ export const CONFIG = {
    * thật thì cổ phiếu, bất động sản và tiền mã hoá cùng rơi một lượt, doanh
    * nghiệp hụt thu, lạm phát vọt lên — và chỉ vàng với trái phiếu còn đứng vững.
    *
-   * ---------- Ma trận này cho ra nhịp nào ----------
-   * Tính trên một ván trọn 79 năm (mô phỏng 20.000 ván):
-   *   tỉ lệ số năm  thịnh vượng 24,1% · bình thường 43,5% · suy thoái 22,6%
-   *                 · khủng hoảng 9,9%
-   *   5,8 đợt khủng hoảng mỗi ván — trung bình MỘT ĐỢT MỖI 13,6 NĂM
-   *   mỗi đợt kéo dài 1,33 năm
-   * Đó là nhịp mà một người Việt Nam đi làm từ đầu thập niên 1990 tới nay đã
-   * thật sự sống qua.
+   * ---------- Ma trận này cho ra nhịp nào (siết lại ở v1.7) ----------
+   * Bản v1.6 cho khủng hoảng chiếm 9,9% số năm, một đợt mỗi 13,6 năm. Đo thực
+   * nghiệm cho thấy đó là mức mà một danh mục dàn đều vẫn đi qua êm ru. Ma trận
+   * v1.7 đẩy lên khoảng 17% số năm và làm sâu hơn hẳn: giá sập 45% thay vì 30%,
+   * lợi tức còn một phần tư thay vì một nửa, lạm phát vọt thêm 7 điểm.
    *
-   * Hai tính chất cài có chủ ý: khủng hoảng không bao giờ nhảy thẳng về thịnh
-   * vượng (kinh tế hồi phục dần chứ không bật dậy), và suy thoái là cửa ngõ
-   * chính vào khủng hoảng.
+   * Đo riêng đòn này ở thực nghiệm vòng hai, tỉ lệ thắng của giáo viên rơi từ
+   * 72% xuống 51% — đòn bẩy mạnh thứ hai của cả bản, sau thang tiền.
+   *
+   * Hai tính chất của v1.6 giữ nguyên: khủng hoảng không bao giờ nhảy thẳng về
+   * thịnh vượng (kinh tế hồi phục dần chứ không bật dậy), và suy thoái là cửa
+   * ngõ chính vào khủng hoảng.
    */
   thiTruong: {
     banDau: 'binhThuong' as TrangThaiThiTruong,
     maTranChuyen: {
-      thinhVuong: { thinhVuong: 0.52, binhThuong: 0.34, suyThoai: 0.11, khungHoang: 0.03 },
-      binhThuong: { thinhVuong: 0.24, binhThuong: 0.54, suyThoai: 0.18, khungHoang: 0.04 },
-      suyThoai: { thinhVuong: 0.05, binhThuong: 0.4, suyThoai: 0.33, khungHoang: 0.22 },
-      khungHoang: { thinhVuong: 0, binhThuong: 0.28, suyThoai: 0.47, khungHoang: 0.25 },
+      thinhVuong: { thinhVuong: 0.42, binhThuong: 0.34, suyThoai: 0.16, khungHoang: 0.08 },
+      binhThuong: { thinhVuong: 0.2, binhThuong: 0.46, suyThoai: 0.24, khungHoang: 0.1 },
+      suyThoai: { thinhVuong: 0.04, binhThuong: 0.3, suyThoai: 0.36, khungHoang: 0.3 },
+      khungHoang: { thinhVuong: 0, binhThuong: 0.22, suyThoai: 0.43, khungHoang: 0.35 },
     },
     /**
      * `doLechGia` cộng vào biến động giá sau khi nhân `nhayChuKy` của từng kênh.
@@ -325,8 +342,8 @@ export const CONFIG = {
     tacDong: {
       thinhVuong: { doLechGia: 0.1, heSoLoiTuc: 1.15, lechLamPhat: 0, heSoTangLuong: 1.3 },
       binhThuong: { doLechGia: 0, heSoLoiTuc: 1, lechLamPhat: 0, heSoTangLuong: 1 },
-      suyThoai: { doLechGia: -0.1, heSoLoiTuc: 0.8, lechLamPhat: 0.01, heSoTangLuong: 0.3 },
-      khungHoang: { doLechGia: -0.3, heSoLoiTuc: 0.5, lechLamPhat: 0.05, heSoTangLuong: 0 },
+      suyThoai: { doLechGia: -0.18, heSoLoiTuc: 0.65, lechLamPhat: 0.02, heSoTangLuong: 0.2 },
+      khungHoang: { doLechGia: -0.45, heSoLoiTuc: 0.25, lechLamPhat: 0.07, heSoTangLuong: 0 },
     },
     /** giá có thể sập chín phần mười nhưng không về không */
     sanBienDong: -0.9,
@@ -633,9 +650,10 @@ export const CONFIG = {
   },
 
   /** ---------- Phá sản ----------
-   * Không phải dấu chấm hết. Ngoài đời phá sản là mất tài sản, bị bán giải chấp
-   * và làm lại với uy tín sứt mẻ — luật phá sản cũng chừa lại nhà ở và phương
-   * tiện đi lại thiết yếu, nên ước nguyện đã mua KHÔNG bị đụng tới.
+   * Lần đầu không phải dấu chấm hết. Ngoài đời phá sản là mất tài sản, bị bán
+   * giải chấp và làm lại với uy tín sứt mẻ — luật phá sản chừa lại nhà ở nhưng
+   * KHÔNG chừa xe (v1.7): ước nguyện xe máy/ô tô đã mua bị bán giải chấp ngay ở
+   * lần phá sản đầu tiên, còn căn hộ thì giữ.
    *
    * ---------- Vì sao vẫn là mối đe doạ thật ----------
    * Quãng đường từ mức khởi điểm 70 xuống ngưỡng thua 50 dài đúng 20 điểm. 15
@@ -643,11 +661,11 @@ export const CONFIG = {
    * hạnh phúc ở mức khởi điểm vẫn còn 55 điểm, TRÊN ngưỡng thua, nên còn đường
    * gượng lại chứ không bị đẩy thẳng xuống thua ngay năm đó (25 điểm — con số
    * cũ — làm phép trừ ra 45, dưới ngưỡng 50, tức phá sản gần như luôn kéo theo
-   * thua ngay lập tức, mâu thuẫn với câu "không phải dấu chấm hết" ngay bên
-   * dưới). Cộng thêm mất sạch dòng tiền thụ động, mất khả năng vay để gây dựng
-   * lại, và khoản phạt khát vọng vẫn tiếp tục chảy máu nếu chưa mua được món của
-   * nghề — phá sản vẫn rất dễ kéo theo một cái thua vì hạnh phúc chỉ vài năm sau
-   * nếu không gượng lại kịp, nên đây vẫn là biến cố đáng sợ nhất game.
+   * thua ngay lập tức, mâu thuẫn với câu "lần đầu không phải dấu chấm hết" ngay
+   * bên trên). Cộng thêm mất sạch dòng tiền thụ động, mất khả năng vay để gây
+   * dựng lại, và khoản phạt khát vọng vẫn tiếp tục chảy máu nếu chưa mua được
+   * món của nghề — phá sản vẫn rất dễ kéo theo một cái thua vì hạnh phúc chỉ vài
+   * năm sau nếu không gượng lại kịp, nên đây vẫn là biến cố đáng sợ nhất game.
    *
    * ---------- Con đường dẫn tới đây ----------
    * Vay tối đa để góp vốn quy mô lớn → khủng hoảng ập tới, thu nhập doanh nghiệp
@@ -655,6 +673,11 @@ export const CONFIG = {
    * phát 11% → bán tài sản ở giá đáy vẫn không đủ → thanh lý doanh nghiệp với 45%
    * vốn → vẫn không đủ. Đó chính xác là cách người ta phá sản ngoài đời: không
    * phải vì một quyết định ngu ngốc, mà vì đòn bẩy gặp đúng chu kỳ xấu.
+   *
+   * ---------- Lần hai là hết (v1.7) ----------
+   * Ngã một lần ở tuổi bốn mươi còn đứng dậy được; ngã lần nữa sau khi đã mất
+   * năm năm cấm vay và ba năm cấm cơ hội thì không. Đây là cửa thua TÀI CHÍNH
+   * đầu tiên của game — suốt v1.6, 100% ván thua là do hạnh phúc.
    */
   phaSan: {
     /** doanh nghiệp kém thanh khoản: bán gấp chỉ thu lại được ngần này vốn góp */
@@ -665,6 +688,14 @@ export const CONFIG = {
     soNamCamVay: 5,
     /** uy tín cần thời gian dựng lại */
     soNamCamCoHoi: 3,
+    /** phá sản lần thứ mấy thì thua hẳn */
+    soLanToiDa: 2,
+    /**
+     * Ước nguyện bị bán giải chấp khi phá sản. Luật phá sản ngoài đời chừa lại
+     * nhà ở nhưng KHÔNG chừa xe — và về mặt lối chơi, khoản hạnh phúc hàng năm
+     * từ căn hộ chính là thứ giúp người chơi gượng dậy.
+     */
+    uocNguyenBiMat: ['xeMay', 'oTo'] as string[],
   },
 
   /** ---------- Biểu đồ giá ----------

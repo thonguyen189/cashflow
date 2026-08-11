@@ -313,9 +313,20 @@ export function nghiaVuHangNam(s: GameState): Tien {
   return s.chiPhiHangNam + phiBaoHiem(s) + traNoMoiNam(s)
 }
 
+/** Bội số nghĩa vụ mà dòng tiền thụ động phải phủ, giảm dần theo tuổi. */
+export function heSoAnToanTheoTuoi(tuoi: number): number {
+  const td = CONFIG.tuDoTaiChinh
+  const ct = CONFIG.cotTruyen
+  const quangDoi = ct.tuoiVienMan - ct.tuoiBatDau
+  const conLai = Math.max(0, ct.tuoiVienMan - tuoi)
+  return td.heSoToiThieu + td.heSoPhuThem * (conLai / quangDoi)
+}
+
 /** Mức dòng tiền thụ động cần đạt để được coi là tự do tài chính. */
 export function mucTieuTuDo(s: GameState): Tien {
-  return Math.round(nghiaVuHangNam(s) * CONFIG.tuDoTaiChinh.heSoAnToan)
+  return Math.round(
+    nghiaVuHangNam(s) * heSoAnToanTheoTuoi(tuoiTaiNam(s.nam)),
+  )
 }
 
 /** Đã tự do tài chính hay chưa, xét tại thời điểm hiện tại. */
@@ -608,6 +619,13 @@ export function soConDangNuoi(conCai: readonly number[], nam: number): number {
     .length
 }
 
+/** Phần chi phí sinh hoạt cộng thêm do chăm sóc tuổi già. 0 khi chưa tới tuổi. */
+export function heSoChamSocTuoiGia(tuoi: number): number {
+  const ct = CONFIG.cotTruyen
+  if (tuoi <= ct.chamSocTuTuoi) return 0
+  return Math.min(ct.chamSocToiDa, ct.chamSocTangMoiNam * (tuoi - ct.chamSocTuTuoi))
+}
+
 /**
  * Hệ số chi phí cố định ở năm `nam`. Gom TẤT CẢ hệ số nhân vào chi phí sinh hoạt
  * về một chỗ: hoàn cảnh gia đình, xuất thân, phụng dưỡng bố mẹ và lối sống theo
@@ -616,6 +634,9 @@ export function soConDangNuoi(conCai: readonly number[], nam: number): number {
  *
  * Hai tham số cuối để tuỳ chọn: mọi lời gọi ba tham số có từ trước v1.6 vẫn đúng
  * vì viên chức tỉnh lẻ và bậc lương 1 đều trung tính.
+ *
+ * Chăm sóc tuổi già (v1.7) nhân thêm SAU CÙNG, cạnh mọi hệ số khác: nó là phần
+ * phụ trội của riêng tuổi tác, không phụ thuộc hôn nhân, con cái hay xuất thân.
  */
 export function tinhHeSoChiPhi(
   daKetHon: boolean,
@@ -632,7 +653,8 @@ export function tinhHeSoChiPhi(
     Math.pow(1 + ct.conTangChiPhi, soConDangNuoi(conCai, nam)) *
     xuatThan.heSoChiPhiSong *
     (conPhungDuong ? 1 + xuatThan.tyLePhungDuong : 1) *
-    (1 + (heSoLuongKhoiDiem - 1) * CONFIG.xuatThan.loiSongTheoLuong)
+    (1 + (heSoLuongKhoiDiem - 1) * CONFIG.xuatThan.loiSongTheoLuong) *
+    (1 + heSoChamSocTuoiGia(tuoiTaiNam(nam)))
   )
 }
 
@@ -1994,10 +2016,9 @@ function chuyenNam(s: GameState): GameState {
 
   if (tienMat < 0 && -tienMat > chiPhiHangNam * CONFIG.phaSan.nguongTheoChiPhi) {
     /* --- Nấc 3: phá sản ---
-     * Toà xoá sạch nợ nhưng cũng lấy sạch tiền mặt còn âm về 0. Ước nguyện đã
-     * mua không bị đụng tới — luật phá sản chừa lại nhà ở và phương tiện đi lại
-     * thiết yếu. Đổi lại là cấm vay và cấm cơ hội kinh doanh một thời gian: uy
-     * tín cần thời gian dựng lại, không phải một cái nút bấm là xong. */
+     * Toà xoá sạch nợ nhưng cũng lấy sạch tiền mặt còn âm về 0. Đổi lại là cấm
+     * vay và cấm cơ hội kinh doanh một thời gian: uy tín cần thời gian dựng
+     * lại, không phải một cái nút bấm là xong. */
     const xoaNo = khoanVaySauCung.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0)
     khoanVaySauCung = []
     tienMat = 0
@@ -2007,14 +2028,31 @@ function chuyenNam(s: GameState): GameState {
     // năm sau nghĩa là banned trọn namMoi .. s.nam + soNamCamVay.
     camVayDenNam = s.nam + CONFIG.phaSan.soNamCamVay
     camCoHoiDenNam = s.nam + CONFIG.phaSan.soNamCamCoHoi
+
+    // Bán giải chấp phương tiện đi lại (v1.7). Món bị mất đi vào `uocNguyenDaMat`
+    // nên nếu muốn có lại thì phải trả theo giá hôm nay, đúng khuôn của cú mất
+    // trộm xe ở v1.4. Nhà ở (căn hộ) không nằm trong `uocNguyenBiMat` nên luôn
+    // được giữ lại — luật phá sản chừa lại nhà ở nhưng không chừa xe.
+    const biMat = uocNguyenDaMua.filter((id) =>
+      CONFIG.phaSan.uocNguyenBiMat.includes(id),
+    )
+    uocNguyenDaMua = uocNguyenDaMua.filter((id) => !biMat.includes(id))
+    uocNguyenDaMat = [...uocNguyenDaMat, ...biMat]
+
     const hpPhaSan = apHanhPhuc(-CONFIG.phaSan.hanhPhuc)
+    const tenXeBiMat = biMat
+      .map((id) => timUocNguyen(id)?.ten)
+      .filter((ten): ten is string => !!ten)
     suKien.push({
       loai: 'phaSan',
       tieuDe: '💀 Phá sản',
       moTa:
         'Bán sạch mọi thứ vẫn không trả nổi. Toà tuyên phá sản, ' +
         `${dinhDangTien(xoaNo)} tiền nợ được xoá nhưng bạn cũng trắng tay. ` +
-        `Nhà cửa và xe cộ thì luật chừa lại. ${CONFIG.phaSan.soNamCamVay} năm tới ` +
+        (tenXeBiMat.length > 0
+          ? `${tenXeBiMat.join(', ')} bị bán giải chấp — luật chỉ chừa lại nhà ở, không chừa xe. `
+          : 'Nhà cửa thì luật chừa lại. ') +
+        `${CONFIG.phaSan.soNamCamVay} năm tới ` +
         `không ngân hàng nào cho vay, và ${CONFIG.phaSan.soNamCamCoHoi} năm tới ` +
         'cũng chẳng ai mời bạn góp vốn — uy tín cần thời gian dựng lại.',
       tienThayDoi: 0,
@@ -2442,6 +2480,21 @@ export function reducer(s: GameState, a: Action): GameState {
       }
 
       const sau = chuyenNam(s)
+
+      // Phá sản lần thứ hai là thua (v1.7) — cửa thua TÀI CHÍNH đầu tiên của
+      // game. Đứng TRƯỚC phép kiểm tự do tài chính vì hai điều kiện loại trừ
+      // nhau: năm vừa ngã lần hai không thể đồng thời là năm về đích.
+      if (sau.soLanPhaSan >= CONFIG.phaSan.soLanToiDa) {
+        return {
+          ...sau,
+          phase: 'ketThuc',
+          trangThai: 'thua',
+          lyDoKetThuc:
+            `Phá sản lần thứ hai ở tuổi ${tuoiTaiNam(sau.nam)}.` +
+            ` Ngã một lần còn đứng dậy được, nhưng sau năm năm không được vay và` +
+            ` ba năm không ai mời làm ăn, cú ngã thứ hai là cú cuối cùng.`,
+        }
+      }
 
       if (!sau.daTuDo && daTuDoTaiChinh(sau)) {
         return {
