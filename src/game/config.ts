@@ -741,8 +741,15 @@ export const CONFIG = {
    */
   baoLanh: {
     tuoiToiThieu: 30,
-    /** xác suất được mời trong một năm hợp lệ */
-    xacSuatMoi: 0.06,
+    /**
+     * KHÔNG có hằng số "xác suất mời" ở đây — tần suất xuất hiện của cơ hội
+     * này KHÔNG do một hằng số quyết định, mà do độ tuổi hợp lệ (tuoiToiThieu)
+     * cộng kích thước bộ cơ hội chung: `rutCoHoi` rút đều tay từ mọi cơ hội
+     * hợp lệ trong bộ chung, nên tần suất thực tế trồi sụt theo bộ đó có bao
+     * nhiêu mục khác (~3-5%/năm hiện tại) chứ không phải một con số cố định.
+     * Muốn vặn "mời thường hơn hay ít hơn" thì phải sửa kích thước/thành phần
+     * bộ cơ hội chung, không phải sửa một hằng số trong khối này.
+     */
     hanhPhucKhiNhan: 8,
     hanhPhucKhiTuChoi: 10,
     /** xác suất người thân vỡ nợ sau khi đã nhận bảo lãnh */

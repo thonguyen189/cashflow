@@ -3517,4 +3517,29 @@ describe('v1.7 — bảo lãnh cho người thân', () => {
       }
     }
   })
+
+  // Review round 1, finding 1: `namVoBaoLanh` là một scalar duy nhất. Nếu
+  // không có chốt chặn, nhận lần hai trong lúc đang treo sẽ ghi đè nó — xoá
+  // sổ khoản đang treo một cách âm thầm. Test này ép trực tiếp vào reducer
+  // (bỏ qua bước rút cơ hội) để xác nhận chốt chặn nằm ngay tại nơi ghi
+  // state, không chỉ dựa vào việc `hopLe` không mời lại.
+  it('nhận lần hai trong lúc đang treo không được xoá khoản đang treo', () => {
+    let s = taoGameMoi('bacSi', 65)
+    const co = timCoHoi('baoLanhNguoiThan')!
+    const namTreoCu = s.nam + CONFIG.baoLanh.voSauItNhat
+    s = { ...s, coHoiNamNay: [co], nam: 12, namVoBaoLanh: namTreoCu }
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: 'baoLanhNguoiThan',
+      nhan: true,
+    })
+    expect(sau.namVoBaoLanh).toBe(namTreoCu)
+  })
+
+  it('không mời bảo lãnh khi đang có một khoản treo', () => {
+    let s = taoGameMoi('bacSi', 66)
+    const co = timCoHoi('baoLanhNguoiThan')!
+    s = { ...s, nam: 15, namVoBaoLanh: s.nam + CONFIG.baoLanh.voSauItNhat }
+    expect(coHoiHopLe(co, s)).toBe(false)
+  })
 })

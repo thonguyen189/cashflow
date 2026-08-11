@@ -740,6 +740,11 @@ interface BoiCanhCoHoi {
   taiSanRong: Tien
   /** đang trong thời gian cấm sau phá sản thì không mời cơ hội kinh doanh */
   camCoHoi: boolean
+  /**
+   * Khoản bảo lãnh đang treo của ván (v1.7), −1 nghĩa là không có. Dùng để
+   * chặn `'baoLanh'` khỏi bộ rút khi đang treo — xem lý do ở `hopLe`.
+   */
+  namVoBaoLanh: number
 }
 
 function hopLe(c: CoHoi, bc: BoiCanhCoHoi): boolean {
@@ -748,6 +753,13 @@ function hopLe(c: CoHoi, bc: BoiCanhCoHoi): boolean {
   if (c.taiSanToiThieu !== undefined && bc.taiSanRong < c.taiSanToiThieu) return false
   if (c.chiMotLan && bc.coHoiDaLam.includes(c.id)) return false
   if (bc.camCoHoi && c.loai === 'kinhDoanh') return false
+  // Bảo lãnh (v1.7): đang có một khoản treo thì không mời thêm. `namVoBaoLanh`
+  // chỉ là MỘT scalar — nhận thêm một lời mời trong lúc đang treo sẽ ghi đè nó,
+  // xoá sổ khoản đang treo một cách âm thầm (xem nhánh 'baoLanh' trong
+  // `quyetDinhCoHoi`). Sau khi khoản treo được giải quyết (vỡ nợ hoặc mốc an
+  // toàn trôi qua), `namVoBaoLanh` trở lại −1 và cơ hội mời lại được — biến cố
+  // này lặp lại được trong một ván dài, không phải một lần cho cả đời.
+  if (c.loai === 'baoLanh' && bc.namVoBaoLanh !== -1) return false
   return true
 }
 
@@ -759,6 +771,7 @@ export const coHoiHopLe = (c: CoHoi, s: GameState): boolean =>
     coHoiDaLam: s.coHoiDaLam,
     taiSanRong: taiSanRong(s),
     camCoHoi: dangCamCoHoi(s),
+    namVoBaoLanh: s.namVoBaoLanh,
   })
 
 /**
@@ -885,6 +898,8 @@ export function taoGameMoi(
     taiSanRong: vonBanDau,
     // Ván mới tinh không thể đang trong thời gian cấm sau phá sản.
     camCoHoi: false,
+    // Ván mới tinh chưa từng nhận bảo lãnh nào nên không có khoản nào treo.
+    namVoBaoLanh: -1,
   })
 
   return {
@@ -2209,6 +2224,9 @@ function chuyenNam(s: GameState): GameState {
     // Đang trong thời gian cấm sau phá sản thì không cơ hội kinh doanh nào được
     // mời — dùng NĂM MỚI vì đây chính là năm mà bộ cơ hội sắp rút sẽ hiện ra.
     camCoHoi: camCoHoiDenNam >= namMoi,
+    // Biến cục bộ này đã phản ánh kết quả của bước 7c (đặt lại −1 nếu khoản
+    // treo vừa vỡ trong năm vừa sống) nên dùng thẳng, không dùng s.namVoBaoLanh.
+    namVoBaoLanh,
   })
 
   const sauChuyen: GameState = {
@@ -2487,7 +2505,6 @@ export function reducer(s: GameState, a: Action): GameState {
       // hẳn nhánh từ chối chung ở dưới (vốn không đổi hạnh phúc chút nào).
       if (coHoi.loai === 'baoLanh') {
         const bl = CONFIG.baoLanh
-        const rng = taoRng(s.seed, s.rngCursor + s.nam * 977)
         const conLaiBaoLanh = s.coHoiNamNay.filter((c) => c.id !== coHoi.id)
         if (!a.nhan) {
           return {
@@ -2496,6 +2513,19 @@ export function reducer(s: GameState, a: Action): GameState {
             hanhPhuc: themHanhPhuc(s.hanhPhuc, -bl.hanhPhucKhiTuChoi),
           }
         }
+        // Bất biến bắt buộc: đang có một khoản bảo lãnh treo thì KHÔNG được
+        // nhận thêm. `namVoBaoLanh` chỉ là MỘT scalar — nhận lần hai sẽ ghi đè
+        // nó, xoá sổ khoản đang treo một cách âm thầm (roll ra "không vỡ" thì
+        // mất trắng khoản cũ, roll ra "vỡ" thì dời sang một năm khác — cả hai
+        // đều sai). Bình thường `hopLe` đã chặn cơ hội này khỏi bộ rút trong
+        // lúc đang treo (xem `BoiCanhCoHoi.namVoBaoLanh`); nhánh dưới đây là
+        // lớp chặn thứ hai ngay tại nơi ghi state, để bất biến giữ đúng bất kể
+        // cơ hội lọt vào `coHoiNamNay` bằng cách nào. Không có gì để làm ngoài
+        // bỏ qua lượt nhận này — khoản treo hiện có phải sống sót nguyên vẹn.
+        if (s.namVoBaoLanh !== -1) {
+          return { ...s, coHoiNamNay: conLaiBaoLanh }
+        }
+        const rng = taoRng(s.seed, s.rngCursor + s.nam * 977)
         // Chốt NGAY lúc nhận, tất định theo seed — không tung xúc xắc mỗi năm,
         // cùng khuôn với lịch cưới hỏi và lịch biến cố lớn.
         const seVo = rng.next() < bl.xacSuatVo
