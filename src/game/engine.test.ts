@@ -63,6 +63,7 @@ import {
   chuyenTrangThaiThiTruong,
   heSoChamSocTuoiGia,
   heSoAnToanTheoTuoi,
+  heSoMatBangSong,
 } from './engine'
 import type {
   AssetId,
@@ -202,7 +203,10 @@ describe('thẻ tiêu dùng — cơ chế hai chiều', () => {
     const s = reducer(moiVan(), { type: 'traChiPhi' })
     const the = s.theConLai[0]!
     const sau = reducer(s, { type: 'quyetDinhThe', nhan: true })
-    expect(sau.tienMat).toBe(s.tienMat - giaThucTe(s, the.gia))
+    // v1.7: giá thẻ còn nhân thêm hệ số mặt bằng sống, không chỉ chỉ số giá.
+    expect(sau.tienMat).toBe(
+      s.tienMat - Math.round(giaThucTe(s, the.gia) * heSoMatBangSong(s)),
+    )
     expect(sau.hanhPhuc).toBe(s.hanhPhuc + the.diem)
   })
 
@@ -556,11 +560,22 @@ describe('mua sắm và học hành', () => {
 
   it('giá ước nguyện khoá tại đầu ván, không leo theo lạm phát', () => {
     const s0 = reducer(moiVan('giaoVien'), { type: 'traChiPhi' })
-    const s: GameState = { ...s0, chiSoGia: 1.5, tienMat: 200 * TRIEU }
+    // Lạm phát thật kéo CẢ chiSoGia lẫn chiPhiHangNam lên cùng tỉ lệ, nên hệ số
+    // mặt bằng sống không đổi (v1.7 — xem "hệ số không nhân đôi lạm phát"): giá
+    // ước nguyện đóng băng vẫn y hệt giá ở năm 1, không nhân thêm 1,5 lần nữa.
+    const s: GameState = {
+      ...s0,
+      chiSoGia: 1.5,
+      chiPhiHangNam: Math.round(s0.chiPhiHangNam * 1.5),
+      tienMat: 200 * TRIEU,
+    }
+    expect(heSoMatBangSong(s)).toBeCloseTo(heSoMatBangSong(s0), 6)
     const sau = reducer(s, { type: 'muaUocNguyen', uocNguyenId: 'xeMay' })
     expect(sau.uocNguyenDaMua).toContain('xeMay')
-    // Xe máy giá gốc 80 triệu — dù chỉ số giá đã 1,5 vẫn chỉ trừ đúng 80 triệu
-    expect(sau.tienMat).toBe(200 * TRIEU - 80 * TRIEU)
+    // Xe máy giá gốc 80 triệu, nhân hệ số mặt bằng sống của giáo viên — dù chỉ
+    // số giá đã 1,5 vẫn chỉ trừ đúng ngần này, không nhân thêm lạm phát
+    const giaKyVong = Math.round(80 * TRIEU * heSoMatBangSong(s))
+    expect(sau.tienMat).toBe(200 * TRIEU - giaKyVong)
   })
 
   it('mua món khát vọng thì hết bị phạt hạnh phúc và được thưởng mỗi năm', () => {
@@ -735,10 +750,13 @@ describe('mua lại món ước nguyện đã mất', () => {
     return kq!
   }
 
-  it('ván mới chưa mất món nào và giá mọi món đúng bằng giá đóng băng', () => {
+  it('ván mới chưa mất món nào và giá mọi món đúng bằng giá đóng băng nhân hệ số mặt bằng sống', () => {
     const s = moiVan()
     expect(s.uocNguyenDaMat).toEqual([])
-    for (const un of UOC_NGUYEN) expect(giaUocNguyen(s, un.id)).toBe(un.gia)
+    const heSo = heSoMatBangSong(s)
+    for (const un of UOC_NGUYEN) {
+      expect(giaUocNguyen(s, un.id)).toBe(Math.round(un.gia * heSo))
+    }
   })
 
   it('chưa từng mất gì thì giá ước nguyện đứng yên qua mấy chục năm lạm phát', () => {
@@ -748,8 +766,13 @@ describe('mua lại món ước nguyện đã mất', () => {
     }
     expect(s.uocNguyenDaMat).toEqual([])
     expect(s.chiSoGia).toBeGreaterThan(1.5)
+    const heSo = heSoMatBangSong(s)
     for (const un of UOC_NGUYEN) {
-      expect(giaUocNguyen(s, un.id)).toBe(un.gia)
+      // v1.7: giá đóng băng không còn bằng nguyên giá gốc — nó nhân thêm hệ số
+      // mặt bằng sống hiện tại (xuất thân, bậc lương, cưới xin, con cái), NHƯNG
+      // vẫn hoàn toàn tách khỏi `giaThucTe`/chỉ số giá — đó mới là điều bị đóng
+      // băng.
+      expect(giaUocNguyen(s, un.id)).toBe(Math.round(un.gia * heSo))
       // Lạm phát là có thật — chỉ riêng giấc mơ được đóng băng giá
       expect(giaThucTe(s, un.gia)).toBeGreaterThan(un.gia)
     }
@@ -767,12 +790,18 @@ describe('mua lại món ước nguyện đã mất', () => {
     expect(sau.uocNguyenDaMat).toEqual(['oTo'])
     expect(xeDangCo(sau)).toBeNull()
 
-    // Từ đây muốn có lại chiếc xe thì phải trả bằng tiền của hôm nay
+    // Từ đây muốn có lại chiếc xe thì phải trả bằng tiền của hôm nay, còn nhân
+    // thêm hệ số mặt bằng sống (v1.7) như mọi lượt mua ước nguyện khác
     expect(sau.chiSoGia).toBeGreaterThan(1)
-    expect(giaUocNguyen(sau, 'oTo')).toBe(giaThucTe(sau, O_TO.gia))
+    const heSo = heSoMatBangSong(sau)
+    expect(giaUocNguyen(sau, 'oTo')).toBe(
+      Math.round(giaThucTe(sau, O_TO.gia) * heSo),
+    )
     expect(giaUocNguyen(sau, 'oTo')).toBeGreaterThan(O_TO.gia)
-    // Món chưa từng mất vẫn giữ nguyên giá đóng băng
-    expect(giaUocNguyen(sau, 'canHo')).toBe(timUocNguyen('canHo')!.gia)
+    // Món chưa từng mất vẫn giữ nguyên giá đóng băng nhân hệ số mặt bằng sống
+    expect(giaUocNguyen(sau, 'canHo')).toBe(
+      Math.round(timUocNguyen('canHo')!.gia * heSo),
+    )
   })
 
   it('mất trộm khi CÓ bảo hiểm vật chất thì xe vẫn còn và giá không đổi', () => {
@@ -787,14 +816,18 @@ describe('mua lại món ước nguyện đã mất', () => {
     expect(matTrom!.hanhPhucThayDoi).toBe(0)
     expect(coBaoHiem.uocNguyenDaMua).toContain('oTo')
     expect(coBaoHiem.uocNguyenDaMat).toEqual([])
-    expect(giaUocNguyen(coBaoHiem, 'oTo')).toBe(O_TO.gia)
+    expect(giaUocNguyen(coBaoHiem, 'oTo')).toBe(
+      Math.round(O_TO.gia * heSoMatBangSong(coBaoHiem)),
+    )
   })
 
   it('mua lại xe đã mất phải trả giá hiện hành, chỉ đủ giá gốc là không mua nổi', () => {
     const { sau } = timVanCoMatTromXe()
     const s = reducer(sau, { type: 'dongTongKet' })
     const giaHienHanh = giaUocNguyen(s, 'oTo')
-    expect(giaHienHanh).toBe(giaThucTe(s, O_TO.gia))
+    expect(giaHienHanh).toBe(
+      Math.round(giaThucTe(s, O_TO.gia) * heSoMatBangSong(s)),
+    )
     expect(giaHienHanh).toBeGreaterThan(O_TO.gia)
 
     // Cầm đúng số tiền của thời trẻ thì không còn mua nổi chiếc xe của hôm nay
@@ -3380,5 +3413,48 @@ describe('v1.7 — phá sản lần hai là hết', () => {
     expect(sau.soLanPhaSan).toBe(1)
     expect(sau.uocNguyenDaMua).not.toContain('xeMay')
     expect(sau.uocNguyenDaMua).toContain('canHo')
+  })
+})
+
+describe('v1.7 — giá hạnh phúc neo theo mặt bằng sống', () => {
+  it('ba nghề trả cùng một tỉ lệ thu nhập cho cùng một tấm thẻ', () => {
+    const tyLe = NGHE.map((nghe) => {
+      const s = taoGameMoi(nghe.id, 41)
+      return (18 * TRIEU * heSoMatBangSong(s)) / nghe.luong
+    })
+    // Trước v1.7 ba tỉ lệ này là 10% / 5% / 3% — nghề lương cao gần như miễn
+    // nhiễm với cửa thua duy nhất của game.
+    expect(Math.max(...tyLe) - Math.min(...tyLe)).toBeLessThan(0.01)
+  })
+
+  it('bác sĩ là mốc chuẩn, hệ số bằng 1', () => {
+    const s = taoGameMoi('bacSi', 42)
+    expect(heSoMatBangSong(s)).toBeCloseTo(1, 2)
+  })
+
+  it('hệ số không nhân đôi lạm phát', () => {
+    const s = taoGameMoi('bacSi', 43)
+    const sau = { ...s, chiPhiHangNam: s.chiPhiHangNam * 3, chiSoGia: 3 }
+    expect(heSoMatBangSong(sau)).toBeCloseTo(heSoMatBangSong(s), 6)
+  })
+
+  it('sống sang thì cùng một niềm vui cũng đắt hơn', () => {
+    const tietKiem = taoGameMoi('bacSi', 44, {
+      xuatThanId: 'thuanNong',
+      heSoLuongKhoiDiem: 0.75,
+    })
+    const sangTrong = taoGameMoi('bacSi', 44, {
+      xuatThanId: 'khaGia',
+      heSoLuongKhoiDiem: 1.25,
+    })
+    expect(heSoMatBangSong(sangTrong)).toBeGreaterThan(
+      heSoMatBangSong(tietKiem) * 1.3,
+    )
+  })
+
+  it('giá tài sản và giá cơ hội KHÔNG bị nhân hệ số này', () => {
+    const s = taoGameMoi('kySuPhanMem', 45)
+    // giaThucTe chỉ nhân chỉ số giá — hệ số mặt bằng sống áp riêng ở ba chỗ gọi
+    expect(giaThucTe(s, 100 * TRIEU)).toBe(Math.round(100 * TRIEU * s.chiSoGia))
   })
 })

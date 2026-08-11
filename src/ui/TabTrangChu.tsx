@@ -10,6 +10,7 @@ import {
   daToiUuChiPhi,
   giaThucTe,
   giaUocNguyen,
+  heSoMatBangSong,
   hoiPhucTriLieu,
   khoaHocConLai,
   phiBaoHiem,
@@ -57,7 +58,9 @@ function TheHanhDong({ state, dispatch }: Props) {
   if (state.phase === 'theBai') {
     const the = state.theConLai[0]
     if (!the) return null
-    const gia = giaThucTe(state, the.gia)
+    // Phải khớp đúng công thức engine dùng ở case 'quyetDinhThe' (v1.7), nếu
+    // không màn hình sẽ hiện một giá còn bấm nhận lại bị trừ giá khác.
+    const gia = Math.round(giaThucTe(state, the.gia) * heSoMatBangSong(state))
     const duTien = state.tienMat >= gia
     const thucNhan = themHanhPhuc(state.hanhPhuc, the.diem) - state.hanhPhuc
     const biGiam = thucNhan < the.diem

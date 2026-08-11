@@ -9,6 +9,7 @@ import {
   dongTienThuDong,
   giaThucTe,
   giaUocNguyen,
+  heSoMatBangSong,
   khoaHocConLai,
   muaToiDa,
   mucTieuTuDo,
@@ -177,7 +178,9 @@ export function moPhongMotVan(
 
     if (s.phase === 'theBai') {
       const the = s.theConLai[0]!
-      const gia = giaThucTe(s, the.gia)
+      // Nhân thêm hệ số mặt bằng sống (v1.7) để bot đọc đúng giá mà engine sẽ
+      // trừ — nếu không bot sẽ quyết định nhận/từ chối dựa trên một giá sai.
+      const gia = Math.round(giaThucTe(s, the.gia) * heSoMatBangSong(s))
       const moiDiem = gia / the.diem
       // Giữ hạnh phúc an toàn: dưới 65 thì nhận rộng tay hơn. Số 65 là vùng đệm CỐ Ý
       // nằm trên `hanhPhucNguongCanhBao` để bot phản ứng sớm hơn một nhịp so với lúc
