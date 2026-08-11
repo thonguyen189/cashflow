@@ -6,7 +6,7 @@
 
 > **Trạng thái: đã thực hiện xong toàn bộ 6 task.** Số đo cuối cùng ở mục L của `docs/07-thiet-ke-v1-7.md`; 305/305 test xanh, `tsc` sạch, dựng bản thành công.
 >
-> **Hướng kết nhánh đã chốt: giữ nhánh, chơi thử trước khi gộp** (Task 6 Step 3 — có danh sách ba việc cần để mắt khi chơi).
+> **Hướng kết nhánh đã chốt: gộp thẳng vào `main` để chơi thử bằng địa chỉ deploy** (Task 6 Step 3 — có danh sách ba việc cần để mắt khi chơi).
 >
 > **Hai chỗ đi lệch khỏi kế hoạch, đã đo và đã báo trước khi làm:**
 > - **Sàn 8% của Task 5 Step 2 bị phá.** Giáo viên đo được 6,0%. Quét `heSoAnToanTheoTuoi` qua bảy mức cho thấy chênh lệch giữa nghề mạnh nhất và yếu nhất đứng yên ở 43–44,5 điểm suốt cả dải, tức cần gạt này không phải nguyên nhân và không chữa được. Người chốt đã quyết: nhận 6% là sự thật, sửa thước đo. Toàn bộ số đo ở mục L.
@@ -988,9 +988,13 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 Nhánh `v1-7-du-kho-de-phai-chon` đi trước `main` hơn 60 commit. **Dừng lại hỏi người** trước khi gộp — dùng superpowers:finishing-a-development-branch để chọn giữa gộp thẳng, mở pull request, hay giữ nhánh chờ chơi thử. Không tự quyết.
 
-**Đã hỏi và đã chốt (2026-08-12): giữ nhánh, chơi thử trước khi gộp.** Nhánh đi trước `main` 71 commit, `main` không đi trước gì nên lúc nào gộp cũng là tua thẳng — không có áp lực thời gian phải gộp sớm.
+**Đã hỏi và đã chốt (2026-08-12): gộp thẳng vào `main`.**
 
-Lý do giữ: v1.7 đổi căn bản cảm giác chơi chứ không chỉ đổi số. Giáo viên từ 48% xuống 6%; đòn bẩy đổi vai tuỳ nghề (bẫy với bác sĩ, phao với giáo viên); tuổi thắng lùi vào quãng 53–55. Bộ test đo được **bố cục các con số**, nhưng không đo được điều duy nhất còn lại đáng lo: **6% là khắc nghiệt thú vị hay đã thành nản lòng.** Đó là câu hỏi chỉ trả lời được bằng tay cầm chuột.
+Quyết định đầu tiên là *giữ nhánh, chơi thử trước khi gộp*, nhưng đổi ngay sau đó vì một ràng buộc thực tế: `.github/workflows/deploy.yml` chỉ kích hoạt khi push vào `main`, và GitHub Pages chỉ có **một** bản triển khai cho cả repo. Muốn chơi thử bằng địa chỉ deploy thì phải gộp — chơi thử và giữ nhánh loại trừ nhau ở hạ tầng này. Nhánh đi trước `main` 71 commit và `main` không đi trước gì nên gộp là tua thẳng, không xung đột.
+
+Việc chơi thử **không bị bỏ**, chỉ đổi chỗ: nó diễn ra trên `main` đã deploy thay vì trên nhánh. Ba chỗ cần để mắt dưới đây giữ nguyên hiệu lực.
+
+Lý do ba việc ấy đáng để mắt: v1.7 đổi căn bản cảm giác chơi chứ không chỉ đổi số. Giáo viên từ 48% xuống 6%; đòn bẩy đổi vai tuỳ nghề (bẫy với bác sĩ, phao với giáo viên); tuổi thắng lùi vào quãng 53–55. Bộ test đo được **bố cục các con số**, nhưng không đo được điều duy nhất còn lại đáng lo: **6% là khắc nghiệt thú vị hay đã thành nản lòng.** Đó là câu hỏi chỉ trả lời được bằng tay cầm chuột.
 
 Việc cần làm khi chơi thử — ba chỗ số đo chỉ thẳng tới:
 
@@ -998,7 +1002,7 @@ Việc cần làm khi chơi thử — ba chỗ số đo chỉ thẳng tới:
 2. **Chơi giáo viên có vay.** Số đo nói đòn bẩy nâng giáo viên từ 6% lên 11,5%. Nếu ngoài giao diện người chơi không nhận ra được điều đó thì đây là một nước đi hay đang bị giấu, và nó thuộc về phần trình bày chứ không phải phần cân bằng.
 3. **Chơi bác sĩ hoặc kỹ sư để so.** Hai nghề này ở 49% và 50,5%, tuổi thắng 55,3 và 53,5. Nếu quãng giữa ván thấy dài và trống thì vấn đề là nhịp độ, và cần gạt của nó là `heSoToiThieu`/`heSoPhuThem` — đã có sẵn bảng bảy mức ở mục L để chọn.
 
-Sau khi chơi xong thì quay lại chọn giữa gộp thẳng và mở pull request, hoặc mở một vòng thiết kế mới cho kinh tế nghề giáo viên nếu 6% đọc ra là nản lòng.
+Sau khi chơi xong: nếu 6% đọc ra là nản lòng thì mở một vòng thiết kế mới cho **kinh tế nghề giáo viên** — chi phí sinh hoạt riêng, hoặc một cơ chế bù như đổi nghề hay dạy thêm. Số đo đã loại `heSoAnToanTheoTuoi` khỏi danh sách nghi phạm, nên vòng ấy không được bắt đầu bằng việc vặn lại hệ số an toàn.
 
 ---
 
