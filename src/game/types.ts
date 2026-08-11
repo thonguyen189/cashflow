@@ -147,7 +147,7 @@ export interface TaiSan {
   thueLoiTuc: number
 }
 
-export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien'
+export type CoHoiLoai = 'kinhDoanh' | 'canhBac' | 'toChucSuKien' | 'baoLanh'
 
 /** Ba loại bảo hiểm xe, đúng như ngoài đời. */
 export type LoaiBaoHiemXe = 'trachNhiemDanSu' | 'vatChatXe' | 'taiNanNguoiTrenXe'
@@ -243,6 +243,7 @@ export type SuKienLoai =
   | 'thanhLyDoanhNghiep'
   | 'phaSan'
   | 'doanhNghiepPhaSan'
+  | 'baoLanh'
 
 /** Sáu biến cố lớn của đời người (v1.6), mỗi cái có một lá chắn riêng. */
 export type BienCoId =
@@ -409,6 +410,14 @@ export interface GameState {
   camVayDenNam: number
   /** không được mời cơ hội kinh doanh tới hết năm này; -1 nghĩa là không bị cấm */
   camCoHoiDenNam: number
+
+  /** ---------- Bảo lãnh cho người thân (v1.7) ---------- */
+  /**
+   * Năm mà khoản bảo lãnh đã nhận sẽ vỡ và thành nợ của người chơi; -1 nghĩa là
+   * không có khoản nào đang treo. Chốt ngay lúc nhận (tất định theo seed) chứ
+   * không tung xúc xắc mỗi năm — cùng khuôn với lịch cưới hỏi và lịch biến cố.
+   */
+  namVoBaoLanh: number
 
   tongKet: TongKetNam | null
   lichSu: DongLichSu[]

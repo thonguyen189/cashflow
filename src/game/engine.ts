@@ -947,6 +947,9 @@ export function taoGameMoi(
     camVayDenNam: -1,
     camCoHoiDenNam: -1,
 
+    // Ván mới tinh chưa từng đứng tên bảo lãnh cho ai.
+    namVoBaoLanh: -1,
+
     tongKet: null,
     lichSu: [],
 
@@ -1829,6 +1832,44 @@ function chuyenNam(s: GameState): GameState {
     }
   }
 
+  /* --- 7c. Khoản bảo lãnh tới hạn vỡ (v1.7) ---
+   * Khoản nợ này KHÔNG đi qua `vayToiDa`: người chơi không chọn vay, ngân hàng
+   * chỉ đơn giản đến đòi. Kẹp nó vào hạn mức thì nó lại thành một khoản vay bình
+   * thường và mất sạch ý nghĩa.
+   *
+   * So sánh với `s.nam + 1` (năm mà `chuyenNam` đang CHUYỂN TỚI) chứ không phải
+   * `s.nam` (năm vừa sống xong): `namMoi` chính thức khai báo ở bước 10, đứng
+   * SAU bước này, nên phải tự viết lại phép cộng — cùng lý do và cùng khuôn với
+   * `namMoiChoThue` ở bước 8 bên dưới.
+   */
+  let namVoBaoLanh = s.namVoBaoLanh
+  let khoanVayThemBaoLanh: KhoanVay[] = []
+  if (namVoBaoLanh > 0 && namVoBaoLanh <= s.nam + 1) {
+    const bl = CONFIG.baoLanh
+    const goc = Math.round(s.chiPhiHangNam * bl.gocTheoChiPhi)
+    khoanVayThemBaoLanh = [
+      {
+        id: `baoLanh-${s.nam}`,
+        goc,
+        kyHan: bl.kyHan,
+        thanhToanMoiNam: thanhToanMoiNamCuaKhoanVay(goc, bl.kyHan),
+        namConLai: bl.kyHan,
+      },
+    ]
+    const hpVoBaoLanh = apHanhPhuc(-bl.hanhPhucKhiVo)
+    suKien.push({
+      loai: 'baoLanh',
+      tieuDe: '🤝 Người thân mất khả năng trả nợ',
+      moTa:
+        `Em trai bạn làm ăn thất bát, ngân hàng đòi tới người bảo lãnh.` +
+        ` Khoản vay ${dinhDangTien(goc)} nay là nợ của bạn, trả trong` +
+        ` ${bl.kyHan} năm. Chữ ký năm ấy đã đến lúc phải trả giá.`,
+      tienThayDoi: 0,
+      hanhPhucThayDoi: hpVoBaoLanh,
+    })
+    namVoBaoLanh = -1
+  }
+
   /* --- 8. Lương: đi làm thì bám lạm phát + tăng thực + thăng chức;
    *        năm nghỉ hưu chuyển sang lương hưu; đã hưu thì chỉ bám lạm phát --- */
   const nghe8 = timNghe(s.ngheId)!
@@ -2194,7 +2235,10 @@ function chuyenNam(s: GameState): GameState {
     // Ba trường chuyên gia còn lại chỉ đổi trong reducer nên đi theo phép trải
     // `...s` là đủ; riêng cờ này do chính `chuyenNam` bật tắt, phải gán tường minh.
     daCanhBaoKietSuc,
-    khoanVay: khoanVaySauCung,
+    // Khoản bảo lãnh vỡ nợ (nếu có) nối vào SAU khi ba nấc vỡ nợ của NĂM NAY đã
+    // xử lý xong: nó chưa hề tồn tại lúc `tienMat` được cân đối ở bước 11, và
+    // cũng chưa có `thanhToanMoiNam` nào bị trừ ngay năm nó phát sinh.
+    khoanVay: [...khoanVaySauCung, ...khoanVayThemBaoLanh],
     khoanDangCho: [],
     daKetHon,
     conCai,
@@ -2214,6 +2258,9 @@ function chuyenNam(s: GameState): GameState {
     soLanPhaSan,
     camVayDenNam,
     camCoHoiDenNam,
+    // Bước 7c cập nhật biến cục bộ này (đặt về -1 khi vỡ) — cùng lý do gán
+    // tường minh với ba trường phá sản ở trên.
+    namVoBaoLanh,
   }
 
   const tong = tongTaiSan(sauChuyen)
@@ -2433,6 +2480,36 @@ export function reducer(s: GameState, a: Action): GameState {
       if (!choPhepHanhDongTuDo(s)) return s
       const coHoi = timCoHoi(a.coHoiId)
       if (!coHoi) return s
+
+      // Bảo lãnh cho người thân (v1.7) đi riêng một nhánh, đứng TRƯỚC phần xử lý
+      // kinh doanh/canh bạc/tổ chức sự kiện: giá luôn bằng 0 nên không có gì để
+      // kiểm tiền mặt hay kẹp quy mô, và cả hai lựa chọn đều đổi hạnh phúc — khác
+      // hẳn nhánh từ chối chung ở dưới (vốn không đổi hạnh phúc chút nào).
+      if (coHoi.loai === 'baoLanh') {
+        const bl = CONFIG.baoLanh
+        const rng = taoRng(s.seed, s.rngCursor + s.nam * 977)
+        const conLaiBaoLanh = s.coHoiNamNay.filter((c) => c.id !== coHoi.id)
+        if (!a.nhan) {
+          return {
+            ...s,
+            coHoiNamNay: conLaiBaoLanh,
+            hanhPhuc: themHanhPhuc(s.hanhPhuc, -bl.hanhPhucKhiTuChoi),
+          }
+        }
+        // Chốt NGAY lúc nhận, tất định theo seed — không tung xúc xắc mỗi năm,
+        // cùng khuôn với lịch cưới hỏi và lịch biến cố lớn.
+        const seVo = rng.next() < bl.xacSuatVo
+        const namVo = seVo
+          ? s.nam + Math.round(rng.khoang(bl.voSauItNhat, bl.voSauNhieuNhat))
+          : -1
+        return {
+          ...s,
+          coHoiNamNay: conLaiBaoLanh,
+          hanhPhuc: themHanhPhuc(s.hanhPhuc, bl.hanhPhucKhiNhan),
+          namVoBaoLanh: namVo,
+        }
+      }
+
       const conLai = s.coHoiNamNay.filter((c) => c.id !== a.coHoiId)
       if (!a.nhan) return { ...s, coHoiNamNay: conLai }
 

@@ -33,6 +33,7 @@ const BIEU_TUONG_SU_KIEN: Record<SuKienLoai, string> = {
   thanhLyDoanhNghiep: '🏷️',
   phaSan: '💀',
   doanhNghiepPhaSan: '🏚️',
+  baoLanh: '🤝',
 }
 
 export default function TongKetModal({

@@ -66,6 +66,12 @@ export interface ChienLuoc {
   nhanCanhBac: boolean
   /** nhận cơ hội tổ chức sự kiện — kỳ vọng dương, mở kết quả ngay cuối năm */
   nhanToChucSuKien: boolean
+  /**
+   * Nhận lời mời đứng tên bảo lãnh cho người thân (v1.7). Hạnh phúc ngay là
+   * ràng buộc THẬT với bot cân bằng — từ chối cũng mất hạnh phúc, nên đây
+   * không phải một lựa chọn "an toàn tuyệt đối" như bỏ qua canh bạc.
+   */
+  nhanBaoLanh: boolean
   /** bậc quy mô góp vốn ưa thích; bot tự kẹp lại theo trần cho phép */
   quyMoGopVonUaThich: number
   /**
@@ -99,6 +105,7 @@ export const CHIEN_LUOC_CAN_BANG: ChienLuoc = {
   nhanCoHoiKinhDoanh: true,
   nhanCanhBac: false,
   nhanToChucSuKien: true,
+  nhanBaoLanh: true,
   // Luôn đúng MỘT suất (như trước v1.6), KHÔNG dồn tới 3x dù tran cho phép.
   // Đã thử chẩn đoán hồi quy "thuê chuyên gia hoạch định tài chính rút ngắn
   // đường tới tự do tài chính" (test ghép cặp co/không thuê): nghi ngờ ban đầu
@@ -299,6 +306,19 @@ export function moPhongMotVan(
     // 7. cơ hội: xử lý từng cái một, vòng lặp sẽ quay lại lo cái tiếp theo
     const coHoi = s.coHoiNamNay[0]
     if (coHoi) {
+      // Bảo lãnh cho người thân (v1.7) đi thẳng tới reducer, không qua phép
+      // kiểm tiền mặt hay tính đòn bẩy bên dưới — giá luôn bằng 0, quyết định
+      // duy nhất là có nhận hay không.
+      if (coHoi.loai === 'baoLanh') {
+        s = reducer(s, {
+          type: 'quyetDinhCoHoi',
+          coHoiId: coHoi.id,
+          nhan: cl.nhanBaoLanh,
+        })
+        continue
+      }
+
+      // `coHoi.loai` không thể còn là 'baoLanh' tới đây — nhánh trên đã continue.
       const chapNhanLoai =
         coHoi.loai === 'kinhDoanh'
           ? cl.nhanCoHoiKinhDoanh

@@ -3458,3 +3458,63 @@ describe('v1.7 — giá hạnh phúc neo theo mặt bằng sống', () => {
     expect(giaThucTe(s, 100 * TRIEU)).toBe(Math.round(100 * TRIEU * s.chiSoGia))
   })
 })
+
+describe('v1.7 — bảo lãnh cho người thân', () => {
+  it('ván mới chưa có khoản bảo lãnh nào treo', () => {
+    expect(taoGameMoi('bacSi', 61).namVoBaoLanh).toBe(-1)
+  })
+
+  it('từ chối thì mất hạnh phúc nhưng không gánh rủi ro', () => {
+    let s = taoGameMoi('bacSi', 62)
+    const co = timCoHoi('baoLanhNguoiThan')!
+    s = { ...s, coHoiNamNay: [co], nam: 12 }
+    const truoc = s.hanhPhuc
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: 'baoLanhNguoiThan',
+      nhan: false,
+    })
+    expect(sau.hanhPhuc).toBeLessThan(truoc)
+    expect(sau.namVoBaoLanh).toBe(-1)
+  })
+
+  it('nhận thì được hạnh phúc ngay và có thể phải gánh nợ về sau', () => {
+    let s = taoGameMoi('bacSi', 63)
+    const co = timCoHoi('baoLanhNguoiThan')!
+    s = { ...s, coHoiNamNay: [co], nam: 12 }
+    const truoc = s.hanhPhuc
+    const sau = reducer(s, {
+      type: 'quyetDinhCoHoi',
+      coHoiId: 'baoLanhNguoiThan',
+      nhan: true,
+    })
+    expect(sau.hanhPhuc).toBeGreaterThan(truoc)
+    // Tất định theo seed: hoặc không vỡ (-1), hoặc hẹn một năm trong tương lai
+    expect(sau.namVoBaoLanh === -1 || sau.namVoBaoLanh > s.nam).toBe(true)
+  })
+
+  it('khi vỡ thì khoản nợ đến thẳng, không xét hạn mức vay', () => {
+    let s = taoGameMoi('bacSi', 64)
+    s = { ...s, nam: 20, namVoBaoLanh: 21, khoanVay: [] }
+    const sau = choiHetNam(s)
+    expect(sau.khoanVay.length).toBe(1)
+    expect(sau.namVoBaoLanh).toBe(-1)
+    const sk = sau.tongKet!.suKien.find((k) => k.loai === 'baoLanh')!
+    expect(sk.hanhPhucThayDoi).toBeLessThan(0)
+  })
+
+  it('không bao giờ mời bảo lãnh trước tuổi tối thiểu', () => {
+    for (let seed = 0; seed < 60; seed++) {
+      let s = taoGameMoi('bacSi', seed)
+      for (let i = 0; i < 8 && s.trangThai === 'dangChoi'; i++) {
+        const coBaoLanh = s.coHoiNamNay.some((c) => c.loai === 'baoLanh')
+        if (coBaoLanh) {
+          expect(tuoiTaiNam(s.nam)).toBeGreaterThanOrEqual(
+            CONFIG.baoLanh.tuoiToiThieu,
+          )
+        }
+        s = choiHetNam(s)
+      }
+    }
+  })
+})

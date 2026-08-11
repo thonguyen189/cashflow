@@ -839,6 +839,19 @@ export const CO_HOI: CoHoi[] = [
     bienDongThuNhapMin: -0.35,
     bienDongThuNhapMax: 0.4,
   },
+
+  /* ---------- Chung: bảo lãnh ---------- */
+  {
+    id: 'baoLanhNguoiThan',
+    ten: 'Em trai nhờ đứng tên bảo lãnh',
+    moTa:
+      'Em trai vay ngân hàng mua nhà, thiếu người bảo lãnh. Nhận thì cả họ nể,' +
+      ' từ chối thì mang tiếng. Nếu em ấy trả không nổi, ngân hàng sẽ tìm tới bạn.',
+    emoji: '🤝',
+    loai: 'baoLanh',
+    gia: 0,
+    namToiThieu: 10,
+  },
 ]
 
 /** ---------------- Lời kể sáu biến cố lớn ----------------
