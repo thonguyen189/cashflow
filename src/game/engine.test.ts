@@ -393,12 +393,32 @@ describe('điều kiện kết thúc', () => {
   })
 
   /**
+   * Trả chi phí năm 1 rồi duyệt hết thẻ tiêu dùng, NHẬN tất — nhưng neo lại
+   * hạnh phúc ở mức khởi đầu ngay sau đó.
+   *
+   * Vì sao phải neo: `duyetHetThe(..., true)` nhận mọi thẻ khi đủ tiền, ép từ
+   * chối (mất điểm) khi không đủ. Vốn khởi điểm v1.7 thấp hơn v1.6 tới 2–4 lần
+   * trong khi giá thẻ GIỮ NGUYÊN, nên tiền mặt của giáo viên cạn giữa chừng
+   * chuỗi thẻ và vài thẻ đắt bị ép từ chối — hạnh phúc tụt xuống dưới
+   * `hanhPhucNguongThua` (đã đo được: seed cố định của bộ test này cho ra 47,
+   * dưới ngưỡng 50) trước khi `ketThucNam` kịp chạy. Đó là hiệu ứng phụ của cơ
+   * chế thẻ bài, không liên quan gì tới điều kiện thắng/thua đang được kiểm ở
+   * đây, nên neo lại đúng như quy ước đã dùng ở khối 'món ước nguyện' phía
+   * trên (dòng ~514: "Neo dưới trần mềm để nhận trọn vẹn phần thưởng danh
+   * nghĩa").
+   */
+  const s0GiauThe = (): GameState => ({
+    ...duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true),
+    hanhPhuc: CONFIG.hanhPhucBanDau,
+  })
+
+  /**
    * 5 tỷ trái phiếu, lợi tức kỳ vọng 6% = 300 triệu mỗi năm — thừa sức phủ
-   * nghĩa vụ năm đầu của giáo viên (108 triệu sinh hoạt + phí bảo hiểm y tế,
+   * nghĩa vụ năm đầu của giáo viên (76 triệu sinh hoạt + phí bảo hiểm y tế,
    * nhân hệ số an toàn) kể cả sau khi lạm phát đẩy chi phí lên.
    */
   const dungTrangThaiTuDo = (): GameState => {
-    const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
+    const s0 = s0GiauThe()
     return {
       ...s0,
       tienMat: 200 * TRIEU,
@@ -407,13 +427,13 @@ describe('điều kiện kết thúc', () => {
   }
 
   it('tiền mặt chất đống nhưng không đẻ ra dòng tiền thì vẫn chưa thắng', () => {
-    const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
+    const s0 = s0GiauThe()
     const giau: GameState = { ...s0, tienMat: 50 * TY }
     expect(reducer(giau, { type: 'ketThucNam' }).trangThai).toBe('dangChoi')
   })
 
   it('vàng không sinh lợi tức nên không mua nổi tự do tài chính', () => {
-    const s0 = duyetHetThe(reducer(moiVan(), { type: 'traChiPhi' }), true)
+    const s0 = s0GiauThe()
     // 50 tỷ vàng — giàu nứt đố đổ vách mà dòng tiền thụ động vẫn bằng 0
     const omVang: GameState = { ...s0, soHuu: { ...s0.soHuu, vang: 6000 } }
     expect(dongTienThuDong(omVang)).toBe(0)
@@ -972,8 +992,16 @@ describe('thu nhập doanh nghiệp biến động từng năm', () => {
     // đó xoá thẳng doanh nghiệp và có bài kiểm riêng của nó).
     let s: GameState = { ...gopVon('nhaTroCongNhan'), lichBienCo: [] }
     const nenLucGopVon = thuNhapThuDong(s)
-    for (let i = 0; i < 20 && s.trangThai === 'dangChoi'; i++) {
+    // Từ v1.7, nghĩa vụ hàng năm của kỹ sư phần mềm (~125 triệu) đã thấp hơn
+    // hẳn 195 triệu nền của nhà trọ công nhân — giá cơ hội/thu nhập doanh
+    // nghiệp GIỮ NGUYÊN trong khi lương giảm 2–4 lần (xem content.ts) — nên
+    // nhân vật đã tự do tài chính ngay cuối năm 1, vòng lặp thoát sớm và chưa
+    // đủ 20 năm để lạm phát tích luỹ. Bài này không kiểm điều kiện thắng, nên
+    // hễ thắng giữa chừng thì chơi tiếp (`choiTiepSauThang`) để 20 năm lạm
+    // phát thật sự trôi qua, đúng ý đo ban đầu.
+    for (let i = 0; i < 20 && s.trangThai !== 'thua' && s.trangThai !== 'vienMan'; i++) {
       s = reducer(diTronMotNam(s, 5 * TY), { type: 'dongTongKet' })
+      if (s.trangThai === 'thang') s = reducer(s, { type: 'choiTiepSauThang' })
     }
     expect(s.chiSoGia).toBeGreaterThan(1.5)
     expect(thuNhapThuDong(s)).toBeGreaterThan(nenLucGopVon * 1.5)
@@ -1113,10 +1141,14 @@ describe('bán tài sản khi tiền mặt âm', () => {
   })
 
   it('bán sạch vẫn không đủ: thêm sự kiện Túng thiếu, mất 10 hạnh phúc', () => {
-    // Thiếu hụt phải ở dưới ngưỡng phá sản (v1.6) — quá ngưỡng thì rơi sang nấc 3,
-    // xem describe('v1.6 — ba nấc vỡ nợ') cho ca thiếu hụt nặng. 300 triệu vẫn bị
-    // lương của năm bù bớt lại nhưng còn dư âm dưới ngưỡng phá sản (~110 triệu).
-    const s = ketThucVoiTienAm(-300 * TRIEU, 10)
+    // Thiếu hụt phải ở dưới ngưỡng phá sản — quá ngưỡng thì rơi sang nấc 3, xem
+    // describe('v1.6 — ba nấc vỡ nợ') cho ca thiếu hụt nặng. Ngưỡng phá sản của
+    // giáo viên ở v1.7 chỉ còn ~81 triệu (chiPhiHangNam năm sau × 1, so với
+    // ~110 triệu thời v1.6 vì chiPhi gốc giảm từ 108tr xuống 76tr — xem
+    // content.ts). Lương của năm (~90tr, đã đo bằng seed cố định) bù bớt phần
+    // lớn khoản âm 150 triệu, còn dư âm khoảng 53,5 triệu — vẫn dưới ngưỡng
+    // phá sản nên chỉ rơi vào Túng thiếu.
+    const s = ketThucVoiTienAm(-150 * TRIEU, 10)
     const cacSuKienBan = s.tongKet!.suKien.filter((k) => k.loai === 'banTaiSan')
     expect(cacSuKienBan.some((k) => k.tieuDe === 'Túng thiếu')).toBe(true)
     expect(s.soHuu.traiPhieu).toBe(0)
@@ -1147,7 +1179,11 @@ describe('cột mốc tài sản', () => {
       1_900 * TRIEU,
     ])
     expect(mocTaiSanCuaNghe('bacSi').at(-1)).toBe(2_600 * TRIEU)
-    expect(mocTaiSanCuaNghe('kySuPhanMem').at(-1)).toBe(3_050 * TRIEU)
+    // 122tr × 25 = 3.050tr đúng bằng 30,5 lần mức làm tròn 100tr — rơi trúng
+    // điểm giữa nên Math.round (làm tròn nửa lên) đưa nó thành 31 × 100tr,
+    // không phải 30. mocTaiSanCuaNghe('bacSi') và ('giaoVien') né được ranh
+    // giới này nên không cần sửa.
+    expect(mocTaiSanCuaNghe('kySuPhanMem').at(-1)).toBe(3_100 * TRIEU)
   })
 
   it('mốc leo theo mặt bằng giá để lạm phát không làm rẻ cột mốc', () => {
@@ -1803,13 +1839,15 @@ describe('chuyên gia đồng hành', () => {
     const goc = vanDuTien(70)
     // Tiền mặt âm mà trong tay chỉ còn dúm trái phiếu: bán sạch vẫn không đủ,
     // nên năm này vừa có "Bán tài sản trang trải" vừa lãnh 10 điểm trừ "Túng thiếu".
-    // Thiếu hụt phải ở dưới ngưỡng phá sản (v1.6): lương của năm bù lại một phần
-    // nên cần âm sâu hơn số cũ, nhưng vẫn phải dưới ngưỡng phá sản để không rơi
-    // sang nấc 3 (~110 triệu dư âm sau khi bán hết trái phiếu, xem describe
-    // 'v1.6 — ba nấc vỡ nợ' cho ca thiếu hụt nặng).
+    // Thiếu hụt phải ở dưới ngưỡng phá sản: lương của năm bù lại một phần, còn
+    // dư âm phải nằm dưới ngưỡng phá sản để không rơi sang nấc 3. Cùng phép
+    // tính với describe('bán tài sản khi tiền mặt âm') phía trên — v1.7 hạ
+    // ngưỡng phá sản của giáo viên xuống còn ~81 triệu (chiPhi gốc giảm từ
+    // 108tr xuống 76tr), nên -150 triệu ban đầu khép lại quanh -53,5 triệu,
+    // vẫn chắc chắn dưới ngưỡng.
     const tungThieu: GameState = {
       ...duyetHetThe(goc, false),
-      tienMat: -300 * TRIEU,
+      tienMat: -150 * TRIEU,
       soHuu: { ...goc.soHuu, traiPhieu: 10 },
       hanhPhuc: 70,
     }
@@ -2720,8 +2758,14 @@ describe('v1.6 — ba nấc vỡ nợ', () => {
       // Đã kết hôn sẵn: SEED=12345 hẹn đám cưới đúng năm 12, một khoản chi cốt
       // truyện không liên quan tới phép thử này mà đủ lớn để làm lệch số đo.
       daKetHon: true,
+      // Vay 200tr/năm (giá trị v1.6 cũ) cộng lương giáo viên đã giảm còn 90tr
+      // (v1.7) đẩy thiếu hụt trước nấc 2 lên tới ~187 triệu — vượt quá 45% vốn
+      // riêng quán cà phê (180tr) nên cả hai doanh nghiệp đều bị bán, làm hỏng
+      // đúng cái nhánh "chỉ bán cái nhỏ" mà bài này muốn kiểm. Hạ khoản trả nợ
+      // xuống 150tr/năm để thiếu hụt còn ~137 triệu, nằm dưới 180tr — thanh lý
+      // một mình quán cà phê là đủ, xưởng may được giữ lại.
       khoanVay: [
-        { id: 'v1', goc: 1 * TY, kyHan: 10, thanhToanMoiNam: 200 * TRIEU, namConLai: 8 },
+        { id: 'v1', goc: 1 * TY, kyHan: 10, thanhToanMoiNam: 150 * TRIEU, namConLai: 8 },
       ],
       doanhNghiep: [
         { coHoiId: 'quanCaPhe', ten: 'Mở quán cà phê nhỏ', thuNhapNen: 1, chiSoGiaLucMua: 1, vonGoc: 400 * TRIEU },
