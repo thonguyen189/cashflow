@@ -4,7 +4,9 @@
 
 **Goal:** Thực hiện bốn quyết định đã chốt sau vòng hiệu chỉnh v1.7 nhưng chưa cài đặt — trả đường lương giáo viên về đúng thực tế, chặn bán tháo vô hạn ở nấc 1 để phá sản thật sự xảy ra được, kéo kỳ hạn vay lên hai mươi năm, và bỏ mục tiêu chênh lệch ≤ 15 điểm khỏi mục J — rồi đo lại toàn bộ và ghi số thật vào tài liệu thiết kế.
 
-> **Trạng thái: Task 1–5 và Task 6 Step 1–2 đã xong.** Còn đúng Task 6 Step 3 (chốt hướng kết nhánh) — việc phải do người quyết. Số đo cuối cùng ở mục L của `docs/07-thiet-ke-v1-7.md`; 305/305 test xanh.
+> **Trạng thái: đã thực hiện xong toàn bộ 6 task.** Số đo cuối cùng ở mục L của `docs/07-thiet-ke-v1-7.md`; 305/305 test xanh, `tsc` sạch, dựng bản thành công.
+>
+> **Hướng kết nhánh đã chốt: giữ nhánh, chơi thử trước khi gộp** (Task 6 Step 3 — có danh sách ba việc cần để mắt khi chơi).
 >
 > **Hai chỗ đi lệch khỏi kế hoạch, đã đo và đã báo trước khi làm:**
 > - **Sàn 8% của Task 5 Step 2 bị phá.** Giáo viên đo được 6,0%. Quét `heSoAnToanTheoTuoi` qua bảy mức cho thấy chênh lệch giữa nghề mạnh nhất và yếu nhất đứng yên ở 43–44,5 điểm suốt cả dải, tức cần gạt này không phải nguyên nhân và không chữa được. Người chốt đã quyết: nhận 6% là sự thật, sửa thước đo. Toàn bộ số đo ở mục L.
@@ -982,9 +984,21 @@ git commit -m "v1.7 danh dau ke hoach cu da thuc hien xong
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 3: Chốt hướng kết nhánh**
+- [x] **Step 3: Chốt hướng kết nhánh**
 
 Nhánh `v1-7-du-kho-de-phai-chon` đi trước `main` hơn 60 commit. **Dừng lại hỏi người** trước khi gộp — dùng superpowers:finishing-a-development-branch để chọn giữa gộp thẳng, mở pull request, hay giữ nhánh chờ chơi thử. Không tự quyết.
+
+**Đã hỏi và đã chốt (2026-08-12): giữ nhánh, chơi thử trước khi gộp.** Nhánh đi trước `main` 71 commit, `main` không đi trước gì nên lúc nào gộp cũng là tua thẳng — không có áp lực thời gian phải gộp sớm.
+
+Lý do giữ: v1.7 đổi căn bản cảm giác chơi chứ không chỉ đổi số. Giáo viên từ 48% xuống 6%; đòn bẩy đổi vai tuỳ nghề (bẫy với bác sĩ, phao với giáo viên); tuổi thắng lùi vào quãng 53–55. Bộ test đo được **bố cục các con số**, nhưng không đo được điều duy nhất còn lại đáng lo: **6% là khắc nghiệt thú vị hay đã thành nản lòng.** Đó là câu hỏi chỉ trả lời được bằng tay cầm chuột.
+
+Việc cần làm khi chơi thử — ba chỗ số đo chỉ thẳng tới:
+
+1. **Chơi giáo viên vài ván tới nơi tới chốn.** Không phải để xem có thắng không (6% nghĩa là gần như không), mà để xem quãng thua có ra một câu chuyện đáng chơi hay chỉ là chuỗi năm giống hệt nhau. Cửa thua vẫn là hạnh phúc ở 87% số ván thua, tức phần lớn ván giáo viên kết thúc bằng kiệt sức chứ không phải bằng vỡ nợ.
+2. **Chơi giáo viên có vay.** Số đo nói đòn bẩy nâng giáo viên từ 6% lên 11,5%. Nếu ngoài giao diện người chơi không nhận ra được điều đó thì đây là một nước đi hay đang bị giấu, và nó thuộc về phần trình bày chứ không phải phần cân bằng.
+3. **Chơi bác sĩ hoặc kỹ sư để so.** Hai nghề này ở 49% và 50,5%, tuổi thắng 55,3 và 53,5. Nếu quãng giữa ván thấy dài và trống thì vấn đề là nhịp độ, và cần gạt của nó là `heSoToiThieu`/`heSoPhuThem` — đã có sẵn bảng bảy mức ở mục L để chọn.
+
+Sau khi chơi xong thì quay lại chọn giữa gộp thẳng và mở pull request, hoặc mở một vòng thiết kế mới cho kinh tế nghề giáo viên nếu 6% đọc ra là nản lòng.
 
 ---
 
