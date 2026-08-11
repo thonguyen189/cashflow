@@ -6,6 +6,7 @@ import {
   daToiUuChiPhi,
   dongTienThuDong,
   giaTriDauTu,
+  heSoAnToanTheoTuoi,
   loiTucDanhMucSauThue,
   mocTaiSanCuaNghe,
   mucTieuTuDo,
@@ -224,8 +225,11 @@ export default function TabSoSach({ state }: { state: GameState }) {
         <div className="hang">
           <span className="hang-nhan">
             <strong>
+              {/* v1.7: đệm an toàn giảm dần theo tuổi (quy tắc 4% ngoài đời), nên
+               * nhãn phải đọc đúng hệ số của TUỔI HIỆN TẠI trong ván — hiện hằng số
+               * cũ sẽ đọc sai con số `canDat` thật đang hiển thị ngay bên cạnh. */}
               🎯 Mức cần đạt (đệm an toàn ×
-              {CONFIG.tuDoTaiChinh.heSoAnToan.toString().replace('.', ',')})
+              {heSoAnToanTheoTuoi(tuoiHienTai(state)).toFixed(2).replace('.', ',')})
             </strong>
           </span>
           <span className="hang-gia-tri">{dinhDangTien(canDat)}</span>

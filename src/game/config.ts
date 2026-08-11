@@ -22,19 +22,22 @@ export const CONFIG = {
    * không cần một con số cứng nào cả.
    */
   tuDoTaiChinh: {
-    /**
-     * Dòng tiền thụ động phải đạt tỉ lệ này so với nghĩa vụ hàng năm.
+    /** ---------- Hệ số an toàn theo tuổi (v1.7) ----------
+     * heSoAnToan(tuổi) = heSoToiThieu + heSoPhuThem × (tuổi viên mãn − tuổi) / quãng đời
      *
-     * Vì dòng tiền được tính theo mức KỲ VỌNG mà thực nhận thì dao động mạnh
-     * (quán cà phê có năm âm 35%, cổ tức có năm bằng 0), đòi đúng 100% kỳ vọng
-     * nghĩa là cứ hai năm lại hụt một năm. Đệm 50% vừa đủ để năm xấu nhất của
-     * một doanh nghiệp vẫn không làm bạn phải đi làm lại.
+     * Tuổi 21 đòi 2,50 · tuổi 40 đòi 2,19 · tuổi 65 đòi 1,78 · tuổi 100 đòi 1,20.
      *
-     * Hệ số này điều chỉnh NHỊP ĐỘ ván chơi, không phải tỉ lệ thắng: mô phỏng
-     * cho thấy nâng từ 1,0 lên 2,0 kéo ván dài thêm khoảng năm năm mà tỉ lệ
-     * thắng đứng yên, vì thua chỉ đến từ hạnh phúc.
+     * Đây chính là quy tắc 4% ngoài đời: nghỉ hưu càng sớm thì tỉ lệ rút an toàn
+     * phải càng thấp, vì tiền phải nuôi bạn càng lâu và càng nhiều lần đi qua
+     * khủng hoảng. Nó giết thẳng kiểu thắng ở tuổi 31 mà không cần cấm đoán gì —
+     * chỉ cần nói đúng sự thật.
+     *
+     * Con số cũ là 1,5 cố định. Đo thực nghiệm cho thấy hệ số này chỉ dời TUỔI
+     * thắng chứ không hạ TỈ LỆ thắng (nâng lên 4,0 vẫn ra 91–94%), nên nó ở đây
+     * với tư cách công cụ NHỊP ĐỘ, không phải công cụ độ khó.
      */
-    heSoAnToan: 1.5,
+    heSoToiThieu: 1.2,
+    heSoPhuThem: 1.3,
   },
 
   /** ---------- Cột mốc tài sản ----------

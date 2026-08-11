@@ -59,6 +59,7 @@ import {
   xeDangCo,
   chuyenTrangThaiThiTruong,
   heSoChamSocTuoiGia,
+  heSoAnToanTheoTuoi,
 } from './engine'
 import type {
   AssetId,
@@ -3140,5 +3141,27 @@ describe('v1.7 — chi phí chăm sóc tuổi già', () => {
     const gia = tinhHeSoChiPhi(true, [], nam60, XUAT_THAN[1]!, 1)
     const raGia = tinhHeSoChiPhi(true, [], nam85, XUAT_THAN[1]!, 1)
     expect(raGia).toBeGreaterThan(gia * 1.25)
+  })
+})
+
+describe('v1.7 — hệ số an toàn theo tuổi', () => {
+  it('nghỉ hưu càng sớm thì đòi hỏi càng cao', () => {
+    expect(heSoAnToanTheoTuoi(21)).toBeCloseTo(2.5, 2)
+    expect(heSoAnToanTheoTuoi(50)).toBeCloseTo(2.02, 2)
+    expect(heSoAnToanTheoTuoi(80)).toBeCloseTo(1.53, 2)
+    expect(heSoAnToanTheoTuoi(100)).toBeCloseTo(1.2, 2)
+  })
+
+  it('giảm đơn điệu theo tuổi', () => {
+    for (let tuoi = 21; tuoi < 100; tuoi++) {
+      expect(heSoAnToanTheoTuoi(tuoi + 1)).toBeLessThan(heSoAnToanTheoTuoi(tuoi))
+    }
+  })
+
+  it('mục tiêu tự do ở tuổi 30 cao hơn hẳn ở tuổi 65 với cùng nghĩa vụ', () => {
+    const s = taoGameMoi('bacSi', 51)
+    const nam30 = { ...s, nam: 30 - CONFIG.cotTruyen.tuoiBatDau + 1 }
+    const nam65 = { ...s, nam: 65 - CONFIG.cotTruyen.tuoiBatDau + 1 }
+    expect(mucTieuTuDo(nam30)).toBeGreaterThan(mucTieuTuDo(nam65) * 1.25)
   })
 })

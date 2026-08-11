@@ -280,9 +280,20 @@ export function nghiaVuHangNam(s: GameState): Tien {
   return s.chiPhiHangNam + phiBaoHiem(s) + traNoMoiNam(s)
 }
 
+/** Bội số nghĩa vụ mà dòng tiền thụ động phải phủ, giảm dần theo tuổi. */
+export function heSoAnToanTheoTuoi(tuoi: number): number {
+  const td = CONFIG.tuDoTaiChinh
+  const ct = CONFIG.cotTruyen
+  const quangDoi = ct.tuoiVienMan - ct.tuoiBatDau
+  const conLai = Math.max(0, ct.tuoiVienMan - tuoi)
+  return td.heSoToiThieu + td.heSoPhuThem * (conLai / quangDoi)
+}
+
 /** Mức dòng tiền thụ động cần đạt để được coi là tự do tài chính. */
 export function mucTieuTuDo(s: GameState): Tien {
-  return Math.round(nghiaVuHangNam(s) * CONFIG.tuDoTaiChinh.heSoAnToan)
+  return Math.round(
+    nghiaVuHangNam(s) * heSoAnToanTheoTuoi(tuoiTaiNam(s.nam)),
+  )
 }
 
 /** Đã tự do tài chính hay chưa, xét tại thời điểm hiện tại. */
