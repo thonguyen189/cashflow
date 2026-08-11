@@ -4,6 +4,14 @@
 
 **Goal:** Thực hiện bốn quyết định đã chốt sau vòng hiệu chỉnh v1.7 nhưng chưa cài đặt — trả đường lương giáo viên về đúng thực tế, chặn bán tháo vô hạn ở nấc 1 để phá sản thật sự xảy ra được, kéo kỳ hạn vay lên hai mươi năm, và bỏ mục tiêu chênh lệch ≤ 15 điểm khỏi mục J — rồi đo lại toàn bộ và ghi số thật vào tài liệu thiết kế.
 
+> **Trạng thái: Task 1–5 và Task 6 Step 1–2 đã xong.** Còn đúng Task 6 Step 3 (chốt hướng kết nhánh) — việc phải do người quyết. Số đo cuối cùng ở mục L của `docs/07-thiet-ke-v1-7.md`; 305/305 test xanh.
+>
+> **Hai chỗ đi lệch khỏi kế hoạch, đã đo và đã báo trước khi làm:**
+> - **Sàn 8% của Task 5 Step 2 bị phá.** Giáo viên đo được 6,0%. Quét `heSoAnToanTheoTuoi` qua bảy mức cho thấy chênh lệch giữa nghề mạnh nhất và yếu nhất đứng yên ở 43–44,5 điểm suốt cả dải, tức cần gạt này không phải nguyên nhân và không chữa được. Người chốt đã quyết: nhận 6% là sự thật, sửa thước đo. Toàn bộ số đo ở mục L.
+> - **Task 5 Step 4 dừng sớm, không dùng hết bốn vòng vặn.** Quét cho thấy cả hai đòn bẩy số học đều trơ: `tyLeBanToiDaMoiNam` 0,4 → 0,15 không đổi một chữ số nào (kỳ hạn vay 20 năm của cùng đợt làm trần này hết cắn), `nguongTheoChiPhi` hạ tới tận 0 cũng chỉ chạm 4,5%. Ràng buộc đang cắn nằm ở nấc 2 — sửa nó là đổi engine, cần task riêng.
+>
+> **Một việc làm thêm ngoài kế hoạch:** bài `bốn xuất thân` chuyển từ giáo viên sang bác sĩ. Trên giáo viên bốn nhánh ra 4,2/4,2/5,0/3,3% — chênh 1,7 điểm không phải vì đã công bằng mà vì cả bốn bị dồn sát sàn 0, nên bài mất sạch khả năng bắt hồi quy. Trên bác sĩ nó ra 30,8/47,5/50,0/32,5%.
+
 **Architecture:** Ba trong bốn việc chỉ là đổi số ở `config.ts`/`content.ts` và chữ ở tài liệu; việc thứ hai là thay đổi engine thật sự, đặt trong nấc 1 của khối ba nấc vỡ nợ tại `chuyenNam`. Vì mọi thay đổi đều dời số cân bằng, task cuối cùng đo lại năm chỉ tiêu và viết lại mục L thay vì để mỗi task tự vặn ngưỡng test.
 
 **Tech Stack:** TypeScript 5.7 · React 19 · Vite 6 · Vitest 3 · không có backend, trạng thái lưu ở localStorage.
@@ -184,12 +192,12 @@ Mục J của tài liệu thiết kế vẫn đòi giữ chênh lệch giữa b�
 - Consumes: không có
 - Produces: không có (không đổi mã chạy được)
 
-- [ ] **Step 1: Chạy test để ghi mốc trước khi sửa**
+- [x] **Step 1: Chạy test để ghi mốc trước khi sửa**
 
 Chạy: `npm test -- src/game/balance.test.ts`
 Kỳ vọng: 12/12 xanh. Chép hai dòng `console.log` của bài xuất thân và bài bậc lương để đối chiếu ở Step 5.
 
-- [ ] **Step 2: Sửa bảng mục J trong tài liệu thiết kế**
+- [x] **Step 2: Sửa bảng mục J trong tài liệu thiết kế**
 
 Trong `docs/07-thiet-ke-v1-7.md`, xoá hai dòng:
 
@@ -205,7 +213,7 @@ và thay bằng:
 | Chênh lệch giữa năm bậc lương | ≤ 15 điểm | **không đặt mục tiêu** — xem ghi chú |
 ```
 
-- [ ] **Step 3: Thay ghi chú dưới bảng mục J**
+- [x] **Step 3: Thay ghi chú dưới bảng mục J**
 
 Đoạn trích dẫn hiện có bắt đầu bằng `> **Đã đo xong — xem mục L.**` nay phải nói rõ hai dòng kia đã bị gỡ chứ không phải trượt chỉ tiêu. Thay trọn khối trích dẫn đó bằng:
 
@@ -228,7 +236,7 @@ và thay bằng:
 > theo khoảng thật quan sát được để vẫn bắt được hồi quy.
 ```
 
-- [ ] **Step 4: Sửa tên hai bài test và chú thích khối trong `balance.test.ts`**
+- [x] **Step 4: Sửa tên hai bài test và chú thích khối trong `balance.test.ts`**
 
 Tên bài hiện tại nhắc tới "trần 15 điểm của v1.6 không còn giữ được" — nay chỉ tiêu đã gỡ hẳn nên tên phải nói bất biến đang được chốt, không nói cái đã bỏ. Đổi:
 
@@ -252,12 +260,12 @@ Trong chú thích khối phía trên hai bài (bắt đầu bằng `---------- T
 
 Giữ nguyên toàn bộ phần còn lại của chú thích (giải thích hiệu ứng trần, bảng quét `heSoAnToanTheoTuoi`, lý do chọn ngưỡng 40 điểm) — nó vẫn đúng từng chữ.
 
-- [ ] **Step 5: Chạy test để xác nhận không có gì đổi**
+- [x] **Step 5: Chạy test để xác nhận không có gì đổi**
 
 Chạy: `npm test -- src/game/balance.test.ts`
 Kỳ vọng: 12/12 xanh, và hai dòng `console.log` in ra **đúng cùng con số** với Step 1 (24 điểm và 33 điểm). Số lệch nghĩa là đã lỡ tay đụng vào mã chạy được — quay lại sửa.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docs/07-thiet-ke-v1-7.md src/game/balance.test.ts
@@ -301,7 +309,7 @@ Kéo kỳ hạn lên hai mươi năm đưa chi phí vay về `(1 + 0,08 × 20) �
 - Consumes: `CONFIG.laiSuatVay`, `CONFIG.thue.thueDoanhNghiep` (đã có)
 - Produces: `CONFIG.kyHanVayToiDa = 20`
 
-- [ ] **Step 1: Viết test thất bại cho chi phí vay mới**
+- [x] **Step 1: Viết test thất bại cho chi phí vay mới**
 
 Thêm vào cuối `src/game/engine.test.ts`:
 
@@ -334,12 +342,12 @@ describe('v1.7 đợt 2 — kỳ hạn vay hai mươi năm', () => {
 
 `thanhToanMoiNamCuaKhoanVay` đã được `engine.ts:559` xuất ra và `engine.test.ts` đã import sẵn — kiểm tra dòng import ở đầu file, thiếu thì bổ sung.
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "kỳ hạn vay hai mươi năm"`
 Kỳ vọng: FAIL — `expected 0.18 to be less than 0.144` và `expected 10 to be 20`.
 
-- [ ] **Step 3: Đổi `kyHanVayToiDa` và viết lại chú thích khối**
+- [x] **Step 3: Đổi `kyHanVayToiDa` và viết lại chú thích khối**
 
 Trong `src/game/config.ts`, đổi `kyHanVayToiDa: 10,` thành `kyHanVayToiDa: 20,` và thêm ngay trên dòng đó:
 
@@ -364,12 +372,12 @@ Trong `src/game/config.ts`, đổi `kyHanVayToiDa: 10,` thành `kyHanVayToiDa: 2
    */
 ```
 
-- [ ] **Step 4: Chạy test để xác nhận xanh**
+- [x] **Step 4: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "kỳ hạn vay hai mươi năm"`
 Kỳ vọng: PASS, cả hai bài.
 
-- [ ] **Step 5: Sửa bài "bot đòn bẩy" trong `balance.test.ts`**
+- [x] **Step 5: Sửa bài "bot đòn bẩy" trong `balance.test.ts`**
 
 Bài này đang chốt `expect(chiPhiVayMoiNam).toBeGreaterThan(sinhLoiToiDaSauThue)` — khẳng định "vay là lỗ chắc chắn", nay **cố ý không còn đúng** nên nó sẽ đỏ. Thay ba dòng khẳng định số học:
 
@@ -401,21 +409,21 @@ bằng:
 
 **Hai dòng cuối bài — `donBay.tyLeThang < canBang.tyLeThang` và `donBay.soNamTrungBinhKhiThang > canBang.soNamTrungBinhKhiThang` — GIỮ NGUYÊN và không được nới ở task này.** Nếu chúng đỏ nghĩa là kỳ hạn dài đã lật đòn bẩy thành nước đi có lãi, một kết quả cân bằng đáng giá phải đo và ghi chứ không phải xoá: chép vào mục "Test đã đỏ" bên dưới và để Task 5 xử lý.
 
-- [ ] **Step 6: Chạy toàn bộ và ghi nhận bài đỏ**
+- [x] **Step 6: Chạy toàn bộ và ghi nhận bài đỏ**
 
 Chạy: `npm test`
 Kỳ vọng: `engine.test.ts` phải xanh hết — các bài ở `engine.test.ts:268`, `:2160-2163` đọc `CONFIG.kyHanVayToiDa` nên tự bám theo; đỏ ở đó là lỗi thật, phải sửa ngay trong task này. `balance.test.ts` có thể đỏ ở vài bài vì tỉ lệ thắng của bot đòn bẩy vừa dời — **chép tên vào mục "Test đã đỏ", không nới ngưỡng.**
 
-- [ ] **Step 7: Xác nhận giao diện tự bám theo, không sửa tay**
+- [x] **Step 7: Xác nhận giao diện tự bám theo, không sửa tay**
 
 Đọc `src/ui/TabTrangChu.tsx:211-212`. Câu chữ ở đó đọc thẳng `CONFIG.kyHanVayToiDa` nên tự in ra "kỳ hạn tối đa 20 năm". **Không sửa gì**, chỉ xác nhận bằng mắt rằng câu vẫn đọc trôi với số mới.
 
-- [ ] **Step 8: Biên dịch**
+- [x] **Step 8: Biên dịch**
 
 Chạy: `./node_modules/.bin/tsc -b --noEmit`
 Kỳ vọng: không lỗi.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.test.ts src/game/balance.test.ts
@@ -459,7 +467,7 @@ Cách sửa: mỗi năm nấc 1 chỉ được bán một **phần** giá trị 
 - Consumes: `CONFIG.phaSan.nguongTheoChiPhi`, `CONFIG.phaSan.tyLeThanhLyDoanhNghiep` (đã có)
 - Produces: `CONFIG.phaSan.tyLeBanToiDaMoiNam: number` — tỉ lệ giá trị danh mục đầu năm được phép bán trong một năm
 
-- [ ] **Step 1: Viết test thất bại**
+- [x] **Step 1: Viết test thất bại**
 
 Thêm vào cuối `src/game/engine.test.ts`. Bộ này dùng lại đúng khuôn `vanVoNo` và hàm trợ giúp `diTronMotNam` của `describe('v1.6 — ba nấc vỡ nợ')` — đọc khối đó trước (khoảng dòng 2839) rồi khai báo lại `vanVoNo` cục bộ y hệt trong describe mới:
 
@@ -527,12 +535,12 @@ describe('v1.7 đợt 2 — nấc 1 không còn bán tháo vô hạn', () => {
 })
 ```
 
-- [ ] **Step 2: Chạy test để xác nhận đỏ**
+- [x] **Step 2: Chạy test để xác nhận đỏ**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "nấc 1 không còn bán tháo"`
 Kỳ vọng: FAIL ở ba bài (`expected 100 to be greater than or equal to 599`, `expected 0 to be 1`, `expected [ … ] to have length 0`). Bài thứ ba ("thiếu hụt nhỏ hơn trần") phải **xanh sẵn** — nó chốt hành vi cũ còn nguyên.
 
-- [ ] **Step 3: Thêm `tyLeBanToiDaMoiNam` vào khối `phaSan` của `config.ts`**
+- [x] **Step 3: Thêm `tyLeBanToiDaMoiNam` vào khối `phaSan` của `config.ts`**
 
 Chèn ngay sau dòng `nguongTheoChiPhi: 1,`:
 
@@ -566,7 +574,7 @@ Chèn ngay sau dòng `nguongTheoChiPhi: 1,`:
     tyLeBanToiDaMoiNam: 0.4,
 ```
 
-- [ ] **Step 4: Áp trần vào nấc 1 trong `engine.ts`**
+- [x] **Step 4: Áp trần vào nấc 1 trong `engine.ts`**
 
 Trong khối `/* --- Nấc 1: bán tài sản đầu tư --- */`, thay trọn vòng lặp hiện có:
 
@@ -617,7 +625,7 @@ bằng:
 
 `TAI_SAN` đã được `engine.ts` import sẵn (dùng ở `dongTienThuDong`) — không thêm import mới.
 
-- [ ] **Step 5: Sửa câu chữ hai sự kiện cho người chơi hiểu vì sao bán không hết**
+- [x] **Step 5: Sửa câu chữ hai sự kiện cho người chơi hiểu vì sao bán không hết**
 
 Người chơi phải hiểu tại sao mình còn tài sản đầy trong tay mà vẫn túng, nếu không thì đây là một cú "engine ăn gian" chứ không phải một bài học. Trong sự kiện `'Bán tài sản trang trải'`, đổi `moTa` thành:
 
@@ -638,12 +646,12 @@ Và trong sự kiện `'Túng thiếu'`:
 
 `soPhanTram` đã có sẵn trong `engine.ts` (dùng ở sự kiện thanh lý doanh nghiệp).
 
-- [ ] **Step 6: Chạy test để xác nhận xanh**
+- [x] **Step 6: Chạy test để xác nhận xanh**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "nấc 1 không còn bán tháo"`
 Kỳ vọng: PASS, cả bốn bài.
 
-- [ ] **Step 7: Chạy toàn bộ `engine.test.ts` và sửa bài lệch vì trần mới**
+- [x] **Step 7: Chạy toàn bộ `engine.test.ts` và sửa bài lệch vì trần mới**
 
 Chạy: `npm test -- src/game/engine.test.ts`
 
@@ -653,17 +661,17 @@ Ba chỗ đã biết là có rủi ro, phải xem từng chỗ nếu đỏ — �
 
 Bài nào phải sửa thì chép tên và lý do vào mục "Test đã đỏ".
 
-- [ ] **Step 8: Đo nhanh tác động lên phá sản**
+- [x] **Step 8: Đo nhanh tác động lên phá sản**
 
 Chạy: `npm test -- src/game/balance.test.ts -t "CHỈ TIÊU 5"`
 Kỳ vọng: dòng `console.log` in ra tỉ lệ phá sản **khác 0** ở ít nhất bot đòn bẩy. Chép nguyên dòng đó vào mục "Số đo" bên dưới — đây là số liệu Task 5 cần. Bài vẫn có thể đỏ vì ngưỡng cũ; **không nới**.
 
-- [ ] **Step 9: Biên dịch**
+- [x] **Step 9: Biên dịch**
 
 Chạy: `./node_modules/.bin/tsc -b --noEmit`
 Kỳ vọng: không lỗi.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add src/game/config.ts src/game/engine.ts src/game/engine.test.ts
@@ -711,12 +719,12 @@ Hệ quả đã đo trước (mục L, thí nghiệm đối chứng): giáo viê
 - Consumes: `tangLuongThucTheoTuoi(nghe, tuoi)` (đã có)
 - Produces: không có hàm mới
 
-- [ ] **Step 1: Đo mốc trước khi sửa**
+- [x] **Step 1: Đo mốc trước khi sửa**
 
 Chạy: `npm test -- src/game/balance.test.ts -t "CHỈ TIÊU 1"`
 Chép nguyên ba dòng `console.log` vào mục "Số đo" — đây là mốc "trước" để Task 5 so sánh.
 
-- [ ] **Step 2: Sửa bài test lương tuổi 40 cho khớp số mới**
+- [x] **Step 2: Sửa bài test lương tuổi 40 cho khớp số mới**
 
 > **Khi chạy song song:** bước này **do agent B1 làm**, không phải B2 — `engine.test.ts` ở đợt 2 thuộc quyền B1. Xem mục "Phân công sub-agent chạy song song". B1 tự tính được con số mới từ bộ số ở Step 3 mà không cần chờ B2.
 
@@ -730,7 +738,7 @@ Thêm chú thích ngay trên `expect` của giáo viên:
     // cong đã bị vòng hiệu chỉnh nhân lên 1,75 lần.
 ```
 
-- [ ] **Step 3: Trả đường cong giáo viên về số thiết kế gốc**
+- [x] **Step 3: Trả đường cong giáo viên về số thiết kế gốc**
 
 Trong `src/game/content.ts`, đổi khối `duongCongSuNghiep` của `giaoVien` thành:
 
@@ -762,22 +770,22 @@ Thay chú thích phía trên khối bằng:
     // là thông điệp: nghề bạn chọn quyết định phần lớn cuộc chơi.
 ```
 
-- [ ] **Step 4: Chạy test cơ chế**
+- [x] **Step 4: Chạy test cơ chế**
 
 Chạy: `npm test -- src/game/engine.test.ts -t "v1.7 — đường cong"`
 Kỳ vọng: PASS cả năm bài. Bài `'giáo viên tăng chậm nhưng không bao giờ âm'` chốt `≤ 0.035` — nay lại đúng khít, trong khi trước đó nó xanh nhờ giới hạn nới hay nhờ số nào khác thì phải xem lại: nếu bài này từng được nới lên `0.06`, trả nó về `0.035` và ghi vào mục "Test đã đỏ".
 
-- [ ] **Step 5: Đo lại và ghi nhận, KHÔNG nới ngưỡng**
+- [x] **Step 5: Đo lại và ghi nhận, KHÔNG nới ngưỡng**
 
 Chạy: `npm test -- src/game/balance.test.ts`
 Kỳ vọng: `CHỈ TIÊU 1` **đỏ** (giáo viên rơi khỏi dải 45–55%, chênh lệch ba nghề vượt 10 điểm), có thể kéo theo `CHỈ TIÊU 2`. Chép mọi dòng `console.log` vào mục "Số đo". **Không sửa một ngưỡng nào ở task này** — Task 5 làm việc đó với đầy đủ số liệu.
 
-- [ ] **Step 6: Biên dịch**
+- [x] **Step 6: Biên dịch**
 
 Chạy: `./node_modules/.bin/tsc -b --noEmit`
 Kỳ vọng: không lỗi.
 
-- [ ] **Step 7: Commit** *(commit với `balance.test.ts` đang đỏ là CỐ Ý — Task 5 nối ngay sau)*
+- [x] **Step 7: Commit** *(commit với `balance.test.ts` đang đỏ là CỐ Ý — Task 5 nối ngay sau)*
 
 ```bash
 git add src/game/content.ts src/game/engine.test.ts
@@ -816,13 +824,13 @@ Task **duy nhất** được phép chốt lại ngưỡng cân bằng. Ba thay �
 - Consumes: mọi thay đổi của Task 1–4
 - Produces: không có
 
-- [ ] **Step 1: Đo trọn bộ và lưu số**
+- [x] **Step 1: Đo trọn bộ và lưu số**
 
 Chạy: `npm test -- src/game/balance.test.ts 2>&1 | tee "C:/Users/thont/AppData/Local/Temp/claude/e--thont-99-Khac-CashFlow/do-lai-v1-7-dot-2.txt"`
 
 Ghi lại đủ sáu con số cho **từng nghề**: tỉ lệ thắng · tuổi thắng trung bình · sống trọn đời · thua vì hạnh phúc · phá sản · hết đời chưa tự do; cộng hai con số phá sản của cặp cân bằng/đòn bẩy, và hai con số chênh lệch xuất thân/bậc lương.
 
-- [ ] **Step 2: Chốt lại `CHỈ TIÊU 1` theo dải riêng từng nghề**
+- [x] **Step 2: Chốt lại `CHỈ TIÊU 1` theo dải riêng từng nghề**
 
 Đây là hệ quả trực tiếp của quyết định Q2 phương án (a). Thay bài `CHỈ TIÊU 1` bằng:
 
@@ -855,11 +863,11 @@ Ghi lại đủ sáu con số cho **từng nghề**: tỉ lệ thắng · tuổi
 
 Dải phải thoả hai ràng buộc, kiểm bằng mắt trước khi ghi vào: **không nghề nào có sàn dưới 8%** (dưới mức đó thì nghề ấy là bất khả thi chứ không phải khó, và đó là lỗi thiết kế cần báo lại chứ không phải số cần chép), và **không nghề nào có trần trên 60%**.
 
-- [ ] **Step 3: Chốt lại `CHỈ TIÊU 2` (tuổi thắng) theo số đo**
+- [x] **Step 3: Chốt lại `CHỈ TIÊU 2` (tuổi thắng) theo số đo**
 
 Giữ nguyên khuôn bài, thay dải `52–62` bằng dải bao trọn ba con số đo được cộng biên ±3 tuổi. Nếu giáo viên nay hầu như không thắng thì `soNamTrungBinhKhiThang` của nghề đó tính trên mẫu rất nhỏ và sẽ nhiễu nặng — khi ấy **bỏ giáo viên khỏi bài này** kèm chú thích giải thích rằng trung bình trên dưới mười ván không nói được gì, chứ không nới dải cho vừa.
 
-- [ ] **Step 4: Chốt lại `CHỈ TIÊU 5 và 6` (phá sản) theo số đo sau khi có trần bán tháo**
+- [x] **Step 4: Chốt lại `CHỈ TIÊU 5 và 6` (phá sản) theo số đo sau khi có trần bán tháo**
 
 Nếu tỉ lệ phá sản của bot cân bằng rơi vào 8–18% và của bot đòn bẩy vượt 30% thì **trả lại đúng ngưỡng mục J** và đổi tên bài thành khẳng định dương (`'CHỈ TIÊU 5 và 6 — phá sản hiếm ở bot cân bằng, thường xuyên ở bot đòn bẩy'`).
 
@@ -898,11 +906,11 @@ Nếu chưa đạt, ba đòn bẩy dưới đây xếp theo mức độ **đư�
 - **Task 2 đẩy ngược chiều.** Kỳ hạn vay 20 năm làm khoản trả nợ mỗi năm nhẹ đi, tức ít cú hụt tiền hơn, tức ít cửa vào ba nấc hơn. Mọi số phá sản đo trước Task 2 đều lạc hậu — phải đo lại sau khi Task 2 vào.
 - **Câu quảng cáo trong chú thích `tyLeBanToiDaMoiNam` cần dịu lại.** Nó đang viết "đòn bẩy chính để hiệu chỉnh tỉ lệ phá sản" — đúng về **chiều** nhưng chưa đúng về **độ lớn**, vì bản thân nó không đưa được tỉ lệ phá sản lên khỏi 0. Sửa câu đó khi viết mục L.
 
-- [ ] **Step 5: Xem lại `CHỈ TIÊU 3` và `CHỈ TIÊU 4`**
+- [x] **Step 5: Xem lại `CHỈ TIÊU 3` và `CHỈ TIÊU 4`**
 
 Hai chỉ tiêu này (thua vì hạnh phúc, sống trọn đời) không phải mục tiêu của đợt này nhưng số của chúng sẽ dời — phá sản nay lấy đi một phần số ván thua nên **thị phần chết vì hạnh phúc phải giảm**. Cập nhật ngưỡng và **cả tên bài** cho khớp số mới; nếu thị phần đã xuống dưới 40% thì chỉ tiêu 3 đạt và tên bài phải nói thế.
 
-- [ ] **Step 6: Viết lại mục L của tài liệu thiết kế**
+- [x] **Step 6: Viết lại mục L của tài liệu thiết kế**
 
 Trong `docs/07-thiet-ke-v1-7.md`, mục L cần:
 
@@ -916,12 +924,12 @@ Trong `docs/07-thiet-ke-v1-7.md`, mục L cần:
    - **Dòng 813**, tiêu đề mục con `### Trần 15 điểm cho xuất thân và bậc lương không còn giữ được` → đổi thành `### Chênh lệch xuất thân và bậc lương: vì sao đây không còn là chỉ tiêu`.
    - **Dòng 830**, câu kết `hai chỉ tiêu này loại trừ nhau` → nối thêm rằng mục J đã gỡ chỉ tiêu ấy ở đợt 2 chứ không phải để nó nằm đó dưới dạng một ô đỏ vĩnh viễn.
 
-- [ ] **Step 7: Chạy toàn bộ, biên dịch, dựng bản**
+- [x] **Step 7: Chạy toàn bộ, biên dịch, dựng bản**
 
 Chạy: `npm test` rồi `./node_modules/.bin/tsc -b --noEmit` rồi `npm run build`
 Kỳ vọng: **tất cả xanh**, biên dịch sạch, dựng bản thành công. Đây là cổng chốt của cả kế hoạch — còn một bài đỏ thì chưa xong.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/game/balance.test.ts docs/07-thiet-ke-v1-7.md
@@ -946,7 +954,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ## Task 6: Dọn dẹp ba khoản treo và kết nhánh
 
-- [ ] **Step 1: Commit sửa đổi đang treo của kế hoạch cũ**
+- [x] **Step 1: Commit sửa đổi đang treo của kế hoạch cũ**
 
 `docs/superpowers/plans/2026-08-11-v1-7-du-kho-de-phai-chon.md` có 7 dòng đổi `718_000_000` thành `718 * TRIEU`. Xem lại rồi commit:
 
@@ -957,7 +965,7 @@ git commit -m "v1.7 ke hoach cu: dung hang TRIEU trong doan ma mau
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 2: Tích 121 ô checkbox của kế hoạch cũ**
+- [x] **Step 2: Tích 121 ô checkbox của kế hoạch cũ**
 
 Toàn bộ 15 task của `2026-08-11-v1-7-du-kho-de-phai-chon.md` đã cài xong và commit, nhưng không ô nào được tích nên đọc vào tưởng chưa làm gì. Đổi mọi `- [ ]` thành `- [x]` trong file đó, và thêm ngay dưới dòng `**Goal:**` một dòng:
 
