@@ -3099,11 +3099,23 @@ describe('v1.7 — đường cong sự nghiệp theo nghề', () => {
       }
       return luong
     }
-    // Số cập nhật sau vòng hiệu chỉnh v1.7: giáo viên ×1,75 và bác sĩ ×1,2 ở ba
-    // bậc đầu. Ba nghề vẫn phân kỳ rõ (252 / 565 / 650tr) nhưng gần nhau hơn bộ
-    // cũ (165 / 441 / 650) — đó chính là cái đưa chênh lệch tỉ lệ thắng từ 44,5
-    // điểm về 2,5 điểm.
-    expect(luongTaiTuoi('giaoVien', 40) / TRIEU).toBeCloseTo(252, -1)
+    // Bộ số của v1.7 đợt 2, và nó CỐ Ý không đối xứng: giáo viên đã được trả về
+    // đường cong THẬT (3,5% → 3% → 2,5% → 2%), còn bác sĩ vẫn giữ mức ×1,2 mà
+    // vòng hiệu chỉnh vặn lên. Người dùng chốt chỉ trả riêng giáo viên, vì đúng
+    // 6%/năm tăng thực là con số không tồn tại trong thang lương viên chức Việt
+    // Nam — lên bậc ba năm một lần chỉ cho khoảng 3,2%/năm.
+    //
+    // 165 = 90tr × 1,035⁹ × 1,03¹⁰, tức lương giáo viên tuổi 40 trên chính đường
+    // cong của nghề mình. Hằng số cũ 252 ứng với đường cong đã bị nhân 1,75 lần.
+    //
+    // Hệ quả phải nói thẳng: vòng hiệu chỉnh vặn giáo viên lên chính là cái đưa
+    // chênh lệch tỉ lệ thắng giữa ba nghề từ 44,5 điểm xuống 2,5 điểm. Trả về số
+    // thật thì khoảng cách đó BUNG TRỞ LẠI. Đó là một quyết định thiết kế có ý
+    // thức chứ không phải hồi quy: chênh lệch giữa ba nghề không còn là chỉ tiêu
+    // phải đạt, nó là thông điệp — nghề bạn chọn quyết định phần lớn cuộc chơi,
+    // và thà kể đúng chuyện đồng lương giáo viên còn hơn giữ một ô xanh đẹp
+    // trong bảng cân bằng.
+    expect(luongTaiTuoi('giaoVien', 40) / TRIEU).toBeCloseTo(165, -1)
     expect(luongTaiTuoi('bacSi', 40) / TRIEU).toBeCloseTo(565, -1)
     expect(luongTaiTuoi('kySuPhanMem', 40) / TRIEU).toBeCloseTo(650, -1)
     // Thứ tự ba nghề ở tuổi 40 giữ nguyên như thiết kế mục B
@@ -3759,5 +3771,30 @@ describe('v1.7 đợt 2 — nấc 1 không còn bán tháo vô hạn', () => {
     const tung = suKien.find((k) => k.tieuDe === 'Túng thiếu')!
     expect(tung.moTa).toContain('không có tài sản nào để bán')
     expect(reducer(truoc, { type: 'dongTongKet' }).soLanPhaSan).toBe(0)
+  })
+})
+
+describe('v1.7 đợt 2 — kỳ hạn vay hai mươi năm', () => {
+  it('chi phí vay mỗi năm rơi vào GIỮA dải sinh lời doanh nghiệp sau thuế', () => {
+    // Đây là toàn bộ lý do của thay đổi này. Kỳ hạn 10 năm cho chi phí 18%/năm,
+    // nằm TRÊN cả trần 14,4% của dải sinh lời sau thuế, nên vay là lỗ chắc chắn
+    // ở mọi cơ hội trong bộ bài — đòn bẩy hết là canh bạc, thành cái bẫy thuần
+    // tuý. Kỳ hạn 20 năm cho 13%/năm, nằm giữa 9,6% và 14,4%: cơ hội tốt thì có
+    // lãi mỏng, cơ hội thường thì lỗ. Đó mới là một quyết định.
+    const chiPhiVayMoiNam =
+      (1 + CONFIG.laiSuatVay * CONFIG.kyHanVayToiDa) / CONFIG.kyHanVayToiDa
+    const sauThue = 1 - CONFIG.thue.thueDoanhNghiep
+    expect(chiPhiVayMoiNam).toBeGreaterThan(0.12 * sauThue)
+    expect(chiPhiVayMoiNam).toBeLessThan(0.18 * sauThue)
+  })
+
+  it('khoản vay mới lập đúng hai mươi kỳ và trả nhẹ hơn hẳn kỳ hạn cũ', () => {
+    const goc = 1 * TY
+    const traMoiNamMoi = thanhToanMoiNamCuaKhoanVay(goc, CONFIG.kyHanVayToiDa)
+    const traMoiNamCu = thanhToanMoiNamCuaKhoanVay(goc, 10)
+    expect(CONFIG.kyHanVayToiDa).toBe(20)
+    expect(traMoiNamMoi).toBeLessThan(traMoiNamCu)
+    // 1 tỷ × (1 + 0,08 × 20) ÷ 20 = 130 triệu mỗi năm
+    expect(traMoiNamMoi).toBe(130 * TRIEU)
   })
 })

@@ -192,13 +192,34 @@ export const CONFIG = {
    * xuống 12–18% (xem chú thích đầu mảng `CO_HOI` trong content.ts) mà
    * KHÔNG đổi lãi vay: giờ chi phí vay 18%/năm chạm trần hoặc vượt hẳn cả
    * dải, nên đòn bẩy hoà vốn ở kịch bản tốt nhất và lỗ ròng ở phần lớn cơ
-   * hội còn lại. Đây là hệ quả ĐÃ BIẾT của việc hạ dải sinh lời, CỐ Ý chưa
-   * vá ở đây — để dành cho vòng hiệu chỉnh cân bằng cân nhắc cùng lúc với
-   * những đòn bẩy độ khó khác (mục J, tài liệu thiết kế v1.7), không phải
-   * lỗi cần sửa ngay khi đọc thấy dòng này.
+   * hội còn lại. Đây là hệ quả ĐÃ BIẾT của việc hạ dải sinh lời, để dành
+   * cho vòng hiệu chỉnh cân bằng cân nhắc cùng lúc với những đòn bẩy độ khó
+   * khác (mục J, tài liệu thiết kế v1.7).
+   *
+   * v1.7 đợt 2 đã vá, nhưng vá bằng KỲ HẠN chứ không bằng lãi suất — lãi
+   * suất giữ nguyên 8%. Lý do đầy đủ ở chú thích của `kyHanVayToiDa` ngay
+   * dưới đây.
    */
   laiSuatVay: 0.08,
-  kyHanVayToiDa: 10,
+  /**
+   * Kỳ hạn kéo từ 10 lên 20 năm ở v1.7 đợt 2, giữ nguyên lãi suất 8%.
+   *
+   * Trả góp đều gốc cộng lãi đơn nên chi phí vay mỗi năm là
+   * `(1 + laiSuat × kyHan) ÷ kyHan`: kỳ hạn 10 năm ra 18%, kỳ hạn 20 năm ra 13%.
+   *
+   * Vì sao phải đổi: v1.7 hạ dải sinh lời doanh nghiệp về 12–18% rồi thuế thu
+   * nhập doanh nghiệp 20% cắn tiếp, còn thực nhận 9,6–14,4%. Vay 18% để kiếm
+   * 9,6–14,4% là lỗ chắc chắn 3,6 tới 8,4 điểm mỗi năm ở MỌI cơ hội trong bộ
+   * bài — đòn bẩy thôi là canh bạc và thành cái bẫy thuần tuý, đo thật bot đòn
+   * bẩy thắng 25,5% so với 49,0% của bot cân bằng. 13% nằm gọn GIỮA dải thực
+   * nhận: cơ hội tốt thì có lãi mỏng, cơ hội thường thì lỗ. Đó mới là quyết định.
+   *
+   * Vì sao không hạ lãi suất thay vì kéo kỳ hạn: hạ `laiSuatVay` xuống 2% để kỳ
+   * hạn 10 năm ra 12%/năm cho kết quả tương đương, nhưng đặt lãi suất ngân hàng
+   * Việt Nam ở mức phi thực tế. Vay hai mươi năm thì đúng là chuyện thường của
+   * một khoản thế chấp.
+   */
+  kyHanVayToiDa: 20,
   /**
    * Tổng thanh toán nợ hàng năm không vượt quá tỉ lệ này của lương. Ngân hàng
    * Việt Nam cho vay thế chấp thực tế duyệt tới khoảng 65% thu nhập — 0,5 (mức

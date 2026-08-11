@@ -48,37 +48,24 @@ export const NGHE: Nghe[] = [
     luong: 90 * TRIEU,
     chiPhi: 76 * TRIEU,
     khatVongId: 'xeMay',
-    // giaoVien — chậm, đều, không bao giờ bứt phá, nhưng cũng không bao giờ sụp.
+    // giaoVien — lên bậc ba năm một lần, hệ số 2,34 → 4,98 sau hai mươi bốn năm,
+    // tức khoảng 3,2%/năm tăng thực. Chậm, đều, không bao giờ bứt phá, cũng không
+    // bao giờ sụp.
     //
-    // ---------- Nâng ở vòng hiệu chỉnh v1.7 (Task 15) ----------
-    // Bộ số đầu (0,035/0,03/0,025) bám sát bảng lương viên chức thật: lên bậc ba
-    // năm một lần, hệ số 2,34 → 4,98 sau hai mươi bốn năm, tức bội số lương thực
-    // 2,43 lần ở tuổi 50. Đo thực nghiệm cho thấy nó KHÔNG chơi được: giáo viên
-    // thắng 11,5% trong khi bác sĩ 40% và kỹ sư phần mềm 56% — chênh 44,5 điểm,
-    // gấp bốn lần trần 10 điểm của mục J.
+    // ---------- Vì sao con số này trả về mức thật ở v1.7 đợt 2 ----------
+    // Vòng hiệu chỉnh v1.7 từng nhân ba bậc đầu lên 1,75 lần (0,060 / 0,052 /
+    // 0,044) để xoá 44,5 điểm chênh lệch tỉ lệ thắng giữa ba nghề. Nó đạt chỉ
+    // tiêu, nhưng phải trả bằng cách cho giáo viên một thang lương không tồn tại.
     //
-    // Thí nghiệm đối chứng đã khoanh đúng thủ phạm là ĐƯỜNG CONG chứ không phải
-    // thứ gì khác: đổi riêng đường cong giáo viên sang của kỹ sư kéo tỉ lệ thắng
-    // 11% → 79%, đổi riêng đường cong kỹ sư sang của giáo viên dìm 57% → 19%.
-    // Đổi khát vọng (xe máy → căn hộ) chỉ nhúc nhích 11% → 9%. Tỉ lệ chi phí trên
-    // lương thì đã bằng nhau sẵn ở cả ba nghề nên không giải thích được gì.
-    //
-    // Nhân 1,75 lần ba bậc đầu, GIỮ NGUYÊN bậc sau tuổi 50 để hình dạng nghề còn
-    // nguyên: vẫn là đường tăng chậm dần đều, không có đoạn bứt tốc như bác sĩ và
-    // không có đoạn âm như kỹ sư. Bội số lương thực cộng dồn qua ba chặng mười
-    // năm lên 2,43 → 4,57 lần, vẫn là THẤP NHẤT trong ba nghề (bác sĩ 8,94 sau
-    // khi cũng được nhân 1,2; kỹ sư phần mềm 5,59 giữ nguyên).
-    //
-    // SAI LỆCH SO VỚI ĐỜI THẬT, ghi rõ để bản sau không tưởng là sơ suất: 6%/năm
-    // tăng thực CAO HƠN thang lương viên chức Việt Nam. Đây là nhượng bộ của mô
-    // phỏng để chỉ tiêu "chênh lệch ba nghề ≤ 10 điểm" đạt được. Lựa chọn còn lại
-    // — giữ đường cong thật và chấp nhận giáo viên gần như không bao giờ tự do
-    // tài chính — cũng là một lựa chọn thiết kế chính đáng; xem mục L của
-    // docs/07-thiet-ke-v1-7.md.
+    // Quyết định đã chốt: trả về số thật và chấp nhận rằng giáo viên trên đồng
+    // lương giáo viên thì rất khó đạt tự do tài chính. Đó là điều thật nhất mà
+    // game này kể được, và đổi nó lấy một ô xanh trong bảng cân bằng là không
+    // đáng. Chênh lệch giữa ba nghề vì vậy KHÔNG còn là chỉ tiêu phải đạt — nó
+    // là thông điệp: nghề bạn chọn quyết định phần lớn cuộc chơi.
     duongCongSuNghiep: [
-      { denTuoi: 30, tangThuc: 0.06 },
-      { denTuoi: 40, tangThuc: 0.052 },
-      { denTuoi: 50, tangThuc: 0.044 },
+      { denTuoi: 30, tangThuc: 0.035 },
+      { denTuoi: 40, tangThuc: 0.03 },
+      { denTuoi: 50, tangThuc: 0.025 },
       { denTuoi: 200, tangThuc: 0.02 },
     ],
   },

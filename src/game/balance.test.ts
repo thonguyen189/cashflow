@@ -193,21 +193,30 @@ describe('cân bằng game', () => {
   })
 
   /**
-   * ---------- Đòn bẩy nay là nước đi LỖ, không còn là canh bạc ----------
+   * ---------- Đòn bẩy vẫn thua thiệt, nhưng vay không còn LỖ CHẮC CHẮN ----------
    * Test cũ khẳng định "bot đòn bẩy khi thắng thì về đích sớm hơn bot cân bằng —
    * canh bạc có lãi kỳ vọng". Khẳng định đó đã lật hẳn ở v1.7 và test này ghi lại
    * chiều mới, đúng như đo được.
    *
    * Số học của nó rõ ràng, không cần mô phỏng mới thấy: trả góp đều gốc cộng lãi
-   * đơn nên mỗi năm phải trả `(1 + 0,08 × 10) ÷ 10 = 18%` gốc. Dải sinh lời doanh
-   * nghiệp hạ xuống 12–18% ở v1.7, rồi còn bị thuế thu nhập doanh nghiệp 20% cắn
-   * tiếp, nên thực nhận chỉ còn 9,6–14,4%. Vay 18% để kiếm 9,6–14,4% là lỗ chắc
-   * chắn từ 3,6 tới 8,4 điểm mỗi năm, ở MỌI cơ hội trong bộ bài — không còn cơ
-   * hội nào để đòn bẩy thắng cả.
+   * đơn nên mỗi năm phải trả `(1 + laiSuat × kyHan) ÷ kyHan` gốc. Với kỳ hạn 10
+   * năm con số đó là 18%, trong khi dải sinh lời doanh nghiệp hạ xuống 12–18% ở
+   * v1.7 rồi còn bị thuế thu nhập doanh nghiệp 20% cắn tiếp, thực nhận chỉ còn
+   * 9,6–14,4%. Vay 18% để kiếm 9,6–14,4% là lỗ chắc chắn từ 3,6 tới 8,4 điểm mỗi
+   * năm, ở MỌI cơ hội trong bộ bài — đòn bẩy khi ấy hết là canh bạc, nó là cái
+   * bẫy thuần tuý.
    *
-   * Đây là quyết định thiết kế đang chờ người thật: xem khuyến nghị ở mục L.
+   * v1.7 đợt 2 đã xử lý bằng cách kéo kỳ hạn lên 20 năm: chi phí vay về 13%/năm,
+   * nằm GIỮA 9,6% và 14,4%. Vì vậy bài này không còn chốt "vay là lỗ chắc chắn"
+   * — khẳng định đó CỐ Ý không còn đúng — mà chốt "chi phí vay nằm giữa dải".
+   *
+   * Hai khẳng định còn lại GIỮ NGUYÊN, không nới: bot đòn bẩy vay bừa vẫn phải
+   * thua bot cân bằng cả tỉ lệ thắng lẫn tốc độ, vì nó rót vốn vào cả những cơ
+   * hội nằm dưới 13% chứ không chỉ những cơ hội trên mức đó. Nếu chúng đỏ thì
+   * kỳ hạn dài đã lật đòn bẩy thành nước đi có lãi — một kết quả cân bằng đáng
+   * đo và đáng ghi, không phải một ngưỡng cần nới.
    */
-  it('bot đòn bẩy nay thua thiệt cả tỉ lệ thắng lẫn tốc độ — vay không còn có lãi', () => {
+  it('bot đòn bẩy vẫn thua thiệt nhưng vay không còn lỗ chắc chắn', () => {
     const canBang = moPhongNhieuVan('bacSi', SO_VAN_CHI_TIEU)
     const donBay = moPhongNhieuVan('bacSi', SO_VAN_CHI_TIEU, CHIEN_LUOC_DON_BAY)
     // eslint-disable-next-line no-console
@@ -217,12 +226,14 @@ describe('cân bằng game', () => {
         ` · đòn bẩy thắng ${(donBay.tyLeThang * 100).toFixed(1)}%` +
         ` về đích tuổi ${tuoiThang(donBay.soNamTrungBinhKhiThang).toFixed(1)}`,
     )
-    // Chi phí vay mỗi năm tính thẳng từ CONFIG, không viết cứng: nó phải nằm TRÊN
-    // trần dải sinh lời sau thuế thì kết luận "vay là lỗ" mới đứng vững.
+    // Chi phí vay mỗi năm tính thẳng từ CONFIG, không viết cứng. Từ v1.7 đợt 2
+    // nó phải nằm GIỮA sàn và trần của dải sinh lời sau thuế: dưới trần thì
+    // cơ hội tốt còn cửa có lãi, trên sàn thì cơ hội thường vẫn lỗ.
     const chiPhiVayMoiNam =
       (1 + CONFIG.laiSuatVay * CONFIG.kyHanVayToiDa) / CONFIG.kyHanVayToiDa
-    const sinhLoiToiDaSauThue = 0.18 * (1 - CONFIG.thue.thueDoanhNghiep)
-    expect(chiPhiVayMoiNam).toBeGreaterThan(sinhLoiToiDaSauThue)
+    const sauThue = 1 - CONFIG.thue.thueDoanhNghiep
+    expect(chiPhiVayMoiNam).toBeGreaterThan(0.12 * sauThue)
+    expect(chiPhiVayMoiNam).toBeLessThan(0.18 * sauThue)
     expect(donBay.tyLeThang).toBeLessThan(canBang.tyLeThang)
     expect(donBay.soNamTrungBinhKhiThang).toBeGreaterThan(
       canBang.soNamTrungBinhKhiThang,
