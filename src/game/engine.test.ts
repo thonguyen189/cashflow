@@ -3228,7 +3228,7 @@ describe('v1.7 — doanh nghiệp có thể phá sản hẳn', () => {
       const sau = choiHetNam(s)
       expect(sau.doanhNghiep).toHaveLength(0)
       const sk = sau.tongKet!.suKien.find((k) => k.loai === 'doanhNghiepPhaSan')!
-      expect(sk.tienThayDoi).toBe(Math.round(von * 0.1))
+      expect(sk.tienThayDoi).toBe(Math.round(von * CONFIG.doanhNghiep.hoanLaiKhiPhaSan))
       expect(sk.hanhPhucThayDoi).toBeLessThan(0)
     } finally {
       ;(CONFIG.doanhNghiep as { xacSuatPhaSanCoBan: number }).xacSuatPhaSanCoBan = goc
