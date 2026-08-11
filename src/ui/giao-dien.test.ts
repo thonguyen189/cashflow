@@ -258,3 +258,23 @@ describe('v1.7 fix round 1 — kết xuất khớp đúng hàm engine (không ph
     expect(html).toContain(`Thu nhập còn ${Math.round(baoHoaKyVong * 100)}% so với ngày đầu`)
   })
 })
+
+describe('v1.7 đợt 2 — người chơi vay được đúng kỳ hạn mà giao diện hứa', () => {
+  it('nút chọn kỳ hạn phủ tới kỳ hạn tối đa của config, không dừng ở số viết cứng', () => {
+    // Lỗi thật đã xảy ra và test này sinh ra để nó không tái diễn: `CAC_KY_HAN`
+    // từng viết cứng [1, 2, 3, 5, 7, 10] và đứng im khi `kyHanVayToiDa` lên 20,
+    // trong khi đoạn mô tả ngay bên trên đọc thẳng config nên hứa hai mươi năm.
+    // Bot mô phỏng lấy `CONFIG.kyHanVayToiDa` ở sim.ts nên vay được, người chơi
+    // thật thì không — hai bên chơi hai trò khác nhau, và mọi số cân bằng đo
+    // được đều nói về một cơ chế mà chỉ bot chạm tới.
+    //
+    // Bài này chốt CẢ HAI vế cùng lúc: câu hứa và cái nút. Chốt riêng một vế thì
+    // đúng cái khe hở vừa rồi vẫn lọt qua được.
+    const s = chayToiTuDo('bacSi')
+    const html = renderToStaticMarkup(
+      createElement(TabTrangChu, { state: s, dispatch: () => {} }),
+    )
+    expect(html).toContain(`kỳ hạn tối đa ${CONFIG.kyHanVayToiDa} năm`)
+    expect(html).toContain(`>${CONFIG.kyHanVayToiDa}</button>`)
+  })
+})

@@ -193,8 +193,21 @@ function TheHanhDong({ state, dispatch }: Props) {
 }
 
 /* ---------- Ngân hàng ---------- */
-/** Kỳ hạn tối đa 10 năm — đưa các lựa chọn quen thuộc thay vì dãy 10 nút. */
-const CAC_KY_HAN = [1, 2, 3, 5, 7, 10]
+/**
+ * Vài bậc quen thuộc thay vì một dãy hai mươi nút. Bậc cuối LUÔN là kỳ hạn tối
+ * đa của config, và đó là điểm mấu chốt chứ không phải chi tiết làm đẹp.
+ *
+ * Trước v1.7 đợt 2 danh sách này viết cứng `[1, 2, 3, 5, 7, 10]` và đứng im khi
+ * `kyHanVayToiDa` được nâng lên 20, trong khi đoạn mô tả ngay bên dưới đọc thẳng
+ * config nên hứa hai mươi năm. Bot mô phỏng lấy `CONFIG.kyHanVayToiDa` ở
+ * `sim.ts` nên vay được kỳ hạn dài, còn người chơi thật thì bấm mãi cũng chỉ tới
+ * mười — hai bên chơi hai trò khác nhau, và mọi số cân bằng đo được đều nói về
+ * một cơ chế mà chỉ bot chạm tới. Suy từ config là cách duy nhất để chuyện đó
+ * không tái diễn ở lần vặn kỳ hạn sau.
+ */
+const CAC_KY_HAN = [...new Set([1, 2, 3, 5, 10, CONFIG.kyHanVayToiDa])]
+  .filter((k) => k <= CONFIG.kyHanVayToiDa)
+  .sort((a, b) => a - b)
 
 function KhuNganHang({ state, dispatch }: Props) {
   const [kyHan, setKyHan] = useState(3)
