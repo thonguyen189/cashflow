@@ -3604,13 +3604,78 @@ describe('v1.7 đợt 2 — nấc 1 không còn bán tháo vô hạn', () => {
     ...them,
   })
 
-  it('một năm chỉ bán được tối đa phần danh mục mà config cho phép', () => {
-    // 1000 phần trái phiếu × 1 triệu = 1 tỷ danh mục, thiếu hụt ~900 triệu.
-    // Trước thay đổi này: bán 900 phần, hết âm, không hề hấn gì. Nay trần 40%
-    // chỉ cho bán 400 phần, nên ít nhất 599 phần phải còn lại trong tay.
-    const s = vanVoNo({ soHuu: { ...moiVan().soHuu, traiPhieu: 1000 } })
+  /**
+   * Ván hụt tiền VỪA PHẢI: khoản trả nợ nhẹ hơn hẳn nên sau khi bán tới trần,
+   * phần thiếu còn lại vẫn nằm dưới ngưỡng phá sản. Cần một ván như thế để quan
+   * sát riêng hành vi của trần — ván vỡ nợ nặng nay rơi tới nấc 3, mà nấc 3 thu
+   * nốt danh mục nên không còn gì để đếm.
+   */
+  const vanHutTienVua = (them: Partial<GameState> = {}): GameState =>
+    vanVoNo({
+      khoanVay: [
+        { id: 'v1', goc: 1 * TY, kyHan: 20, thanhToanMoiNam: 450 * TRIEU, namConLai: 8 },
+      ],
+      ...them,
+    })
+
+  const tranSoDonVi = (soLuong: number): number =>
+    Math.floor(soLuong * CONFIG.phaSan.tyLeBanToiDaMoiNam)
+
+  it('một năm chỉ bán được đúng phần số đơn vị mà config cho phép', () => {
+    // Chốt HAI PHÍA, không chỉ chặn phía trên: bán 400 phần là đúng, mà bán 1
+    // phần hay bán 0 phần cũng "không vượt trần" — trong khi bán 0 phần chính
+    // là chế độ hỏng mà trần theo giá trị danh mục từng mắc phải.
+    const s = vanHutTienVua({ soHuu: { ...moiVan().soHuu, traiPhieu: 1000 } })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
-    expect(sau.soHuu.traiPhieu).toBeGreaterThanOrEqual(599)
+    expect(sau.soLanPhaSan).toBe(0)
+    expect(sau.soHuu.traiPhieu).toBe(1000 - tranSoDonVi(1000))
+  })
+
+  it('trần áp RIÊNG cho từng loại, loại hết hạn mức không chặn loại đứng sau', () => {
+    // Trái phiếu đứng đầu `thuTuBan` và chỉ được bán 40 trong 100 phần. Phần
+    // thiếu còn lại phải chảy tiếp sang vàng — nếu cài bằng một túi tiền chung
+    // thì trái phiếu ăn hết túi và vàng không bao giờ tới lượt.
+    const s = vanVoNo({
+      khoanVay: [
+        { id: 'v1', goc: 1 * TY, kyHan: 20, thanhToanMoiNam: 110 * TRIEU, namConLai: 8 },
+      ],
+      soHuu: { ...moiVan().soHuu, traiPhieu: 100, vang: 100 },
+    })
+    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    expect(sau.soLanPhaSan).toBe(0)
+    // Trái phiếu chạm đúng trần của chính nó.
+    expect(sau.soHuu.traiPhieu).toBe(100 - tranSoDonVi(100))
+    // Vàng có bị đụng tới, nhưng chưa cần tới trần của nó — tức phần thiếu đã
+    // được bù xong ở giữa chừng, đúng thứ tự `thuTuBan`.
+    expect(sau.soHuu.vang).toBeLessThan(100)
+    expect(sau.soHuu.vang).toBeGreaterThan(100 - tranSoDonVi(100))
+    expect(sau.tienMat).toBeGreaterThanOrEqual(0)
+    // Loại KHÔNG sở hữu phải được bỏ qua sạch sẽ: `Math.max(1, …)` mà thiếu
+    // chốt chặn thì engine bán một đơn vị của thứ không có và in ra tiền từ hư
+    // không, để lại số âm ở đây.
+    for (const ts of TAI_SAN) {
+      expect(sau.soHuu[ts.id]).toBeGreaterThanOrEqual(0)
+    }
+    expect(sau.soHuu.coPhieu).toBe(0)
+    expect(sau.soHuu.crypto).toBe(0)
+    expect(sau.soHuu.batDongSan).toBe(0)
+  })
+
+  it('mọi loại tài sản trong TAI_SAN đều thanh lý được ở nấc 1', () => {
+    // `thuTuBan` là danh sách viết cứng. Thêm một loại tài sản thứ sáu vào
+    // TAI_SAN mà quên thêm vào đó thì nó thành tài sản KHÔNG BAO GIỜ bán được
+    // khi túng, và không một phép thử nào khác bắt được điều đó.
+    for (const ts of TAI_SAN) {
+      const soLuong = Math.ceil((1 * TY) / ts.giaDonVi)
+      const s = vanVoNo({ soHuu: { ...moiVan().soHuu, [ts.id]: soLuong } })
+      const truoc = diTronMotNam(s, 0)
+      // Đọc sự kiện chứ không đọc số dư cuối năm: nấc 3 thu sạch danh mục nên
+      // số dư về 0 kể cả khi engine chưa hề bán được đồng nào của loại này.
+      const daBan = truoc.tongKet!.suKien.some(
+        (k) => k.tieuDe === 'Bán tài sản trang trải',
+      )
+      expect(daBan, `${ts.id} không bán được ở nấc 1`).toBe(true)
+    }
   })
 
   it('còn tài sản đầy trong tay mà vẫn phá sản được — điều v1.7 chưa làm nổi', () => {
@@ -3618,14 +3683,37 @@ describe('v1.7 đợt 2 — nấc 1 không còn bán tháo vô hạn', () => {
     // nợ" là trạng thái DUY NHẤT dẫn tới nấc 3, và trước thay đổi này nó không
     // bao giờ xuất hiện vì người có tài sản thì luôn bán được sạch.
     const s = vanVoNo({ soHuu: { ...moiVan().soHuu, traiPhieu: 1000 } })
-    const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
+    const truoc = diTronMotNam(s, 0)
+    // Có bán được tài sản trong năm — tức danh mục đầy chứ không rỗng — mà vẫn
+    // đi hết ba nấc.
+    expect(
+      truoc.tongKet!.suKien.some((k) => k.tieuDe === 'Bán tài sản trang trải'),
+    ).toBe(true)
+    const sau = reducer(truoc, { type: 'dongTongKet' })
     expect(sau.soLanPhaSan).toBe(1)
-    expect(sau.soHuu.traiPhieu).toBeGreaterThan(0)
+  })
+
+  it('phá sản thu nốt danh mục còn lại, không cho ai thoát nợ mà vẫn giữ của', () => {
+    // Nếu toà không thu, phá sản thành phép đổi có lãi: xoá 7,2 tỷ tiền nợ để
+    // mất 15 điểm hạnh phúc mà vẫn ôm nguyên danh mục. Cả cơ chế răn đe sụp.
+    const s = vanVoNo({
+      soHuu: { ...moiVan().soHuu, traiPhieu: 1000, vang: 100 },
+    })
+    const truoc = diTronMotNam(s, 0)
+    const sau = reducer(truoc, { type: 'dongTongKet' })
+    expect(sau.soLanPhaSan).toBe(1)
+    for (const ts of TAI_SAN) {
+      expect(sau.soHuu[ts.id]).toBe(0)
+    }
+    // Người chơi phải được kể rằng danh mục vừa bị thu, không thể để tài sản
+    // biến mất mà không dòng nào giải thích.
+    const sk = truoc.tongKet!.suKien.find((k) => k.loai === 'phaSan')!
+    expect(sk.moTa).toContain('bị thu để chia cho chủ nợ')
   })
 
   it('thiếu hụt nhỏ hơn trần thì vẫn bán đủ như cũ, không phá sản', () => {
-    // Trần không được phép biến mọi cú hụt tiền thành thảm hoạ: 5 tỷ danh mục
-    // cho phép bán tới 2 tỷ trong năm, thừa sức bù 900 triệu.
+    // Trần không được phép biến mọi cú hụt tiền thành thảm hoạ: 5000 phần trái
+    // phiếu cho phép bán tới 2000 phần trong năm, thừa sức bù 900 triệu.
     const s = vanVoNo({ soHuu: { ...moiVan().soHuu, traiPhieu: 5000 } })
     const sau = reducer(diTronMotNam(s, 0), { type: 'dongTongKet' })
     expect(sau.soLanPhaSan).toBe(0)
@@ -3650,5 +3738,26 @@ describe('v1.7 đợt 2 — nấc 1 không còn bán tháo vô hạn', () => {
     // Trước thay đổi này: 1 tỷ trái phiếu thừa sức bù 900 triệu nên doanh
     // nghiệp không bị đụng tới. Nay nấc 1 dừng ở 400 triệu và nấc 2 vào cuộc.
     expect(sau.doanhNghiep).toHaveLength(0)
+  })
+
+  it('túng thiếu mà trong tay không có gì bán thì kể đúng chuyện đó', () => {
+    // Nhánh "Túng thiếu" nổ ở MỌI ca thiếu hụt dưới ngưỡng, mà phổ biến nhất là
+    // những năm đầu game khi chưa có đồng tài sản nào — kể "bán tới mức thị
+    // trường nuốt nổi" cho một người không sở hữu gì là engine nói dối.
+    // Khoản trả nợ phải rất nhẹ: không một đồng tài sản nào để bán nghĩa là nấc
+    // 1 và nấc 2 đều không bù được gì, nên chỉ cần hụt quá một năm chi phí là
+    // rơi thẳng xuống nấc 3. Đo thật ở ván này: 20 triệu còn Túng thiếu, 40
+    // triệu đã là phá sản.
+    const s = vanVoNo({
+      khoanVay: [
+        { id: 'v1', goc: 200 * TRIEU, kyHan: 20, thanhToanMoiNam: 20 * TRIEU, namConLai: 8 },
+      ],
+    })
+    const truoc = diTronMotNam(s, 0)
+    const suKien = truoc.tongKet!.suKien
+    expect(suKien.some((k) => k.tieuDe === 'Bán tài sản trang trải')).toBe(false)
+    const tung = suKien.find((k) => k.tieuDe === 'Túng thiếu')!
+    expect(tung.moTa).toContain('không có tài sản nào để bán')
+    expect(reducer(truoc, { type: 'dongTongKet' }).soLanPhaSan).toBe(0)
   })
 })

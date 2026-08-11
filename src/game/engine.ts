@@ -2023,32 +2023,33 @@ function chuyenNam(s: GameState): GameState {
    *         bán tài sản đầu tư → thanh lý doanh nghiệp → tuyên phá sản. Mỗi nấc
    *         chỉ vào cuộc khi nấc trước không đủ bù. */
   let soHuu = s.soHuu
+  // Khai báo NGOÀI khối nấc 1 vì lời kể của nấc "Túng thiếu" phía dưới cần biết
+  // năm nay có bán được gì hay không mới chọn đúng câu chuyện để kể.
+  let tienBanDuoc = 0
   if (tienMat < 0) {
     /* --- Nấc 1: bán tài sản đầu tư --- */
     soHuu = { ...s.soHuu }
-    let tienBanDuoc = 0
-    // Trần bán tháo mỗi năm (v1.7 đợt 2): tính trên giá trị danh mục ĐẦU khi
-    // vào nấc, không tính lại sau mỗi lần bán — nếu tính lại thì trần tự co
-    // theo phần đã bán và người chơi vẫn bán được gần sạch qua đủ nhiều bước.
-    const giaTriDanhMuc = TAI_SAN.reduce(
-      (tong, ts) => tong + soHuu[ts.id] * giaMoi[ts.id],
-      0,
-    )
-    let conDuocBan = Math.round(giaTriDanhMuc * CONFIG.phaSan.tyLeBanToiDaMoiNam)
     const thuTuBan: AssetId[] = ['traiPhieu', 'vang', 'coPhieu', 'crypto', 'batDongSan']
     for (const id of thuTuBan) {
-      if (tienMat >= 0 || conDuocBan <= 0) break
+      if (tienMat >= 0) break
+      // Chốt chặn bắt buộc: không có nó thì `Math.max(1, …)` bên dưới cho phép
+      // bán một đơn vị của thứ KHÔNG SỞ HỮU, đẩy `soHuu[id]` xuống âm và in ra
+      // tiền từ hư không. Có nó thì `Math.max(1, …)` luôn ≤ `soHuu[id]`, vì
+      // `soHuu[id] ≥ 1` và `Math.floor(soHuu[id] × tỉ lệ) ≤ soHuu[id]`.
+      if (soHuu[id] <= 0) continue
       const gia = giaMoi[id]
+      // Trần bán tháo mỗi năm (v1.7 đợt 2) tính theo SỐ ĐƠN VỊ của TỪNG LOẠI,
+      // không phải theo giá trị cả danh mục — xem `tyLeBanToiDaMoiNam` trong
+      // config để biết vì sao trần theo giá trị là một cái bẫy.
       const canBan = Math.min(
         Math.ceil(-tienMat / gia),
-        soHuu[id],
-        Math.floor(conDuocBan / gia),
+        Math.max(1, Math.floor(soHuu[id] * CONFIG.phaSan.tyLeBanToiDaMoiNam)),
       )
-      if (canBan <= 0) continue
+      // Không cần nhánh `canBan <= 0`: tiền mặt còn âm nên vế đầu ≥ 1, vế sau
+      // ≥ 1 nhờ `Math.max`, và loại không sở hữu đã bị chốt chặn bỏ qua.
       soHuu[id] -= canBan
       tienMat += canBan * gia
       tienBanDuoc += canBan * gia
-      conDuocBan -= canBan * gia
     }
     if (tienBanDuoc > 0) {
       suKien.push({
@@ -2056,7 +2057,7 @@ function chuyenNam(s: GameState): GameState {
         tieuDe: 'Bán tài sản trang trải',
         moTa:
           'Chi tiêu trong năm vượt số tiền mặt đang có, đành bán bớt tài sản để cân đối. ' +
-          `Bán gấp thì mỗi năm cũng chỉ ra hàng được chừng ${soPhanTram(CONFIG.phaSan.tyLeBanToiDaMoiNam)}% danh mục — ` +
+          `Bán gấp thì mỗi năm cũng chỉ ra hàng được chừng ${soPhanTram(CONFIG.phaSan.tyLeBanToiDaMoiNam)}% mỗi loại — ` +
           'không ai mua cả gia tài trong một tuần.',
         tienThayDoi: tienBanDuoc,
         hanhPhucThayDoi: 0,
@@ -2094,7 +2095,7 @@ function chuyenNam(s: GameState): GameState {
         loai: 'thanhLyDoanhNghiep',
         tieuDe: '🏷️ Thanh lý doanh nghiệp',
         moTa:
-          `Bán hết tài sản đầu tư vẫn chưa đủ, đành sang nhượng gấp ${daBan.join(', ')}.` +
+          `Bán tài sản tới mức thị trường nuốt nổi trong năm vẫn chưa đủ, đành sang nhượng gấp ${daBan.join(', ')}.` +
           ` Bán vội thì chỉ được ${soPhanTram(CONFIG.phaSan.tyLeThanhLyDoanhNghiep)}% vốn đã bỏ ra.`,
         tienThayDoi: thuVe,
         hanhPhucThayDoi: 0,
@@ -2111,6 +2112,28 @@ function chuyenNam(s: GameState): GameState {
     khoanVaySauCung = []
     tienMat = 0
     soLanPhaSan += 1
+
+    // Toà lấy nốt danh mục đầu tư còn lại (v1.7 đợt 2).
+    //
+    // Trước khi có trần bán tháo, đoạn này không cần thiết: nấc 1 vét sạch danh
+    // mục nên tới được nấc 3 nghĩa là trong tay đã không còn gì. Từ khi có trần
+    // thì ngược hẳn — tới được nấc 3 LUÔN đồng nghĩa với việc còn phần lớn danh
+    // mục, nên nếu toà không lấy thì phá sản hoá ra một lối thoát nợ CÓ LÃI:
+    // xoá vài tỷ tiền nợ, giữ nguyên tài sản, trả giá bằng 15 điểm hạnh phúc.
+    // Với người vay lớn thì đó là phép đổi quá hời, và cả cơ chế phá sản mất
+    // sạch ý nghĩa răn đe.
+    //
+    // Nhà ở không nằm trong `soHuu` mà trong `uocNguyenDaMua`, nên luật "chừa
+    // lại nhà ở, không chừa xe" vẫn nguyên vẹn ở khối `uocNguyenBiMat` bên dưới.
+    const giaTriDanhMucBiThu = TAI_SAN.reduce(
+      (tong, ts) => tong + soHuu[ts.id] * giaMoi[ts.id],
+      0,
+    )
+    if (giaTriDanhMucBiThu > 0) {
+      const trangTay = { ...soHuu }
+      for (const ts of TAI_SAN) trangTay[ts.id] = 0
+      soHuu = trangTay
+    }
     // Năm SAU mới là năm đầu tiên còn bị cấm — năm nay (s.nam) coi như đã dùng
     // hết vì hành động của nó đã khép lại trong `chuyenNam`. Cấm 5 năm tính từ
     // năm sau nghĩa là banned trọn namMoi .. s.nam + soNamCamVay.
@@ -2137,6 +2160,9 @@ function chuyenNam(s: GameState): GameState {
       moTa:
         'Bán sạch mọi thứ vẫn không trả nổi. Toà tuyên phá sản, ' +
         `${dinhDangTien(xoaNo)} tiền nợ được xoá nhưng bạn cũng trắng tay. ` +
+        (giaTriDanhMucBiThu > 0
+          ? `Toàn bộ danh mục đầu tư còn lại, ${dinhDangTien(giaTriDanhMucBiThu)}, bị thu để chia cho chủ nợ. `
+          : '') +
         (tenXeBiMat.length > 0
           ? `${tenXeBiMat.join(', ')} bị bán giải chấp — luật chỉ chừa lại nhà ở, không chừa xe. `
           : 'Nhà cửa thì luật chừa lại. ') +
@@ -2151,9 +2177,16 @@ function chuyenNam(s: GameState): GameState {
     suKien.push({
       loai: 'banTaiSan',
       tieuDe: 'Túng thiếu',
+      // Hai lời kể khác hẳn nhau vì hai cảnh đời khác hẳn nhau. Nhánh này nổ ở
+      // MỌI ca thiếu hụt dưới ngưỡng phá sản, mà phổ biến nhất là những năm đầu
+      // game: chưa có đồng tài sản nào để bán. Kể "bán tới mức thị trường nuốt
+      // nổi" cho một người không sở hữu gì là engine nói dối người chơi.
       moTa:
-        'Bán được tới mức thị trường nuốt nổi trong một năm mà vẫn chưa đủ bù chi tiêu, ' +
-        'phải giật gấu vá vai qua ngày. Tài sản còn đó, chỉ là không kịp hoá thành tiền.',
+        tienBanDuoc > 0
+          ? 'Bán được tới mức thị trường nuốt nổi trong một năm mà vẫn chưa đủ bù chi tiêu, ' +
+            'phải giật gấu vá vai qua ngày. Tài sản còn đó, chỉ là không kịp hoá thành tiền.'
+          : 'Chi tiêu vượt quá số tiền kiếm được, mà trong tay không có tài sản nào để bán, ' +
+            'phải giật gấu vá vai qua ngày.',
       tienThayDoi: 0,
       hanhPhucThayDoi: hpTung,
     })

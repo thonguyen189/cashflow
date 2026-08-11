@@ -727,7 +727,8 @@ export const CONFIG = {
     /** thiếu hụt vượt tỉ lệ này × chi phí sinh hoạt thì tuyên phá sản */
     nguongTheoChiPhi: 1,
     /**
-     * Nấc 1 mỗi năm chỉ được bán ngần này phần GIÁ TRỊ DANH MỤC đầu năm.
+     * Nấc 1 mỗi năm chỉ được bán ngần này phần SỐ ĐƠN VỊ của TỪNG LOẠI tài sản,
+     * nhưng luôn được bán ít nhất một đơn vị của loại đang sở hữu.
      *
      * ---------- Vì sao con số này tồn tại ----------
      * Trước v1.7 đợt 2, nấc 1 bán không giới hạn, bán tới khi tiền mặt hết âm.
@@ -745,12 +746,33 @@ export const CONFIG = {
      * Bán tháo trong hoảng loạn không bao giờ thanh khoản tức thì ngoài đời: một
      * mảnh đất cần vài tháng tới vài năm mới ra hàng, cổ phiếu nhỏ bán gấp thì
      * tự dìm giá của chính mình. 0,4 nghĩa là trong một năm bết bát nhất người
-     * chơi vẫn xoay được gần nửa danh mục — rộng rãi so với đời thật, nhưng đủ
+     * chơi vẫn xoay được gần nửa mỗi loại — rộng rãi so với đời thật, nhưng đủ
      * hẹp để một cú hụt tiền nặng đi tới được nấc 2 và nấc 3.
      *
-     * Đây là đòn bẩy chính để hiệu chỉnh tỉ lệ phá sản: hạ xuống thì phá sản
-     * nhiều hơn, nâng lên thì hiếm đi. Mục tiêu mục J là 8–18% cho bot cân bằng
-     * và trên 30% cho bot đòn bẩy.
+     * ---------- Vì sao đo theo SỐ ĐƠN VỊ, và vì sao luôn cho bán một đơn vị ----
+     * Bản đầu của trần này đo theo giá trị cả danh mục: mỗi năm gom một túi tiền
+     * chung bằng 40% tổng giá trị rồi trừ dần qua từng loại. Cách đó có một chế
+     * độ hỏng chết người: loại nào có ĐƠN GIÁ vượt túi tiền chung thì phép chia
+     * lấy phần nguyên luôn ra 0, năm nào cũng vậy, mãi mãi. Người giữ hai căn bất
+     * động sản (2 × 2 tỷ) và không gì khác có túi tiền 1,6 tỷ, không mua nổi một
+     * căn 2 tỷ, nên nấc 1 bán được ĐÚNG 0 đồng — rồi bị tuyên phá sản vì hụt 300
+     * triệu trong khi đang đứng trên 4 tỷ bất động sản. Tiền mã hoá (250 triệu
+     * một đơn vị) dính đúng cái bẫy đó khi chỉ có một hai đơn vị.
+     *
+     * Trần theo số đơn vị của từng loại không có chế độ hỏng ấy, và nó bám sát
+     * đời thật hơn: người ta bán bớt MỘT trong hai căn nhà, chứ không bán 40% một
+     * căn. Còn khi chỉ có đúng một căn thì bán cả căn cũng là chuyện thường —
+     * nên `Math.max(1, …)` là một phần của thiết kế, không phải một chỗ vá.
+     *
+     * ---------- Chỉnh được tới đâu ----------
+     * Hạ xuống thì phá sản nhiều hơn, nâng lên thì hiếm đi — nhưng chỉ đúng về
+     * CHIỀU, chưa đúng về ĐỘ LỚN. Đo thật (200 ván mỗi chiến lược, bác sĩ) khi
+     * quét 1,0 → 0,4 → 0,25 → 0,15 → 0,05: số năm chạm nấc 2 của bot đòn bẩy leo
+     * đều 5 → 11 → 15 → 16 → 19, nhưng nấc 3 vẫn nổ ĐÚNG 0 lần ở mọi mức. Ràng
+     * buộc đang cắn nay nằm ở nấc 2 — thanh lý doanh nghiệp cũng không có trần
+     * mỗi năm, và 45% vốn góp của một người vay lớn thì thừa sức bù. Một mình
+     * con số này không kéo nổi tỉ lệ phá sản lên khỏi 0. Mục tiêu mục J là 8–18%
+     * cho bot cân bằng và trên 30% cho bot đòn bẩy.
      */
     tyLeBanToiDaMoiNam: 0.4,
     hanhPhuc: 15,
