@@ -698,6 +698,39 @@ export const CONFIG = {
     uocNguyenBiMat: ['xeMay', 'oTo'] as string[],
   },
 
+  /** ---------- Bảo lãnh cho người thân (v1.7) ----------
+   * Em trai vay ngân hàng mua nhà, nhờ bạn đứng tên bảo lãnh.
+   *
+   * ---------- Vì sao đây là mảnh ghép then chốt ----------
+   * Ba nấc vỡ nợ chỉ khởi động khi tiền mặt âm, mà tiền mặt chỉ âm khi có nợ
+   * phải trả. Người chơi cẩn thận không vay thì KHÔNG THỂ phá sản, bất kể khủng
+   * hoảng nặng tới đâu — đó là lý do v1.6 đo phá sản ra 0% ở mọi kịch bản. Đây
+   * là đường vào nợ mà cả người chơi cẩn thận nhất cũng dính, và ngoài đời đúng
+   * là cách rất nhiều gia đình Việt Nam mất sạch.
+   *
+   * Khoản nợ khi vỡ KHÔNG xét `vayToiDa`: người chơi không chọn vay, ngân hàng
+   * chỉ đơn giản đến đòi. Đó chính là điểm mấu chốt — nếu kẹp nó vào hạn mức thì
+   * nó lại thành một khoản vay bình thường và mất sạch ý nghĩa.
+   *
+   * Lá chắn duy nhất là từ chối và chịu mất hạnh phúc cùng tiếng xấu trong họ.
+   * Một quyết định thật, không có đáp án đúng.
+   */
+  baoLanh: {
+    tuoiToiThieu: 30,
+    /** xác suất được mời trong một năm hợp lệ */
+    xacSuatMoi: 0.06,
+    hanhPhucKhiNhan: 8,
+    hanhPhucKhiTuChoi: 10,
+    /** xác suất người thân vỡ nợ sau khi đã nhận bảo lãnh */
+    xacSuatVo: 0.35,
+    voSauItNhat: 3,
+    voSauNhieuNhat: 8,
+    /** gốc khoản nợ phải gánh = tỉ lệ này × chi phí sinh hoạt của năm vỡ */
+    gocTheoChiPhi: 2.5,
+    kyHan: 10,
+    hanhPhucKhiVo: 12,
+  },
+
   /** ---------- Biểu đồ giá ----------
    * Số điểm giá "quá khứ" sinh sẵn khi tạo ván, để biểu đồ đầu tư
    * có đường giá sống động ngay từ năm đầu tiên.

@@ -55,6 +55,9 @@ export function taiVan(): GameState | null {
     // trường của bản v1.7: ván v1.6 thiếu `namGop` nên `heSoBaoHoa` trả NaN,
     // kéo theo mọi thu nhập doanh nghiệp thành NaN ngay năm đầu tiên
     if (s.doanhNghiep?.some((d) => typeof d.namGop !== 'number')) return null
+    // trường của bản v1.7: thiếu nó thì khoản bảo lãnh không bao giờ vỡ và
+    // `namVoBaoLanh > 0` so sánh với undefined ra false một cách âm thầm
+    if (typeof s.namVoBaoLanh !== 'number') return null
     return s
   } catch {
     return null
