@@ -2981,12 +2981,16 @@ describe('v1.7 — thuế thu nhập cá nhân', () => {
     // 718tr, không người phụ thuộc: chịu thuế 532tr
     //   120tr × 5% = 6tr · 240tr × 10% = 24tr · 172tr × 20% = 34,4tr → 64,4tr
     //
-    // `toBeCloseTo` thay vì `toBe`: `64.4 * TRIEU` tự nó đã là
-    // 64400000,00000001 do 64,4 không có biểu diễn nhị phân hữu hạn — sai số
-    // cỡ 1e-8 đồng, không liên quan tới thuật toán tính thuế (đã Math.round về
-    // đúng 64400000). Dùng `toBe` ở đây sẽ khớp sai một lỗi của dấu phẩy động
-    // JavaScript chứ không phải của phép tính thuế.
-    expect(thueThuNhapCaNhan(718 * TRIEU, 0, 1)).toBeCloseTo(64.4 * TRIEU, 0)
+    // So sánh với đúng tổng ba bậc (`toBe`, không `toBeCloseTo`): viết
+    // `64.4 * TRIEU` liền một cục sẽ dính sai số dấu phẩy động của riêng số
+    // 64,4 (không có biểu diễn nhị phân hữu hạn, ra 64400000,00000001), trong
+    // khi từng số hạng `6 * TRIEU`, `24 * TRIEU`, `34.4 * TRIEU` đều là số
+    // nguyên chính xác tuyệt đối. Cộng ba số hạng đúng thay vì gộp sẵn vừa
+    // giữ được so sánh chính xác tuyệt đối, vừa đọc như một lần viết lại các
+    // bậc thuế ở chú thích trên, không phải một con số ma thuật.
+    expect(thueThuNhapCaNhan(718 * TRIEU, 0, 1)).toBe(
+      6 * TRIEU + 24 * TRIEU + 34.4 * TRIEU,
+    )
   })
 
   it('mỗi người phụ thuộc kéo thuế xuống', () => {
