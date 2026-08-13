@@ -164,6 +164,77 @@ export const CONFIG = {
   soTheMoiNamMin: 4,
   soTheMoiNamMax: 5,
 
+  /** ---------- Trần giá thẻ: bộ bài mở khoá theo khả năng chi tiêu (v1.9) ----------
+   * Thẻ tiêu dùng là cơ chế HAI CHIỀU: nhận thì mất tiền được điểm, từ chối thì mất
+   * đúng ngần ấy điểm. Cơ chế đó chỉ là một quyết định khi người chơi VỚI TỚI được
+   * cả hai vế. Với người không đủ tiền, nó không còn là quyết định — nó là một khoản
+   * phạt hạnh phúc thu đều tay, và người nghèo đóng nhiều nhất.
+   *
+   * Đo thật ở bộ số trước bản này: giáo viên nhà thuần nông bậc lương thấp nhất có
+   * thặng dư năm đầu ÂM 1,5 triệu, trong tay 6,7 triệu sau khi trả chi phí, mà thẻ
+   * đầu tiên game mời là dàn karaoke 22 triệu. Tỉ lệ thắng của tổ hợp ấy đo trên 120
+   * ván là 0,0%, thua vì hạnh phúc 100%. Đó không phải khó, đó là bất khả thi.
+   *
+   * ---------- Vì sao neo vào khả năng chi tiêu chứ không vào chi phí sinh hoạt ----
+   * `heSoMatBangSong` đã nhân giá thẻ theo chi phí sinh hoạt, nhưng chi phí sinh hoạt
+   * giữa nhân vật nghèo nhất và giàu nhất chỉ chênh 2,7 lần, trong khi phần tiền còn
+   * lại sau khi trả hết nghĩa vụ chênh từ âm tới ba mươi mấy triệu — tức là vô cùng.
+   * Chi phí sinh hoạt là thước đo LỐI SỐNG, không phải thước đo KHẢ NĂNG CHI TRẢ, nên
+   * một mình nó không bao giờ đỡ nổi đầu nghèo của thang.
+   *
+   * ---------- Vì sao phải có vế sàn ----------
+   * Người đang âm tiền có khả năng chi tiêu âm, nhân với hệ số nào cũng ra âm, và bộ
+   * bài sẽ RỖNG. Bộ bài rỗng thì tắt luôn cả cỗ máy hạnh phúc — không thẻ nào để nhận
+   * cũng nghĩa là không đường nào hồi phục, hỏng theo kiểu ngược lại. Vế sàn giữ cho
+   * người túng quẫn nhất vẫn được mời những niềm vui rẻ tiền, mà đó cũng đúng là đời
+   * thật: hết tiền thì người ta vẫn uống cà phê vỉa hè với bạn cũ.
+   *
+   * Trần đo trên giá thẻ ĐÃ nhân mặt bằng sống. Cả hai vế đều tỉ lệ thuận với chỉ số
+   * giá nên phép so sánh này miễn nhiễm với lạm phát, không cần chỉnh gì về sau.
+   */
+  theTieuDung: {
+    /** ---------- thẻ không được đắt quá ngần này lần khoản dư ra mỗi năm ----------
+     * Bộ lọc này phải chặn thẻ BẤT KHẢ THI, không phải thẻ ĐẮT. Một tấm thẻ ngốn trọn
+     * khoản dư của cả năm là một quyết định khó — đúng thứ game cần; một tấm ngốn bốn
+     * năm dư thì không còn là quyết định nữa.
+     *
+     * Đo thật ở n=250, trên bộ số CUỐI CÙNG của v1.9 (tức đã có bản vá thứ tự dựng
+     * trạng thái ở bước 14 của `chuyenNam`). "Góc xấu nhất" là giáo viên nhà thuần
+     * nông bậc lương 0,75 — đúng tổ hợp mà người chơi báo lỗi:
+     *
+     *   trần   giáo viên   bác sĩ   kỹ sư PM   góc xấu nhất
+     *   1        40,0%      69,6%     55,6%       11,6%
+     *   2        33,6%      57,2%     50,0%        4,8%
+     *   3        24,4%      53,6%     52,0%        6,8%
+     *   4        24,0%      50,8%     48,4%        5,2%   ← đang cài
+     *   6        22,0%      50,8%     44,8%        3,6%
+     *   tắt      22,0%      50,8%     44,8%        2,4%
+     *
+     * Trần 1 nới tay tới mức hỏng: bác sĩ đầu ván chỉ dư 15,6 triệu nên nó cắt sạch
+     * nửa đắt của bộ bài khỏi tay CẢ người giàu, và đẩy nghề ấy lên gần 70%. Từ mức 6
+     * trở lên thì bộ lọc thôi cắn — hai dòng cuối giống nhau tới từng chữ số. Mức 4
+     * giữ được cả ba nghề trong dải đã đo của bản trước mà vẫn kéo góc xấu nhất ra
+     * khỏi con số 0.
+     *
+     * Mức 3 nhìn qua có vẻ hơn (góc xấu nhất 6,8%), nhưng nó đẩy bác sĩ lên 53,6% —
+     * sát trần 57% của dải — nên không còn chỗ xoay cho những vòng hiệu chỉnh sau.
+     */
+    tranTheoKhaNangChiTieu: 4,
+    /** ---------- nhưng luôn được mời thẻ rẻ tới ngần này lần chi phí sinh hoạt ----------
+     * ĐO ĐƯỢC LÀ KHÔNG CẮN ở bộ số hiện tại: quét 0,03 → 0,2 cho ra bốn ô giống hệt
+     * nhau tới từng chữ số, vì `4 × khả năng chi tiêu` luôn lớn hơn vế này ở mọi nhân
+     * vật lúc vào đời. Ghi rõ ở đây để bản sau đừng tưởng đây là một cần gạt.
+     *
+     * Nó là LAN CAN chứ không phải cần gạt, và cái nó chặn là một chế độ hỏng chết
+     * người: khả năng chi tiêu ÂM được — mất việc, về hưu mà chi phí chăm sóc tuổi già
+     * leo, hoặc ôm một khoản bảo lãnh vừa vỡ — mà số âm nhân 4 vẫn âm, nên nếu chỉ có
+     * vế trần thì bộ bài RỖNG đúng vào năm bi đát nhất. Bộ bài rỗng nghĩa là không thẻ
+     * nào để nhận, tức là cắt luôn đường hồi phục hạnh phúc, hỏng theo chiều ngược lại
+     * với chính lỗi mà cả khối này sinh ra để chữa.
+     */
+    sanTheoChiPhi: 0.05,
+  },
+
   /** ---------- Lạm phát ---------- */
   lamPhatMin: 0.03,
   lamPhatMax: 0.09,
@@ -429,8 +500,27 @@ export const CONFIG = {
   xuatThan: {
     /** các bậc nhân với lương gốc của nghề */
     bacLuong: [0.75, 0.875, 1, 1.125, 1.25],
-    /** lệch 1 phần lương thì chi phí sinh hoạt lệch ngần này phần */
-    loiSongTheoLuong: 0.6,
+    /** ---------- lệch 1 phần lương thì chi phí sinh hoạt lệch ngần này phần ----------
+     * Nâng từ 0,6 lên 0,85 ở v1.9. Con số cũ nói rằng hạ lương một phần tư chỉ hạ
+     * chi phí sống được mười lăm phần trăm, nghĩa là bậc lương THẤP mới là cái bẫy
+     * chứ không phải bậc lương cao — ngược hẳn ý định của khối chú thích ngay trên.
+     *
+     * Đo thật ở 0,6: bảng thặng dư năm đầu có tám ô ÂM trên hai mươi ô của giáo viên,
+     * và tổ hợp giáo viên + nhà thuần nông + bậc thấp nhất ra âm 1,5 triệu mỗi năm
+     * trước khi mua một điểm hạnh phúc nào. Một nhân vật không thể nào tích luỹ được
+     * thì mọi cơ chế còn lại của game đều vô nghĩa với người chơi ấy.
+     *
+     * Vì sao 0,85 chứ không phải 1,0: để 1,0 thì tỉ lệ tiết kiệm bằng nhau ở cả năm
+     * bậc và việc chọn bậc lương mất hết sức nặng về tiền, chỉ còn là chọn điểm hạnh
+     * phúc. 0,85 giữ cho lương cao vẫn dư ra nhiều hơn thật sự, chỉ thôi là lương
+     * thấp thì âm.
+     *
+     * Bộ test cân bằng trước v1.9 không bắt được chuyện này vì nó đo xuất thân RIÊNG
+     * (luôn ở bậc lương 1) và bậc lương RIÊNG (luôn ở viên chức), cả hai lại chỉ chạy
+     * trên bác sĩ — nghề dư dả nhất. Góc xấu nhất gặp xấu nhất chưa từng bị soi. Nay
+     * `balance.test.ts` quét cả lưới ba nghề nhân bốn xuất thân nhân năm bậc lương.
+     */
+    loiSongTheoLuong: 0.85,
     /** áp lực công việc: hạnh phúc trừ mỗi năm = (hệ số lương − 1) × số này */
     apLucTheoLuong: 20,
   },

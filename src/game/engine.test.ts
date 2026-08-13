@@ -2234,10 +2234,20 @@ describe('v1.6 — chi phí sống và áp lực công việc', () => {
     )
   })
 
-  it('bậc lương kéo chi phí sinh hoạt theo đúng 0,6 lần mức lệch', () => {
+  // v1.9 nâng `loiSongTheoLuong` từ 0,6 lên 0,85 — xem chú thích của nó trong
+  // config.ts. Bài này đọc thẳng hằng số ra thay vì chép lại con số, để lần vặn sau
+  // chỉ phải sửa một chỗ; hai phép nhân tay bên dưới mới là thứ khoá lại CÔNG THỨC.
+  it('bậc lương kéo chi phí sinh hoạt theo đúng loiSongTheoLuong lần mức lệch', () => {
     const x = timXuatThan('vienChuc')!
-    expect(tinhHeSoChiPhi(false, [], 1, x, 1.25)).toBeCloseTo(1.15, 10)
-    expect(tinhHeSoChiPhi(false, [], 1, x, 0.75)).toBeCloseTo(0.85, 10)
+    const k = CONFIG.xuatThan.loiSongTheoLuong
+    expect(tinhHeSoChiPhi(false, [], 1, x, 1.25)).toBeCloseTo(1 + 0.25 * k, 10)
+    expect(tinhHeSoChiPhi(false, [], 1, x, 0.75)).toBeCloseTo(1 - 0.25 * k, 10)
+    // Chốt chặn trên chính con số: dưới 0,8 thì bậc lương thấp lại thành cái bẫy mà
+    // v1.9 vừa gỡ (hạ lương một phần tư mà chi phí không chịu xuống theo), còn từ 1,0
+    // trở lên thì mọi bậc tiết kiệm như nhau và việc chọn bậc lương mất hết sức nặng
+    // về tiền, chỉ còn là chọn điểm hạnh phúc.
+    expect(k).toBeGreaterThanOrEqual(0.8)
+    expect(k).toBeLessThan(1)
   })
 
   it('bậc lương cao nhất trừ đúng 5 điểm hạnh phúc mỗi năm', () => {

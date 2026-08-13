@@ -80,8 +80,19 @@ export interface ThietLapNhanVat {
   heSoLuongKhoiDiem: number
 }
 
-/** Thẻ chỉ xuất hiện ở giai đoạn đời tương ứng; không có = mọi giai đoạn. */
-export type GiaiDoanThe = 'giaDinh' | 'conCai' | 'tuoiGia'
+/**
+ * Thẻ chỉ xuất hiện ở giai đoạn đời tương ứng; không có = mọi giai đoạn.
+ *
+ * `docThan` và `ongBa` thêm ở v1.9. Cả hai bám vào cột mốc cốt truyện đã có sẵn
+ * chứ không dựng thêm trạng thái mới: độc thân là phủ định của `daKetHon`, ông bà
+ * là lúc có một người con tròn `conTuoiSinhChau` — đúng điều kiện sinh ra sự kiện
+ * lên chức ông bà. Trước bản này game kể sự kiện ấy rồi bỏ đó, không tấm thẻ nào
+ * nói tiếp về mối quan hệ với thế hệ thứ ba.
+ *
+ * `docThan` và `giaDinh` loại trừ nhau; `ongBa` thì chồng lên `giaDinh` và
+ * `tuoiGia`, đúng như đời thật.
+ */
+export type GiaiDoanThe = 'docThan' | 'giaDinh' | 'conCai' | 'tuoiGia' | 'ongBa'
 
 export interface TheTieuDung {
   id: string

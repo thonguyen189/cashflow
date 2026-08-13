@@ -326,6 +326,27 @@ export function nghiaVuHangNam(s: GameState): Tien {
   return s.chiPhiHangNam + phiBaoHiem(s) + traNoMoiNam(s)
 }
 
+/** Đóng góp của bạn đời trong một năm; 0 khi chưa lập gia đình. */
+export const thuNhapBanDoiNamNay = (s: GameState): Tien =>
+  s.daKetHon ? Math.round(s.luong * CONFIG.cotTruyen.cuoiThuNhapBanDoi) : 0
+
+/**
+ * Khoản còn dư ra trong một năm sau khi đã trả hết nghĩa vụ — thước đo KHẢ NĂNG
+ * CHI TRẢ, khác hẳn `chiPhiHangNam` vốn là thước đo LỐI SỐNG.
+ *
+ * Hai thước đo ấy trải rộng khác nhau một trời một vực, và đó là lý do hàm này phải
+ * tồn tại: chi phí sinh hoạt giữa nhân vật nghèo nhất và giàu nhất chỉ chênh 2,7 lần
+ * nên `heSoMatBangSong` một mình không bao giờ đỡ nổi đầu nghèo của thang, trong khi
+ * khoản dư ra chênh từ ÂM tới ba mươi mấy triệu.
+ *
+ * Trả về số âm được, và đó chính là điểm quan trọng nhất: một nhân vật thu nhập thấp
+ * đang gánh nợ học phí thì thật sự không dư ra đồng nào, nên bộ bài phải biết điều đó
+ * mà đừng mời họ những món không bao giờ với tới. Xem `CONFIG.theTieuDung`.
+ */
+export function khaNangChiTieu(s: GameState): Tien {
+  return s.luong + thuNhapBanDoiNamNay(s) + dongTienThuDong(s) - nghiaVuHangNam(s)
+}
+
 /** Bội số nghĩa vụ mà dòng tiền thụ động phải phủ, giảm dần theo tuổi. */
 export function heSoAnToanTheoTuoi(tuoi: number): number {
   const td = CONFIG.tuDoTaiChinh
@@ -443,6 +464,29 @@ export const giaThucTe = (s: GameState, giaGoc: Tien): Tien =>
  */
 export function heSoMatBangSong(s: GameState): number {
   return s.chiPhiHangNam / (CONFIG.matBangSong.chuan * s.chiSoGia)
+}
+
+/**
+ * Trần giá thẻ tiêu dùng của một năm, quy về MẶT BẰNG GIÁ GỐC của bảng nội dung —
+ * tức là so sánh thẳng được với cột `gia` trong `THE_TIEU_DUNG`.
+ *
+ * Giá thật của một tấm thẻ là `gia × chiSoGia × heSoMatBangSong`, mà
+ * `heSoMatBangSong` lại chia cho `chiSoGia`, nên chỉ số giá triệt tiêu và giá thật
+ * rút gọn thành `gia × chiPhiHangNam ÷ matBangSong.chuan`. Nhờ vậy phép lọc bộ bài
+ * không cần biết gì về lạm phát: nhân ngược lại là ra trần đo bằng đúng đơn vị của
+ * bảng nội dung, và nó tự đúng ở mọi mặt bằng giá về sau.
+ *
+ * Nhận tham số rời chứ không nhận cả `GameState` vì `taoGameMoi` phải gọi nó khi
+ * GameState còn chưa dựng xong — cùng lý do với `tinhHeSoChiPhi` và `nghiaVuNamDau`.
+ */
+export function tranGiaTheGoc(khaNang: Tien, chiPhiHangNam: Tien): Tien {
+  if (chiPhiHangNam <= 0) return Number.POSITIVE_INFINITY
+  const tt = CONFIG.theTieuDung
+  const nguong = Math.max(
+    tt.tranTheoKhaNangChiTieu * khaNang,
+    tt.sanTheoChiPhi * chiPhiHangNam,
+  )
+  return Math.round((nguong * CONFIG.matBangSong.chuan) / chiPhiHangNam)
 }
 
 /* ---------- Chuyên gia đồng hành ---------- */
@@ -721,21 +765,36 @@ interface BoiCanhRutThe {
   nam: number
   /** id các thẻ đã rút năm trước — loại khỏi bộ rút để tránh lặp */
   loaiTru: readonly string[]
+  /**
+   * Trần giá thẻ, đo ở MẶT BẰNG GIÁ GỐC nên so thẳng được với cột `gia` của
+   * `THE_TIEU_DUNG`. Dựng bằng `tranGiaTheGoc`; xem `CONFIG.theTieuDung` để biết
+   * vì sao bộ bài phải mở khoá dần theo khả năng chi tiêu.
+   */
+  tranGiaGoc: Tien
 }
 
 function rutThe(rng: Rng, soLuong: number, boiCanh: BoiCanhRutThe): TheTieuDung[] {
+  const ct = CONFIG.cotTruyen
   const tuoi = tuoiTaiNam(boiCanh.nam)
   // Thẻ con nhỏ chỉ hợp khi còn con dưới tuổi thiếu niên; con 18-20 tuổi mà
   // rút "chiếc xe đạp đầu tiên cho con" thì hỏng mạch truyện.
   const coConNho = boiCanh.conCai.some(
-    (namSinh) => boiCanh.nam - namSinh < CONFIG.cotTruyen.conTuoiToiDaTheConNho,
+    (namSinh) => boiCanh.nam - namSinh < ct.conTuoiToiDaTheConNho,
+  )
+  // Đã lên chức ông bà khi có một người con tròn tuổi sinh cháu — ĐÚNG điều kiện
+  // sinh ra sự kiện `lenChucOngBa` trong `chuyenNam`, để hai chỗ không kể lệch nhau.
+  const daCoChau = boiCanh.conCai.some(
+    (namSinh) => boiCanh.nam - namSinh >= ct.conTuoiSinhChau,
   )
   const con = THE_TIEU_DUNG.filter((t) => {
     if (boiCanh.loaiTru.includes(t.id)) return false
     if (t.tuoiToiDa !== undefined && tuoi > t.tuoiToiDa) return false
+    if (t.gia > boiCanh.tranGiaGoc) return false
+    if (t.giaiDoan === 'docThan') return !boiCanh.daKetHon
     if (t.giaiDoan === 'giaDinh') return boiCanh.daKetHon
     if (t.giaiDoan === 'conCai') return coConNho
-    if (t.giaiDoan === 'tuoiGia') return tuoi >= CONFIG.cotTruyen.tuoiNghiHuu
+    if (t.giaiDoan === 'tuoiGia') return tuoi >= ct.tuoiNghiHuu
+    if (t.giaiDoan === 'ongBa') return daCoChau
     return true
   })
   const kq: TheTieuDung[] = []
@@ -866,6 +925,7 @@ export function taoGameMoi(
         ]
       : []
   const heSoChiPhiBanDau = tinhHeSoChiPhi(false, [], 1, xuatThan, thietLap.heSoLuongKhoiDiem)
+  const chiPhiBanDau = Math.round(nghe.chiPhi * heSoChiPhiBanDau)
 
   // Hẹn lịch cột mốc đời người ngay từ đầu ván — tất định theo seed.
   const namCuoi = rng.nguyen(ct.cuoiTuoiSomNhat, ct.cuoiTuoiMuonNhat) - ct.tuoiBatDau + 1
@@ -922,11 +982,20 @@ export function taoGameMoi(
     lichSuGia[ts.id] = quaKhu.map((g) => Math.max(1, Math.round(g * heSo)))
   }
 
+  // Năm 1 chưa có GameState nên chưa gọi được `khaNangChiTieu(s)`; dựng lại đúng
+  // công thức ấy từ các mảnh đã có. Chưa cưới nên không có thu nhập bạn đời, chưa
+  // đầu tư gì nên dòng tiền thụ động bằng không, còn `nghiaVuNamDau` đã gộp sẵn chi
+  // phí sinh hoạt với bảo hiểm y tế — chỉ còn khoản trả nợ học phí phải cộng tay.
+  const traNoBanDau = khoanVayBanDau.reduce((t, v) => t + v.thanhToanMoiNam, 0)
+  const khaNangBanDau =
+    luong - nghiaVuNamDau(nghe, xuatThan, thietLap.heSoLuongKhoiDiem) - traNoBanDau
+
   const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax), {
     daKetHon: false,
     conCai: [],
     nam: 1,
     loaiTru: [],
+    tranGiaGoc: tranGiaTheGoc(khaNangBanDau, chiPhiBanDau),
   })
   const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam, {
     ngheId: nghe.id,
@@ -956,7 +1025,7 @@ export function taoGameMoi(
     tienMat: vonBanDau,
     hanhPhuc: CONFIG.hanhPhucBanDau + xuatThan.hanhPhucBanDau,
     luong,
-    chiPhiHangNam: Math.round(nghe.chiPhi * heSoChiPhiBanDau),
+    chiPhiHangNam: chiPhiBanDau,
     chiSoGia: 1,
     heSoChiPhi: 1,
     thiTruong: CONFIG.thiTruong.banDau,
@@ -1382,9 +1451,7 @@ function chuyenNam(s: GameState): GameState {
     thuNhapDoanhNghiep.push({ coHoiId: d.coHoiId, ten: d.ten, soTien, bienDong })
   }
   tienMat += thuDong
-  const thuNhapBanDoi = s.daKetHon
-    ? Math.round(s.luong * CONFIG.cotTruyen.cuoiThuNhapBanDoi)
-    : 0
+  const thuNhapBanDoi = thuNhapBanDoiNamNay(s)
   tienMat += thuNhapBanDoi
 
   /* --- 3b. Rủi ro nền: doanh nghiệp có thể đổ hẳn (v1.7) ---
@@ -2380,39 +2447,25 @@ function chuyenNam(s: GameState): GameState {
     daCanhBaoKietSuc = true
   }
 
-  /* --- 14. Rút bài cho năm mới, theo giai đoạn đời và không lặp năm trước --- */
-  const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax), {
-    daKetHon,
-    conCai,
-    nam: namMoi,
-    loaiTru: s.theNamTruoc,
-  })
-  const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam, {
-    ngheId: s.ngheId,
-    nam: namMoi,
-    coHoiDaLam: s.coHoiDaLam,
-    // `sauChuyen` chưa dựng tới đây nên không gọi thẳng taiSanRong(sauChuyen)
-    // được; dựng lại đúng công thức taiSanRong bằng các mảnh đã có: tổng tài sản
-    // sau năm (tongSauNam, bước 12) cộng vốn doanh nghiệp CÒN LẠI (mảng
-    // `doanhNghiep` cục bộ, đã trừ những cái vừa thanh lý ở nấc 2) quy về mặt
-    // bằng giá NĂM MỚI (`chiSoGia` cục bộ của bước 10, không phải s.chiSoGia của
-    // năm cũ), trừ nợ CÒN PHẢI TRẢ của `khoanVay` đã cập nhật ở bước 4.
-    taiSanRong:
-      tongSauNam +
-      doanhNghiep.reduce(
-        (t, d) => t + Math.round(d.vonGoc * (chiSoGia / d.chiSoGiaLucMua)),
-        0,
-      ) -
-      khoanVay.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0),
-    // Đang trong thời gian cấm sau phá sản thì không cơ hội kinh doanh nào được
-    // mời — dùng NĂM MỚI vì đây chính là năm mà bộ cơ hội sắp rút sẽ hiện ra.
-    camCoHoi: camCoHoiDenNam >= namMoi,
-    // Biến cục bộ này đã phản ánh kết quả của bước 7c (đặt lại −1 nếu khoản
-    // treo vừa vỡ trong năm vừa sống) nên dùng thẳng, không dùng s.namVoBaoLanh.
-    namVoBaoLanh,
-  })
-
-  const sauChuyen: GameState = {
+  /* --- 14. Dựng trạng thái năm mới TRƯỚC khi rút bài ---------------------------
+   * Bộ lọc thẻ (bước 15) phải đọc khả năng chi tiêu của NĂM SẮP SỐNG, không phải
+   * năm vừa khép lại. Bản đầu của v1.9 đọc năm cũ vì `sauChuyen` khi ấy dựng sau,
+   * và nó hở đúng ở những năm có cột mốc đời — cưới đội chi phí thêm 20%, sinh con
+   * thêm 25%, nghỉ hưu cắt lương còn 45%. Đo trên 1628 lượt thẻ của tám ván nghèo
+   * nhất: 12 lượt vượt ngưỡng, và CẢ 12 đều rơi đúng vào năm có cột mốc mới. Ca tệ
+   * nhất là một tấm thẻ 189,1 triệu mời vào năm cưới, trong khi ngưỡng năm ấy là
+   * 12,1 triệu và khả năng chi tiêu đang ÂM 4,6 triệu — vượt 15,7 lần. Đó đúng là
+   * chế độ hỏng mà cả bản này sinh ra để chữa, chỉ hiếm hơn.
+   *
+   * Dựng cả trạng thái ở đây thay vì chắp vá vài trường: `khaNangChiTieu` gọi tiếp
+   * `dongTienThuDong` và `nghiaVuHangNam`, hai hàm ấy đọc tổng cộng tám trường, và
+   * một danh sách chép tay tám trường thì sẽ mục lặng lẽ ngay lần đầu có ai thêm
+   * một khoản thu nhập thụ động mới.
+   *
+   * Thứ tự tiêu thụ `rng` KHÔNG đổi: khối này không rút số ngẫu nhiên nào, và hai
+   * lời gọi rút bài vẫn đứng nguyên chỗ cũ so với mọi lời gọi `rng` khác.
+   */
+  const trangThaiNamMoi: GameState = {
     ...s,
     rngCursor: rng.cursor,
     nam: namMoi,
@@ -2448,9 +2501,11 @@ function chuyenNam(s: GameState): GameState {
     conCai,
     daNghiHuu,
     mocTaiSanDaQua,
-    theNamTruoc: theConLai.map((t) => t.id),
-    theConLai,
-    coHoiNamNay,
+    // Ba trường của bước 15 để rỗng ở đây rồi gán sau khi rút — chính vòng rút ấy
+    // cần đọc trạng thái này nên nó chưa thể có mặt trong này.
+    theNamTruoc: s.theNamTruoc,
+    theConLai: [],
+    coHoiNamNay: [],
     // Ba trường biến cố lớn do chính `chuyenNam` (bước 7b) cập nhật, phải gán
     // tường minh — phép trải `...s` sẽ mang theo giá trị cũ nếu thiếu, và lỗi
     // đó không có dấu hiệu gì trên màn hình.
@@ -2465,6 +2520,59 @@ function chuyenNam(s: GameState): GameState {
     // Bước 7c cập nhật biến cục bộ này (đặt về -1 khi vỡ) — cùng lý do gán
     // tường minh với ba trường phá sản ở trên.
     namVoBaoLanh,
+  }
+
+  /* --- 15. Rút bài và rút cơ hội cho năm mới ----------------------------------
+   * Đọc thẳng `trangThaiNamMoi` nên bộ lọc thẻ nhìn đúng túi tiền của năm sắp
+   * sống, kể cả năm vừa cưới, vừa sinh con hay vừa nghỉ hưu — xem bước 14.
+   */
+  const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax), {
+    daKetHon,
+    conCai,
+    nam: namMoi,
+    loaiTru: s.theNamTruoc,
+    tranGiaGoc: tranGiaTheGoc(
+      khaNangChiTieu(trangThaiNamMoi),
+      trangThaiNamMoi.chiPhiHangNam,
+    ),
+  })
+  const coHoiNamNay = rutCoHoi(rng, CONFIG.soCoHoiMoiNam, {
+    ngheId: s.ngheId,
+    nam: namMoi,
+    coHoiDaLam: s.coHoiDaLam,
+    // CỐ Ý giữ nguyên công thức chép tay này thay vì gọi `taiSanRong(trangThaiNamMoi)`
+    // dù nay đã gọi được: hai cách cho ra những con số lệch nhau chút ít, mà bộ cơ
+    // hội rút ra lại quyết định cả đường tiền của ván chơi. Đổi nó là một thay đổi
+    // cân bằng thật, phải có vòng đo riêng chứ không đi ké vòng này.
+    //
+    // Công thức: tổng tài sản sau năm (tongSauNam, bước 12) cộng vốn doanh nghiệp
+    // CÒN LẠI (mảng `doanhNghiep` cục bộ, đã trừ những cái vừa thanh lý ở nấc 2)
+    // quy về mặt bằng giá NĂM MỚI, trừ nợ CÒN PHẢI TRẢ của `khoanVay` ở bước 4.
+    taiSanRong:
+      tongSauNam +
+      doanhNghiep.reduce(
+        (t, d) => t + Math.round(d.vonGoc * (chiSoGia / d.chiSoGiaLucMua)),
+        0,
+      ) -
+      khoanVay.reduce((t, v) => t + v.thanhToanMoiNam * v.namConLai, 0),
+    // Đang trong thời gian cấm sau phá sản thì không cơ hội kinh doanh nào được
+    // mời — dùng NĂM MỚI vì đây chính là năm mà bộ cơ hội sắp rút sẽ hiện ra.
+    camCoHoi: camCoHoiDenNam >= namMoi,
+    // Biến cục bộ này đã phản ánh kết quả của bước 7c (đặt lại −1 nếu khoản
+    // treo vừa vỡ trong năm vừa sống) nên dùng thẳng, không dùng s.namVoBaoLanh.
+    namVoBaoLanh,
+  })
+
+  const sauChuyen: GameState = {
+    ...trangThaiNamMoi,
+    // PHẢI đọc lại con trỏ ngẫu nhiên SAU hai vòng rút: `trangThaiNamMoi` chốt nó
+    // trước khi rút nên con số trong đó đã cũ, mà đây là trường dùng để khôi phục
+    // đúng dòng ngẫu nhiên khi tải lại ván đã lưu — sai một nhịp là ván tải lên
+    // diễn ra khác hẳn ván đã chơi.
+    rngCursor: rng.cursor,
+    theNamTruoc: theConLai.map((t) => t.id),
+    theConLai,
+    coHoiNamNay,
   }
 
   const tong = tongTaiSan(sauChuyen)

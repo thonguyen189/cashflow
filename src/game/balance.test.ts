@@ -238,7 +238,13 @@ describe('cân bằng game', () => {
       const r = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU)
       const soVanThua = 1 - r.tyLeThang
       expect(soVanThua).toBeGreaterThan(0.05)
-      const thiPhan = r.tyLeThuaVi.hanhPhuc / soVanThua
+      // Đếm thẳng trên `ketQua` chứ KHÔNG chia hai tỉ lệ cho nhau. Phép chia ấy là
+      // một tỉ lệ chia cho một tỉ lệ, nên khi cả trăm phần trăm ván thua đều vì hạnh
+      // phúc, sai số dấu phẩy động đẩy kết quả lên 1,0000000000000002 và phép so
+      // `<= 1` đỏ oan — v1.9 dính đúng cú đó. Phép chia hai số nguyên thì không bao
+      // giờ vượt 1 được.
+      const thua = r.ketQua.filter((k) => !k.thang)
+      const thiPhan = thua.filter((k) => k.lyDoThua === 'hanhPhuc').length / thua.length
       // eslint-disable-next-line no-console
       console.log(
         `${nghe.ten.padEnd(18)} thị phần chết vì hạnh phúc trong số ván thua ` +
@@ -290,13 +296,38 @@ describe('cân bằng game', () => {
     // sống trọn đời (ván dài nhất 78 năm) vì tỉ lệ thắng của nghề này rơi vào
     // đúng quãng khiến gần như mọi ván đều kết thúc trước tuổi 100 — hoặc thắng,
     // hoặc chết vì hạnh phúc.
-    const daiNhatMoiNghe = NGHE.map((nghe) =>
-      Math.max(
-        ...moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU).ketQua.map((k) => k.soNam),
-      ),
+    //
+    /* ---------- Vì sao riêng phép đo này phải nâng mẫu ở v1.9 ----------
+     * Ván sống trọn đời là sự kiện MỘT PHẦN NGHÌN, không phải một phần trăm, và cả
+     * ba nghề chỉ có giáo viên đi được tới đó — hai nghề kia thắng quá sớm nên ván
+     * khép lại quanh tuổi 60-70.
+     *
+     * Ở HEAD của v1.8 nó là đúng MỘT ván trên 200 (0,5%). Bộ số v1.9 làm nó hiếm đi
+     * khoảng tám lần. Quét theo cỡ mẫu, lấy ván dài nhất của giáo viên:
+     *
+     *   n = 200 → 69 năm · n = 400 → 72 · n = 800 → 72 · n = 1200 → 78
+     *   n = 2000 → 78 · n = 3000 → 78 · n = 6000 → 80 (bốn ván, 0,067%)
+     *
+     * Tức TÍNH CHẤT còn nguyên — đoạn cuối đời vẫn tới được — chỉ là phải soi bằng
+     * mẫu đủ lớn mới thấy. Vì sao hiếm đi: v1.9 gỡ đúng cái tầng thẻ mà người nghèo
+     * không với tới, nên những ván lê lết ở đáy hạnh phúc nay hoặc gượng lại được và
+     * thắng sớm hơn, hoặc thua dứt khoát — ít ván trôi vô định tới tuổi 100 hơn.
+     *
+     * Nâng mẫu là cách chữa đúng, cùng lý lẽ với chú thích của chỉ tiêu 5 và 6 ngay
+     * dưới: hạ phép so xuống một ngưỡng dễ hơn thì bài test xanh cả khi đoạn cuối đời
+     * không bao giờ được chơi nữa, tức là thôi canh được gì. Nếu bài này đỏ trở lại,
+     * hãy quét lại theo bảng trên trước khi kết luận.
+     */
+    const SO_VAN_DOI_DAI = 6_000
+    const vanDaiNhat = Math.max(
+      ...moPhongNhieuVan('giaoVien', SO_VAN_DOI_DAI).ketQua.map((k) => k.soNam),
     )
-    expect(Math.max(...daiNhatMoiNghe)).toBeGreaterThanOrEqual(SO_NAM_TRON_DOI)
-  })
+    // eslint-disable-next-line no-console
+    console.log(
+      `Giáo viên · mẫu sâu ${SO_VAN_DOI_DAI} ván — ván dài nhất ${vanDaiNhat} năm`,
+    )
+    expect(vanDaiNhat).toBeGreaterThanOrEqual(SO_NAM_TRON_DOI)
+  }, 120_000)
 
   /**
    * ---------- CHỈ TIÊU 5 VÀ 6 VẪN KHÔNG ĐẠT — nhưng bức tường đã nứt ----------
@@ -378,11 +409,34 @@ describe('cân bằng game', () => {
     // Trần 2%: còn cách sàn 8% của mục J một quãng xa, và đó là điều bài này ghi
     // lại. Nếu ô nào vượt 2% thì cơ chế vỡ nợ vừa đổi thật — đọc lại, đừng nới.
     expect(Math.max(...tyLe)).toBeLessThanOrEqual(0.02)
-    // Nhưng KHÔNG được quay về 0 tuyệt đối: trần bán tháo của đợt 2 là thứ duy
-    // nhất từng đưa phá sản ra khỏi con số 0, và bài này canh đúng thành quả đó.
-    expect(Math.max(...tyLe)).toBeGreaterThan(0)
-    // 6000 ván không chạy kịp trong hạn mặc định 5 giây của vitest.
-  }, 60_000)
+
+    /* ---------- Nâng mẫu lần thứ hai ở v1.9 ----------
+     * KHÔNG được quay về 0 tuyệt đối: trần bán tháo của v1.7 đợt 2 là thứ duy nhất
+     * từng đưa phá sản ra khỏi con số 0, và bài này canh đúng thành quả đó.
+     *
+     * v1.9 làm sự kiện ấy mỏng thêm một bậc nữa: đo được 0 ván trên 2000 ở CẢ SÁU ô,
+     * nhưng 2 ván trên 5000 ở ô giáo viên chơi cân bằng — tức khoảng một phần hai
+     * nghìn rưỡi, so với một phần nghìn của v1.8. Nguyên nhân cùng một họ với lần
+     * trước: người chơi dư dả hơn thì ít chạm đáy hơn. Bộ lọc thẻ theo khả năng chi
+     * tiêu chặn đúng những khoản chi vượt tầm, mà chi vượt tầm lại chính là đường
+     * ngắn nhất tới chỗ cạn tiền mặt.
+     *
+     * Vì vậy phép so `> 0` chuyển sang một mẫu SÂU trên đúng ô còn khác 0, thay vì
+     * đọc `tyLe` của vòng lặp bên trên — mẫu 1000 nay đo ra tròn 0 và sẽ đỏ oan.
+     * Nếu ngày nào ô này cũng về 0, ĐỪNG hạ phép so: hãy quét lại cả lưới ba nghề
+     * nhân hai chiến lược ở mẫu 5000 để tìm xem đường vỡ nợ đã dời đi đâu, hoặc đã
+     * mất hẳn. Một phép so `>= 0` thì xanh kể cả khi cơ chế vỡ nợ bị gỡ khỏi engine.
+     */
+    const SO_VAN_DO_SAU = 5_000
+    const oConKhac0 = moPhongNhieuVan('giaoVien', SO_VAN_DO_SAU)
+    const soVanVoNo = oConKhac0.ketQua.filter((k) => k.soLanPhaSan > 0).length
+    // eslint-disable-next-line no-console
+    console.log(
+      `Giáo viên · cân bằng · mẫu sâu ${SO_VAN_DO_SAU} ván — vỡ nợ ${soVanVoNo} ván`,
+    )
+    expect(soVanVoNo).toBeGreaterThan(0)
+    // 11000 ván không chạy kịp trong hạn mặc định 5 giây của vitest.
+  }, 120_000)
 
   /**
    * ---------- Đòn bẩy vẫn thua thiệt, nhưng vay không còn LỖ CHẮC CHẮN ----------

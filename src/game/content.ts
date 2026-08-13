@@ -170,7 +170,28 @@ export const XUAT_THAN: XuatThan[] = [
     moTa: 'Xuất phát trước người ta cả một quãng dài. Nhưng nếp sống sang trọng đi theo bạn suốt đời, và cái đích tự do vì thế cũng lùi xa hơn.',
     tyLeVonBanDau: 4.2,
     tyLeNoBanDau: 0,
-    heSoChiPhiSong: 1.25,
+    // ---------- Hạ từ 1,25 xuống 1,15 ở v1.9 ----------
+    // Không phải vì nhà khá giả quá khó — một mình nó vẫn cân đúng — mà vì nó NHÂN
+    // CHỒNG với `loiSongTheoLuong`, và bản này vừa nâng hệ số ấy lên 0,85. Hai con số
+    // gặp nhau ở góc trên bên phải của bảng: kỹ sư phần mềm nhà khá giả chọn bậc lương
+    // cao nhất chịu hệ số 1,25 × 1,2125 = 1,52, tức chi phí 185 triệu trên đồng lương
+    // 180 triệu. Đo được ô ấy thắng 0,8% trên 250 ván — tức là vừa chữa xong một góc
+    // bất khả thi thì mở ra một góc bất khả thi khác, đúng cái lỗi đang phải chữa.
+    //
+    // Quét 1,25 → 1,15 (n=250): ô ấy lên 6,4%, bác sĩ nhà khá giả bậc cao nhất lên từ
+    // 5,6% tới 20,8%, giáo viên nhà khá giả bậc cao nhất lên từ 16,8% tới 52,8%, mà ba
+    // nghề ở thiết lập mặc định KHÔNG đổi một phần mười điểm nào — chúng đo ở viên chức
+    // tỉnh lẻ nên hệ số này không chạm tới.
+    //
+    // Ô yếu nhất của cả lưới ba nghề nhân bốn xuất thân nhân năm bậc lương vì thế dời
+    // chỗ: từ 0,8% ở kỹ sư phần mềm nhà khá giả bậc 1,25, sang 3,2% ở kỹ sư phần mềm
+    // buôn bán ngoài phố bậc 1,25. Vẫn rất khó, nhưng thôi là bất khả thi — và đó là
+    // một góc người chơi CHỌN khi tạo nhân vật, khác hẳn góc nghèo vốn không ai chọn.
+    //
+    // Cần gạt kia đã thử và đã loại: hạ `apLucTheoLuong` từ 20 xuống 14 cũng nâng được
+    // ô yếu nhất, nhưng nó dìm chính góc mà người chơi báo lỗi (giáo viên nhà thuần
+    // nông bậc thấp nhất, 5,2% xuống 4,4%) vì bậc lương thấp mất phần thưởng hạnh phúc.
+    heSoChiPhiSong: 1.15,
     hanhPhucBanDau: 0,
     tyLePhungDuong: 0,
     phungDuongDenTuoi: 0,
@@ -403,7 +424,29 @@ export const TAI_SAN: TaiSan[] = [
 
 /** ---------------- Thẻ tiêu dùng ----------------
  * Nhận thì +điểm hạnh phúc và mất tiền; TỪ CHỐI thì -điểm.
- * Tỉ lệ đồng/điểm chênh nhau tới 45 lần → mỗi thẻ là một quyết định thật.
+ *
+ * ---------- Trần giá trị: 3 triệu đồng mỗi điểm hạnh phúc (v1.9) ----------
+ * Bản trước để dải đồng trên điểm trải từ 0,17 tới 7,50 triệu — chênh bốn mươi lăm
+ * lần — và coi đó là ưu điểm: chênh càng rộng thì mỗi thẻ càng là một quyết định
+ * thật. Điều đó chỉ đúng với người chơi VỚI TỚI được cả hai đầu. Ba tấm tệ nhất
+ * (drone 7,50 · karaoke 5,83 · đồng hồ 4,50) với nhân vật thu nhập thấp không phải
+ * quyết định mà là khoản phạt: không đủ tiền để nhận, nên năm nào rút trúng là năm
+ * ấy mất trắng đúng số điểm ghi trên thẻ.
+ *
+ * Nay trần là 3,00 và dải còn 0,17 tới 3,00 — vẫn chênh mười tám lần, vẫn thừa để
+ * mỗi thẻ là một quyết định. Sửa bằng cách HẠ GIÁ chứ không phải nâng điểm: nâng
+ * điểm làm khoản phạt từ chối nặng thêm, tức là đổ dầu vào đúng chỗ đang cháy.
+ *
+ * Ý nghĩa của tỉ lệ là bài học chính của cả cơ chế này: quan hệ, sức khoẻ và trải
+ * nghiệm nằm ở đầu rẻ (0,2 tới 0,8 triệu mỗi điểm), còn đồ vật và sĩ diện nằm ở đầu
+ * đắt (2 tới 3 triệu). Mua vui bằng đồ đạc là cách đắt nhất để vui.
+ *
+ * ---------- Sáu chặng đời ----------
+ * Không ghi `giaiDoan` nghĩa là mọi lúc. `docThan` và `ongBa` thêm ở v1.9 — xem
+ * `GiaiDoanThe` trong types.ts. Bộ bài đi từ 39 lên 122 thẻ ở bản này, và đó là hệ
+ * quả bắt buộc chứ không phải trang trí: bộ lọc theo khả năng chi tiêu (xem
+ * `CONFIG.theTieuDung`) cắt bớt số thẻ hợp lệ mỗi năm, mà bộ bài mỏng cộng bộ lọc
+ * chặt thì người nghèo năm nào cũng gặp lại đúng mấy tấm cũ.
  */
 export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't01', ten: 'Cà phê cuối tuần với bạn cũ', emoji: '☕', gia: 500_000, diem: 3 },
@@ -430,9 +473,49 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't15', ten: 'Xe đạp thể thao', emoji: '🚴', gia: 25 * TRIEU, diem: 12, tuoiToiDa: 70 },
   { id: 't16', ten: 'Ngắm hoa anh đào ở Nhật', emoji: '🌸', gia: 60 * TRIEU, diem: 25 },
   { id: 't17', ten: 'Thuê thợ chụp ảnh gia đình', emoji: '📸', gia: 8 * TRIEU, diem: 3 },
-  { id: 't18', ten: 'Đồng hồ hàng hiệu', emoji: '⌚', gia: 45 * TRIEU, diem: 10 },
-  { id: 't19', ten: 'Dàn karaoke tại nhà', emoji: '🎤', gia: 35 * TRIEU, diem: 6 },
-  { id: 't20', ten: 'Drone quay phim', emoji: '🚁', gia: 30 * TRIEU, diem: 4, tuoiToiDa: 75 },
+  // Ba tấm dưới đây là ba tấm bị hạ giá ở v1.9 — xem chú thích đầu mảng.
+  { id: 't18', ten: 'Đồng hồ hàng hiệu', emoji: '⌚', gia: 30 * TRIEU, diem: 10 },
+  { id: 't19', ten: 'Dàn karaoke tại nhà', emoji: '🎤', gia: 18 * TRIEU, diem: 6 },
+  { id: 't20', ten: 'Drone quay phim', emoji: '🚁', gia: 12 * TRIEU, diem: 4, tuoiToiDa: 75 },
+  { id: 't40', ten: 'Mừng cưới con đồng nghiệp', emoji: '💒', gia: 1 * TRIEU, diem: 4 },
+  { id: 't41', ten: 'Rủ hàng xóm ăn bún chả', emoji: '🥢', gia: 400_000, diem: 2 },
+  { id: 't42', ten: 'Đi chùa đầu năm cầu an', emoji: '🙏', gia: 600_000, diem: 3 },
+  { id: 't43', ten: 'Ủng hộ đồng bào vùng lũ', emoji: '🤝', gia: 1.5 * TRIEU, diem: 6 },
+  { id: 't44', ten: 'Sân cầu lông tối thứ Bảy', emoji: '🏸', gia: 900_000, diem: 4 },
+  { id: 't45', ten: 'Đi lấy cao răng định kỳ', emoji: '🪥', gia: 800_000, diem: 3 },
+  { id: 't46', ten: 'Vé xem phim rạp cuối tuần', emoji: '🎬', gia: 500_000, diem: 2 },
+  { id: 't47', ten: 'Phúng viếng đám tang trong họ', emoji: '🕊️', gia: 3 * TRIEU, diem: 8 },
+  { id: 't48', ten: 'Lớp học bơi ba tháng', emoji: '🏊', gia: 4 * TRIEU, diem: 10 },
+  { id: 't49', ten: 'Nuôi một chú mèo trong nhà', emoji: '🐈', gia: 5 * TRIEU, diem: 12 },
+  { id: 't50', ten: 'Khoá học nấu ăn cuối tuần', emoji: '🍳', gia: 3.5 * TRIEU, diem: 7 },
+  { id: 't51', ten: 'Vé đêm nhạc ca sĩ yêu thích', emoji: '🎫', gia: 2.5 * TRIEU, diem: 5 },
+  { id: 't52', ten: 'Bộ quần áo mặc đi tiệc', emoji: '👗', gia: 6 * TRIEU, diem: 3 },
+  { id: 't53', ten: 'Thay bộ nồi chảo trong bếp', emoji: '🥘', gia: 4.5 * TRIEU, diem: 2 },
+  { id: 't54', ten: 'Chai nước hoa hàng hiệu', emoji: '🧴', gia: 7 * TRIEU, diem: 3 },
+  { id: 't55', ten: 'Mổ mắt cận thị', emoji: '👓', gia: 18 * TRIEU, diem: 20, tuoiToiDa: 60 },
+  { id: 't56', ten: 'Đi Hà Giang mùa hoa tam giác mạch', emoji: '🌾', gia: 9 * TRIEU, diem: 16 },
+  { id: 't57', ten: 'Lắp điều hoà cho phòng ngủ', emoji: '❄️', gia: 12 * TRIEU, diem: 5 },
+  { id: 't58', ten: 'Bộ gậy chơi gôn cuối tuần', emoji: '⛳', gia: 18 * TRIEU, diem: 7 },
+  { id: 't59', ten: 'Đổi máy tính xách tay đời mới', emoji: '💻', gia: 19 * TRIEU, diem: 8, tuoiToiDa: 70 },
+  { id: 't60', ten: 'Máy lọc nước và lọc không khí', emoji: '💧', gia: 45 * TRIEU, diem: 18 },
+  { id: 't61', ten: 'Bộ ghế da cho phòng khách', emoji: '🛋️', gia: 35 * TRIEU, diem: 12 },
+  { id: 't62', ten: 'Học lấy bằng lái ô tô', emoji: '🛣️', gia: 25 * TRIEU, diem: 18 },
+  { id: 't63', ten: 'Đi Hàn Quốc ngắm mùa lá đỏ', emoji: '🍁', gia: 55 * TRIEU, diem: 22 },
+  { id: 't64', ten: 'Cải tạo lại gian bếp', emoji: '🍽️', gia: 60 * TRIEU, diem: 22 },
+
+  /* --- Giai đoạn độc thân: chỉ xuất hiện khi CHƯA kết hôn (v1.9) --- */
+  { id: 't65', ten: 'Nhậu lẩu với hội bạn thân', emoji: '🍻', gia: 800_000, diem: 4, giaiDoan: 'docThan' },
+  { id: 't66', ten: 'Buổi hẹn đầu tiên xem phim', emoji: '💘', gia: 700_000, diem: 3, giaiDoan: 'docThan' },
+  { id: 't67', ten: 'Chơi bi-a cùng nhóm bạn', emoji: '🎱', gia: 400_000, diem: 2, giaiDoan: 'docThan' },
+  { id: 't68', ten: 'Cắt tóc tạo kiểu ở tiệm quen', emoji: '💇', gia: 1.2 * TRIEU, diem: 3, giaiDoan: 'docThan' },
+  { id: 't69', ten: 'Phượt xe máy vòng Tây Bắc', emoji: '🏍️', gia: 6 * TRIEU, diem: 15, giaiDoan: 'docThan' },
+  { id: 't70', ten: 'Dọn ra ở trọ riêng một mình', emoji: '🔑', gia: 7 * TRIEU, diem: 12, giaiDoan: 'docThan' },
+  { id: 't71', ten: 'Sắm bộ đồ đi làm chỉn chu', emoji: '👔', gia: 4 * TRIEU, diem: 2, giaiDoan: 'docThan' },
+  { id: 't72', ten: 'Máy chơi trò chơi cầm tay', emoji: '🎮', gia: 7.5 * TRIEU, diem: 3, giaiDoan: 'docThan' },
+  { id: 't73', ten: 'Học lặn biển ở Nha Trang', emoji: '🤿', gia: 12 * TRIEU, diem: 20, giaiDoan: 'docThan' },
+  { id: 't74', ten: 'Ráp dàn máy tính cấu hình mạnh', emoji: '🕹️', gia: 18 * TRIEU, diem: 7, giaiDoan: 'docThan' },
+  { id: 't75', ten: 'Bộ sưu tập giày thể thao', emoji: '👟', gia: 45 * TRIEU, diem: 16, giaiDoan: 'docThan' },
+  { id: 't76', ten: 'Đi bụi châu Âu một tháng', emoji: '🧭', gia: 80 * TRIEU, diem: 28, giaiDoan: 'docThan' },
 
   /* --- Giai đoạn gia đình: chỉ xuất hiện khi đã kết hôn --- */
   { id: 't21', ten: 'Kỷ niệm ngày cưới ở nhà hàng', emoji: '💐', gia: 4 * TRIEU, diem: 8, giaiDoan: 'giaDinh' },
@@ -441,6 +524,20 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't24', ten: 'Tặng bạn đời chiếc nhẫn vàng', emoji: '💍', gia: 25 * TRIEU, diem: 9, giaiDoan: 'giaDinh' },
   { id: 't25', ten: 'Bữa tối dưới ánh nến hâm nóng tình cảm', emoji: '🕯️', gia: 1.5 * TRIEU, diem: 4, giaiDoan: 'giaDinh' },
   { id: 't26', ten: 'Cả nhà về quê ngoại ăn Tết', emoji: '🏮', gia: 5 * TRIEU, diem: 10, giaiDoan: 'giaDinh' },
+  { id: 't77', ten: 'Đi ăn cưới bên nhà nội', emoji: '🎊', gia: 1 * TRIEU, diem: 4, giaiDoan: 'giaDinh' },
+  { id: 't78', ten: 'Nấu mâm cơm giỗ ông bà', emoji: '🍚', gia: 1.5 * TRIEU, diem: 7, giaiDoan: 'giaDinh' },
+  { id: 't79', ten: 'Hai vợ chồng đi ăn hàng làm lành', emoji: '🍜', gia: 800_000, diem: 4, giaiDoan: 'giaDinh' },
+  { id: 't80', ten: 'Quà Tết biếu bố mẹ hai bên', emoji: '🎁', gia: 6 * TRIEU, diem: 12, giaiDoan: 'giaDinh' },
+  { id: 't81', ten: 'Góp tiền họp họ đầu năm', emoji: '🏵️', gia: 3 * TRIEU, diem: 2, giaiDoan: 'giaDinh' },
+  { id: 't82', ten: 'Đưa bạn đời đi khám sức khoẻ', emoji: '🩺', gia: 5 * TRIEU, diem: 14, giaiDoan: 'giaDinh' },
+  { id: 't83', ten: 'Chụp bộ ảnh cưới lại sau mười năm', emoji: '🖼️', gia: 7 * TRIEU, diem: 9, giaiDoan: 'giaDinh' },
+  { id: 't84', ten: 'Sắm máy giặt sấy cho cả nhà', emoji: '🧺', gia: 15 * TRIEU, diem: 6, giaiDoan: 'giaDinh' },
+  { id: 't85', ten: 'Làm tiệc tân gia mời họ hàng', emoji: '🍾', gia: 12 * TRIEU, diem: 5, giaiDoan: 'giaDinh' },
+  { id: 't86', ten: 'Dọn phòng đón bố mẹ lên ở cùng', emoji: '🛏️', gia: 10 * TRIEU, diem: 18, giaiDoan: 'giaDinh', tuoiToiDa: 70 },
+  { id: 't87', ten: 'Thay bộ bàn ghế gỗ tiếp khách', emoji: '🪑', gia: 42 * TRIEU, diem: 15, giaiDoan: 'giaDinh' },
+  { id: 't88', ten: 'Thuê xe chuyển nhà sang chỗ mới', emoji: '📦', gia: 22 * TRIEU, diem: 12, giaiDoan: 'giaDinh' },
+  { id: 't89', ten: 'Đưa cả nhà đi Singapore mười ngày', emoji: '🌏', gia: 80 * TRIEU, diem: 28, giaiDoan: 'giaDinh' },
+  { id: 't90', ten: 'Xây lại cổng nhà cho nở mày nở mặt', emoji: '🚪', gia: 60 * TRIEU, diem: 22, giaiDoan: 'giaDinh' },
 
   /* --- Giai đoạn con cái: chỉ xuất hiện khi đang nuôi con nhỏ --- */
   { id: 't27', ten: 'Mua bộ đồ chơi xếp hình cho con', emoji: '🧸', gia: 1 * TRIEU, diem: 5, giaiDoan: 'conCai' },
@@ -450,6 +547,19 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't31', ten: 'Chiếc xe đạp đầu tiên cho con', emoji: '🚲', gia: 4 * TRIEU, diem: 7, giaiDoan: 'conCai' },
   { id: 't32', ten: 'Du lịch Đà Nẵng cùng các con', emoji: '✈️', gia: 20 * TRIEU, diem: 18, giaiDoan: 'conCai' },
   { id: 't33', ten: 'Sắm góc học tập mới cho con', emoji: '📚', gia: 15 * TRIEU, diem: 6, giaiDoan: 'conCai' },
+  { id: 't91', ten: 'Đưa con đi tiêm phòng nhắc lại', emoji: '💉', gia: 1.8 * TRIEU, diem: 6, giaiDoan: 'conCai' },
+  { id: 't92', ten: 'Sáng chủ nhật thả diều với con', emoji: '🪁', gia: 400_000, diem: 2, giaiDoan: 'conCai' },
+  { id: 't93', ten: 'Mua sữa và bữa phụ cho con', emoji: '🥛', gia: 1.5 * TRIEU, diem: 5, giaiDoan: 'conCai' },
+  { id: 't94', ten: 'Đưa đón con đi học mỗi ngày', emoji: '🛵', gia: 1.2 * TRIEU, diem: 4, giaiDoan: 'conCai' },
+  { id: 't95', ten: 'Cho con học bơi ở bể gần nhà', emoji: '🤽', gia: 3 * TRIEU, diem: 10, giaiDoan: 'conCai' },
+  { id: 't96', ten: 'Nuôi một chú chó nhỏ cho con', emoji: '🐶', gia: 5 * TRIEU, diem: 14, giaiDoan: 'conCai' },
+  { id: 't97', ten: 'Chữa răng sâu cho con', emoji: '🦷', gia: 6 * TRIEU, diem: 8, giaiDoan: 'conCai' },
+  { id: 't98', ten: 'Sắm đồng phục và cặp sách đầu năm', emoji: '🎒', gia: 2.5 * TRIEU, diem: 4, giaiDoan: 'conCai' },
+  { id: 't99', ten: 'Cho con học võ suốt cả năm', emoji: '🥋', gia: 9 * TRIEU, diem: 15, giaiDoan: 'conCai' },
+  { id: 't100', ten: 'Đưa con về quê chơi cả mùa hè', emoji: '🎏', gia: 10 * TRIEU, diem: 18, giaiDoan: 'conCai' },
+  { id: 't101', ten: 'Mua máy tính bảng cho con', emoji: '📲', gia: 14 * TRIEU, diem: 5, giaiDoan: 'conCai' },
+  { id: 't102', ten: 'Thuê người trông con ban ngày', emoji: '🤱', gia: 24 * TRIEU, diem: 10, giaiDoan: 'conCai' },
+  { id: 't103', ten: 'Chạy đua cho con vào trường điểm', emoji: '🏫', gia: 40 * TRIEU, diem: 14, giaiDoan: 'conCai' },
 
   /* --- Giai đoạn tuổi già: chỉ xuất hiện từ tuổi 60 --- */
   { id: 't34', ten: 'Khám sức khoẻ tổng quát đầu năm', emoji: '🏥', gia: 10 * TRIEU, diem: 12, giaiDoan: 'tuoiGia' },
@@ -458,6 +568,31 @@ export const THE_TIEU_DUNG: TheTieuDung[] = [
   { id: 't37', ten: 'Làm vườn trồng rau sau nhà', emoji: '🌱', gia: 3 * TRIEU, diem: 9, giaiDoan: 'tuoiGia' },
   { id: 't38', ten: 'Họp lớp bạn cũ sau mấy chục năm', emoji: '🍵', gia: 1.2 * TRIEU, diem: 7, giaiDoan: 'tuoiGia' },
   { id: 't39', ten: 'Ghế massage cho tấm lưng đã mỏi', emoji: '💆', gia: 30 * TRIEU, diem: 10, giaiDoan: 'tuoiGia' },
+  { id: 't104', ten: 'Ngồi thiền ở thiền viện cuối tuần', emoji: '🛕', gia: 900_000, diem: 4, giaiDoan: 'tuoiGia' },
+  { id: 't105', ten: 'Nuôi đôi chim hót trước hiên', emoji: '🐦', gia: 1.6 * TRIEU, diem: 6, giaiDoan: 'tuoiGia' },
+  { id: 't106', ten: 'Viết lại chuyện đời cho con cháu', emoji: '📜', gia: 3 * TRIEU, diem: 12, giaiDoan: 'tuoiGia' },
+  { id: 't107', ten: 'Vật lý trị liệu chữa khớp gối', emoji: '🦴', gia: 6 * TRIEU, diem: 15, giaiDoan: 'tuoiGia' },
+  { id: 't108', ten: 'Gặp lại đồng đội một thời', emoji: '🎖️', gia: 4 * TRIEU, diem: 9, giaiDoan: 'tuoiGia' },
+  { id: 't109', ten: 'Máy trợ thính nghe rõ tiếng cháu', emoji: '👂', gia: 12 * TRIEU, diem: 16, giaiDoan: 'tuoiGia' },
+  { id: 't110', ten: 'Làm lại hàm răng để ăn ngon', emoji: '🍎', gia: 18 * TRIEU, diem: 14, giaiDoan: 'tuoiGia' },
+  { id: 't111', ten: 'Cây cảnh dáng thế trước sân', emoji: '🪴', gia: 35 * TRIEU, diem: 13, giaiDoan: 'tuoiGia' },
+  { id: 't112', ten: 'Chuyến tàu xuyên Việt khi còn đủ sức', emoji: '🚂', gia: 45 * TRIEU, diem: 18, giaiDoan: 'tuoiGia' },
+
+  /* --- Giai đoạn ông bà: chỉ xuất hiện khi đã có cháu (v1.9) ---
+   * Khác chặng tuổi già ở chỗ nó không nói về thân thể mình đang yếu đi, mà nói về
+   * quan hệ với thế hệ thứ ba: niềm vui có cháu, và cả chuyện bị con cháu nhờ vả.
+   * Chồng lên chặng gia đình và chặng tuổi già chứ không thay thế cái nào.
+   */
+  { id: 't113', ten: 'Dạy cháu học bài mỗi tối', emoji: '✏️', gia: 800_000, diem: 4, giaiDoan: 'ongBa' },
+  { id: 't114', ten: 'Lì xì cháu ngày mùng một Tết', emoji: '🧧', gia: 1.8 * TRIEU, diem: 8, giaiDoan: 'ongBa' },
+  { id: 't115', ten: 'Đưa cháu đi khu vui chơi cuối tuần', emoji: '🎠', gia: 2.5 * TRIEU, diem: 9, giaiDoan: 'ongBa' },
+  { id: 't116', ten: 'Đặt tiệc thôi nôi cho cháu ở nhà hàng', emoji: '🍼', gia: 6 * TRIEU, diem: 3, giaiDoan: 'ongBa' },
+  { id: 't117', ten: 'Trông cháu giúp con suốt mùa hè', emoji: '👶', gia: 12 * TRIEU, diem: 25, giaiDoan: 'ongBa' },
+  { id: 't118', ten: 'Góp tiền làm giỗ tổ dòng họ', emoji: '🏺', gia: 15 * TRIEU, diem: 6, giaiDoan: 'ongBa' },
+  { id: 't119', ten: 'Mua vàng để dành cho cháu', emoji: '🪙', gia: 24 * TRIEU, diem: 10, giaiDoan: 'ongBa' },
+  { id: 't120', ten: 'Cả đại gia đình đi du lịch Hạ Long', emoji: '🚌', gia: 30 * TRIEU, diem: 22, giaiDoan: 'ongBa' },
+  { id: 't121', ten: 'Dựng lại nhà thờ họ ở quê', emoji: '🧱', gia: 55 * TRIEU, diem: 20, giaiDoan: 'ongBa' },
+  { id: 't122', ten: 'Góp tiền cho con mua nhà', emoji: '🏘️', gia: 80 * TRIEU, diem: 30, giaiDoan: 'ongBa' },
 ]
 
 /** ---------------- Cơ hội ----------------
