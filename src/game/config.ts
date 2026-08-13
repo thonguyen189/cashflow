@@ -367,11 +367,36 @@ export const CONFIG = {
      * `heSoLoiTuc` nhân vào cổ tức, tiền thuê, thu nhập doanh nghiệp, xác suất
      * thăng chức và thưởng Tết. `lechLamPhat` cộng thẳng vào lạm phát của năm —
      * khủng hoảng đẩy lạm phát từ 6% lên 11%, đúng cảnh đình lạm năm 2008.
+     *
+     * ---------- Bốn số `doLechGia` phải CĂN GIỮA theo phân bố dừng ----------
+     * `maTranChuyen` ở trên cho phân bố dừng 13,96% / 34,37% / 30,56% / 21,11%:
+     * kinh tế nằm ở suy thoái hoặc khủng hoảng 51,7% thời gian. Bộ số cũ lấy
+     * `binhThuong` làm mốc 0 nên kỳ vọng của `doLechGia` là −0,1361 chứ không
+     * phải 0 — và vì nó được nhân với `nhayChuKy`, mọi kênh có `nhayChuKy` dương
+     * chịu lực cản vĩnh viễn (cổ phiếu −16,4%/năm) còn vàng, với `nhayChuKy` âm,
+     * được trợ lực vĩnh viễn +5,9%/năm. Chu kỳ thôi làm chu kỳ và hoá thành xu
+     * hướng: đo được vàng +17,1%/năm kép, không giảm nổi một năm suy thoái hay
+     * khủng hoảng nào, tức là mua vàng thì không thể thua.
+     *
+     * Bộ số mới có kỳ vọng −0,0018, coi như bằng 0. `biendong-dau-tu.test.ts`
+     * khoá lại ràng buộc này; đổi `maTranChuyen` mà quên căn lại bốn số dưới đây
+     * là test đỏ ngay.
+     *
+     * ---------- Vì sao phần dương lớn đến thế ----------
+     * Khủng hoảng giữ nguyên −0,45 (v1.7 cố ý đào sâu, `engine.test.ts` khoá lại)
+     * và `maTranChuyen` cũng giữ nguyên, nên riêng khủng hoảng đã kéo kỳ vọng
+     * xuống −0,095. Muốn bù lại thì thịnh vượng và bình thường phải dương mạnh.
+     *
+     * Chặn trên của `doLechGia` thịnh vượng là `bienDongMin` của cổ phiếu chia
+     * cho `nhayChuKy` của nó: vượt ngưỡng ấy là cổ phiếu không thể giảm trong năm
+     * thịnh vượng — đúng cái bẫy vừa gỡ ở vàng, chỉ đổi kênh. Đó là lý do biên độ
+     * cổ phiếu, vàng và bất động sản đều phải đào sâu ở `content.ts`: biên rộng
+     * mới đỡ nổi một chu kỳ dao động mạnh mà không kênh nào hoá thắng chắc.
      */
     tacDong: {
-      thinhVuong: { doLechGia: 0.1, heSoLoiTuc: 1.15, lechLamPhat: 0, heSoTangLuong: 1.3 },
-      binhThuong: { doLechGia: 0, heSoLoiTuc: 1, lechLamPhat: 0, heSoTangLuong: 1 },
-      suyThoai: { doLechGia: -0.18, heSoLoiTuc: 0.65, lechLamPhat: 0.02, heSoTangLuong: 0.2 },
+      thinhVuong: { doLechGia: 0.26, heSoLoiTuc: 1.15, lechLamPhat: 0, heSoTangLuong: 1.3 },
+      binhThuong: { doLechGia: 0.21, heSoLoiTuc: 1, lechLamPhat: 0, heSoTangLuong: 1 },
+      suyThoai: { doLechGia: -0.05, heSoLoiTuc: 0.65, lechLamPhat: 0.02, heSoTangLuong: 0.2 },
       khungHoang: { doLechGia: -0.45, heSoLoiTuc: 0.25, lechLamPhat: 0.07, heSoTangLuong: 0 },
     },
     /** giá có thể sập chín phần mười nhưng không về không */

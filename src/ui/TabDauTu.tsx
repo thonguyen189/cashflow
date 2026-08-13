@@ -16,7 +16,14 @@ function BieuDo({ dulieu }: { dulieu: number[] }) {
   })
   const diem = toaDo.join(' ')
   const len = dulieu.length
-  const tang = (dulieu[len - 1] ?? 0) >= (dulieu[0] ?? 0)
+  // Màu lấy theo bước đi của NĂM VỪA RỒI, không theo chênh lệch hai đầu cửa sổ.
+  //
+  // Cách cũ so điểm cuối với điểm đầu của cửa sổ mười lăm năm. Với mô hình giá
+  // v1.8, giá đi lên dài hạn nhưng sập sâu theo chu kỳ, nên trong những năm giá
+  // sập từ 20% trở lên biểu đồ VẪN TÔ XANH ở 96–99% số lần: người chơi vừa mất
+  // hai phần ba tài sản, mở tab lên thấy một đường xanh đi lên. Màu giờ khớp đúng
+  // con số phần trăm nằm ngay bên trên nó.
+  const tang = (dulieu[len - 1] ?? 0) >= (dulieu[len - 2] ?? 0)
   const mau = tang ? 'var(--xanh)' : 'var(--do)'
   return (
     <svg className="bieu-do" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -50,8 +57,20 @@ function TheTaiSan({
   const dangCo = state.soHuu[ts.id]
   const toiDa = muaToiDa(state, ts.id)
   const lichSu = state.lichSuGia[ts.id] ?? []
-  const giaDau = lichSu[0] ?? gia
-  const thayDoi = giaDau > 0 ? gia / giaDau - 1 : 0
+  // So với NĂM NGOÁI, không phải so với đầu cửa sổ lịch sử.
+  //
+  // Cách cũ lấy `lichSu[0]` làm mốc, mà `lichSuGia` là cửa sổ TRƯỢT mười lăm năm
+  // (`.slice(-15)` trong engine) nên mẫu số ấy tự đi mỗi năm. Ba hệ quả đo được:
+  // trung vị của con số hiển thị là +390% với cổ phiếu; nó ĐI XUỐNG trong 30% số
+  // năm giá ĐI LÊN — người chơi đọc ra là lỗi phần mềm; và vì đây là con số phần
+  // trăm duy nhất trên tab đầu tư, ai cũng đọc nó thành lãi của chính mình, kể cả
+  // khi vừa mua xong và vừa lỗ nặng.
+  //
+  // Biến động một năm là thứ khớp với bảng tổng kết cuối năm và là cách đọc tự
+  // nhiên của một con số đứng cạnh giá. Nhãn "so với năm ngoái" ở dưới nói rõ mốc
+  // — con số cũ không có nhãn nào cả.
+  const giaTruoc = lichSu[lichSu.length - 2] ?? gia
+  const thayDoi = giaTruoc > 0 ? gia / giaTruoc - 1 : 0
 
   const muaThuc = Math.min(muaSo, toiDa)
   const banThuc = Math.min(banSo, dangCo)
@@ -68,7 +87,8 @@ function TheTaiSan({
             {dinhDangTien(gia)} / {ts.donViTen}{' '}
             <span className={thayDoi >= 0 ? 'duong' : 'am'}>
               {dinhDangPhanTram(thayDoi)}
-            </span>
+            </span>{' '}
+            so với năm ngoái
           </div>
         </div>
       </div>
@@ -158,7 +178,21 @@ export default function TabDauTu({
   state: GameState
   dispatch: (a: Action) => void
 }) {
-  const moKhoa = TAI_SAN.filter((t) => state.tienMat >= t.giaDonVi || state.soHuu[t.id] > 0)
+  // Cổng mở khoá phải đọc giá HIỆN TẠI. `ts.giaDonVi` là giá năm 1 và nó đứng yên
+  // suốt ván, trong khi dòng "Cần ... cho một ..." ngay bên dưới lại in giá hiện
+  // tại — hai con số khác nhau, và tới v1.8 chúng tách xa nhau thật sự.
+  //
+  // Mô hình giá mới cho phép giá nằm DƯỚI mốc năm 1 nhiều năm liền: đo được tiền
+  // mã hoá 5,7% số năm, có đợt kéo dài tới 15 năm. Dùng `giaDonVi` khi ấy sinh ra
+  // đúng một lời tự mâu thuẫn trên màn hình — thẻ bị xếp vào mục "Chưa mở khoá"
+  // mà lại ghi "Cần 120 triệu" trong lúc người chơi đang cầm 150 triệu. Tệ hơn
+  // nữa, nó khoá cửa đúng vào lúc giá rẻ, tức chặn ngay nước đi mà cả mô hình mới
+  // dựng lên để thưởng (xem `biendong-dau-tu.test.ts`, "mua lúc rẻ phải được
+  // thưởng"). Lưu ý `engine.ts` cũng có một hàm TÊN LÀ `giaDonVi(s, id)` nhưng nó
+  // trả giá hiện tại — chính sự trùng tên này làm cái bẫy dễ sập.
+  const moKhoa = TAI_SAN.filter(
+    (t) => state.tienMat >= state.giaTaiSan[t.id] || state.soHuu[t.id] > 0,
+  )
   const chuaMo = TAI_SAN.filter((t) => !moKhoa.includes(t))
 
   return (

@@ -355,6 +355,153 @@ và suy thoái là cửa ngõ chính vào khủng hoảng.
 
 Đo riêng ở thực nghiệm vòng hai, chỉ đòn này đã đưa giáo viên từ 72% xuống 51%.
 
+### Cập nhật ở v1.8 — bốn con số độ lệch giá phải căn giữa
+
+Phân phối dừng vừa giải ở trên nói rằng nền kinh tế nằm ở suy thoái hoặc khủng hoảng
+**51,7%** thời gian. Nhưng bảng tác động lại lấy 😐 bình thường làm mốc 0, nên **kỳ vọng
+của độ lệch giá không phải 0 mà là −0,1361**. Con số ấy được nhân với `nhayChuKy` rồi cộng
+thẳng vào biến động giá mỗi năm, nên nó không còn là chu kỳ nữa — nó là một **xu hướng**
+chạy suốt ván:
+
+- Mọi kênh có `nhayChuKy` dương chịu một lực cản vĩnh viễn: cổ phiếu −16,4% mỗi năm.
+- Vàng, với `nhayChuKy` âm, được một trợ lực vĩnh viễn +5,9% mỗi năm. Đo ra vàng tăng
+  **+17,1% mỗi năm** tính kép và **không giảm nổi một năm suy thoái hay khủng hoảng nào**.
+  Mua vàng là không thể thua — một lỗ hổng sống sót qua bảy phiên bản mà không ai thấy,
+  vì nó không nằm trong bảng số nào cả, nó là tích của hai bảng số.
+
+Bốn con số được căn lại, giữ nguyên ma trận chuyển và giữ nguyên **−0,45** của khủng hoảng
+(v1.7 cố ý đào sâu, `engine.test.ts` khoá lại). Riêng khủng hoảng đã kéo kỳ vọng xuống
+−0,095, nên phần dương phải mạnh tương ứng để bù:
+
+| Trạng thái | Độ lệch giá v1.7 | **Độ lệch giá v1.8** |
+|---|---|---|
+| 📈 Thịnh vượng | +0,10 | **+0,26** |
+| 😐 Bình thường | 0,00 | **+0,21** |
+| 📉 Suy thoái | −0,18 | **−0,05** |
+| 💥 Khủng hoảng | −0,45 | −0,45 *(giữ nguyên)* |
+
+Kỳ vọng mới là **−0,0018**, coi như bằng 0. Ba cột còn lại của bảng tác động — hệ số lợi
+tức, lệch lạm phát, hệ số tăng lương — **không đổi**, và ma trận chuyển cũng vậy: bảng
+phân phối trạng thái ở trên vẫn đúng nguyên. `biendong-dau-tu.test.ts` khoá ràng buộc này
+lại, nên ai đổi ma trận chuyển mà quên căn lại bốn con số trong bảng sẽ thấy bài đỏ ngay.
+
+Riêng đòn này đã đưa lãi thực mỗi năm của trái phiếu từ −7,23% lên −1,89% và của bất động
+sản từ −7,89% lên −0,26%, kéo theo tỉ lệ thắng của giáo viên từ 6,0% lên **16,0%** (bác sĩ
+49,0% → 48,5%, kỹ sư phần mềm 50,5% → 53,0%). Chỉ nghề nghèo nhất hưởng lợi, vì người thu
+nhập thấp về đích bằng tích luỹ chậm và đều nên bị lực cản ấy bào nặng nhất, còn người thu
+nhập cao về đích chủ yếu bằng lương và doanh nghiệp.
+
+### Cập nhật ở v1.8 — giá tài sản dao động quanh giá trị thật
+
+Căn giữa mới chỉ chữa được triệu chứng. Lỗi gốc nằm ngay trong công thức giá của bản v1.6:
+mỗi năm bốc một con số ngẫu nhiên **độc lập** trong biên độ `bienDongMin`–`bienDongMax`,
+cộng độ lệch chu kỳ, cộng lạm phát nếu `bamLamPhat`. Ba hậu quả, cả ba đều đo được và
+không cái nào nhìn bảng số mà thấy:
+
+1. **Lãi thực dài hạn chỉ là sản phẩm phụ của biên độ trừ đi hao hụt dao động.** Đo trên
+   chính mô hình cũ: cổ phiếu **−10,57%**, tiền mã hoá **−6,50%** mỗi năm. Cả năm kênh đều
+   âm lãi thực — đầu tư dài hạn vào bất cứ đâu cũng thua, trong một trò chơi dạy đầu tư.
+2. **Độ lệch kỳ vọng của chu kỳ biến thành trợ lực vĩnh viễn** cho kênh nghịch chu kỳ —
+   vàng ăn +8,63% lãi thực và không có nổi một năm giảm khi kinh tế xấu.
+3. **Mua lúc rẻ bị phạt.** Giá vừa sập không hàm ý gì về tương lai, nó chỉ tố cáo rằng
+   người chơi đang kẹt trong một giai đoạn xấu còn kéo dài. Lãi ba năm sau khi bắt đáy
+   **+23%** so với **+37%** khi mua bừa. Trò chơi dạy ngược đúng bài học quan trọng nhất.
+
+Không con số nào chữa được ba thứ đó, vì cả ba là hệ quả của *hình dạng* mô hình. Nên mô
+hình được thay hẳn:
+
+```
+giá = giá trị thật × e^(độ lệch)
+
+giá trị thật  ← giá trị thật × (1 + lạm phát nếu theoLamPhat) × (1 + tangTruongThuc)
+
+độ lệch       = hệ số đà     × độ lệch năm ngoái
+              + hệ số kéo về × độ lệch năm trước nữa
+              + cú hích ngẫu nhiên chuẩn × nhieuGia
+              + độ lệch giá của chu kỳ kinh tế × nhayChuKy
+
+hệ số đà      =  2 × damChuKy × cos(2π / chuKyNam)
+hệ số kéo về  = −damChuKy²
+```
+
+**Giá trị thật** là cái neo, đi lên đều đặn mỗi năm và người chơi **không nhìn thấy** — cho
+thấy thì hết trò chơi, vì "mua khi giá dưới giá trị thật" sẽ thành một công thức máy móc.
+**Độ lệch** dao động quanh số không như một con lắc có ma sát: `damChuKy` là độ dai của
+sóng, `chuKyNam` là khoảng cách trung bình giữa hai lần lập đỉnh, `nhieuGia` là độ rung mỗi
+năm. `chuKyNam = 0` nghĩa là không có chu kỳ, giá bám sát giá trị thật và chỉ rung nhẹ —
+đó là trái phiếu.
+
+Ba điểm đáng ghi riêng:
+
+- **Chu kỳ kinh tế đẩy vào ĐỘ LỆCH, không đẩy vào giá trị thật.** Khủng hoảng làm giá rẻ đi
+  so với giá trị, chứ không làm nhà máy bốc hơi. Nhờ vậy khủng hoảng vừa đau vừa là cơ hội,
+  đúng như đời thật — và nhờ vậy một chu kỳ lệch tâm không còn cộng dồn được nữa, nó chỉ
+  dời chỗ đứng yên của độ lệch sang một mức mới rồi thôi.
+- **Lạm phát NHÂN vào giá trị thật, không cộng vào biến động.** Cộng thì `tangTruongThuc`
+  bị pha loãng thành `tangTruongThuc / (1 + lạm phát)`, và con số đặt vào thôi là con số đo
+  ra được — mất đúng cái tính chất khiến mô hình này đáng đổi sang.
+- **Sàn −0,90 giữ nguyên** — giá có thể sập chín phần mười nhưng không về không — chỉ khác
+  là nay nó chặn ở *giá* rồi kéo độ lệch về cho khớp, để trạng thái con lắc và giá báo ra
+  không kể hai câu chuyện khác nhau ngay từ năm sau.
+
+Hệ quả then chốt, và là lý do đổi: **lãi thực dài hạn của mỗi kênh đúng bằng
+`tangTruongThuc`.** Đọc bảng là biết, không phải mô phỏng trăm năm mới lòi ra. Muốn một
+kênh dữ dội hơn thì nâng `nhieuGia` — nó không làm kênh ấy nghèo đi, khác hẳn mô hình cũ,
+nơi biên càng rộng thì hao hụt dao động càng lớn.
+
+| Kênh | Lãi thực mỗi năm | Bám lạm phát | Chu kỳ | Độ dai | Độ rung | `nhayChuKy` |
+|---|---|---|---|---|---|---|
+| 🏦 Trái phiếu & tiền gửi | 0% *(danh nghĩa)* | không | — | — | 0,006 | 0,0 |
+| 📈 Cổ phiếu | **+4,0%** | có | 8 năm | 0,78 | 0,13 | 0,7 *(v1.6: 1,4)* |
+| 🥇 Vàng | **+0,8%** | có | 9 năm | 0,80 | 0,13 | −0,3 *(v1.6: −0,5)* |
+| ⚡ Tiền mã hoá | **+6,0%** | có | 5 năm | 0,84 | 0,34 | 1,1 *(v1.6: 2,0)* |
+| 🏢 Bất động sản | **+1,5%** | có | 14 năm | 0,82 | 0,05 | 0,35 *(v1.6: 1,0)* |
+
+**Trái phiếu là ngoại lệ có chủ ý.** Không bám lạm phát và tăng trưởng thật bằng 0 nghĩa là
+gốc đứng yên theo giá danh nghĩa: một triệu gửi hôm nay vẫn là một triệu, còn giá cả thì
+không. Đo ra **−7,4% lãi thực mỗi năm**, và đó chính là bài học về gửi tiết kiệm — an toàn
+danh nghĩa không phải an toàn thật. Lợi tức 5–7% miễn thuế mới là thứ bù lại, và nó chỉ
+vừa đủ hoà.
+
+**Độ dài chu kỳ lấy theo ngoài đời:** tiền mã hoá đi nhịp ngắn nhất, quanh kỳ giảm phát
+thưởng khối bốn năm một lần; cổ phiếu bảy tới mười năm một chu kỳ kinh doanh; vàng đi nhịp
+dài hơn cổ phiếu một chút; nhà đất nổi tiếng với chu kỳ mười tám năm — rút xuống mười bốn
+để một ván bốn mươi năm còn kịp thấy hai lần lên đỉnh. Cái giá của chu kỳ dài: lỡ mua bất
+động sản đúng đỉnh thì phải ôm gần một thập kỷ mới về bờ. Nhiễu chen thêm đỉnh phụ nên chu
+kỳ **đo được** luôn ngắn hơn con số đặt; điều `biendong-dau-tu.test.ts` chốt là mỗi kênh
+nằm trong tầm của mình và **thứ tự giữa bốn kênh có chu kỳ không đảo**.
+
+**Đường đi vẫn xóc như cũ, chỉ là không còn phải trả bằng lãi.** Đo được: cổ phiếu 35% số
+năm là năm giảm và có ván sụt 88% từ đỉnh; tiền mã hoá có ván sụt 99%; bất động sản êm nhất
+trong bốn kênh có rủi ro với 27% số năm giảm. Vàng vẫn là chỗ trú ẩn, chỉ thôi là chỗ trú
+ẩn **không rủi ro**: độ nhạy nghịch chu kỳ hạ từ −0,5 xuống −0,3 để cú hích trong khủng
+hoảng (+0,135) không còn lớn gấp đôi độ rung (0,13) của chính nó. Vàng sập trong khủng
+hoảng là chuyện có thật — năm 2008 nó mất ba mươi phần trăm trong đợt tháo chạy tìm tiền
+mặt trước khi tăng trở lại.
+
+**Ràng buộc cứng:** `damChuKy` phải nằm trong khoảng [0, 1). Từ 1 trở lên là con lắc tự bơm
+năng lượng, độ lệch lớn dần mãi và giá chạy tới vô cực hoặc về 1 đồng rồi không bao giờ
+quay lại.
+
+**Thay đổi kỹ thuật kèm theo.** `TaiSan` gỡ `bienDongMin`, `bienDongMax`, `bamLamPhat`;
+thêm `tangTruongThuc`, `theoLamPhat`, `chuKyNam`, `damChuKy`, `nhieuGia`. `GameState` thêm
+`giaTriTaiSan`, `lechGia`, `lechGiaTruoc` — con lắc cần hai điểm mới biết mình đang đi
+hướng nào. Ván lưu của v1.7 **di trú được** chứ không phải bỏ: coi giá đang cầm đúng bằng
+giá trị thật và độ lệch về không, người chơi mất pha chu kỳ đang dở nhưng giữ nguyên danh
+mục, tiền mặt và giá đang nắm. Chín năm giá "quá khứ" của biểu đồ nay chạy **chính** mô
+hình này rồi kéo cả chuỗi về mốc `giaDonVi`, dùng chung một dòng lịch sử kinh tế cho cả năm
+kênh — nên đường giá năm đầu trông y hệt đường giá mọi năm sau, và mỗi ván khởi hành ở một
+**pha ngẫu nhiên** của chu kỳ thay vì luôn mở màn đúng ngay giá trị thật.
+
+**`biendong-dau-tu.test.ts`** là tệp test mới dựng riêng cho mô hình này. Nó gọi thẳng
+`buocGia` — đúng cái hàm engine dùng — nên không có chuyện công thức trong test lệch khỏi
+công thức thật, và bài cuối chơi hẳn một ván thật để bắt lỗi đấu nối. Ba bất biến đáng nhớ
+nhất trong số nó khoá lại: lãi
+thực đo ra đúng bằng con số đặt trong `content.ts`; ép độ lệch chu kỳ lệch tâm bằng đúng
+−0,1361 của bản cũ suốt trăm năm cũng không dời nổi lãi dài hạn; và **bắt đáy phải được
+thưởng** — đo lại cổ phiếu **+231%** so với **+77%** khi mua bừa, đảo ngược hẳn dấu của
+mô hình cũ.
+
 ---
 
 ## F. Giá hạnh phúc neo theo mặt bằng sống
@@ -540,6 +687,30 @@ tuổi 100 thì mọi con số khác trong bảng đều vô nghĩa.
 > hiển nhiên sai** (mọi tỉ lệ thắng nằm trong khoảng 10–90%), kèm trần lỏng 40 điểm bám
 > theo khoảng thật quan sát được để vẫn bắt được hồi quy.
 
+> **Đo lại ở v1.8, sau khi thay mô hình giá tài sản — hai dòng đầu bảng đổi.** Chi tiết
+> và bảng số đầy đủ ở mục con cuối của mục L.
+>
+> **Chỉ tiêu 1 — tỉ lệ thắng của giáo viên lên 27,7%.** Từ 6,0% ở đợt 2, qua 16,0% sau khi
+> căn giữa độ lệch giá, tới **27,7%** sau khi thay hẳn mô hình giá (mẫu 1000 ván). Vẫn
+> chưa vào dải 45–55% nhưng thôi là con số của một nghề *bất khả thi*. Bác sĩ 50,9% và kỹ
+> sư phần mềm 52,3% — cả hai vẫn trong dải. Chênh lệch ba nghề theo đó từ 44,5 điểm xuống
+> **24,6 điểm**, dù dòng ấy đã được gỡ khỏi danh sách chỉ tiêu từ đợt 2.
+>
+> **Chỉ tiêu 2 — tuổi thắng trung bình đã TRƯỢT xuống dưới mục tiêu.** Bảng trên đặt
+> 52–62 và vòng hiệu chỉnh của v1.7 chốt dải đo thật 50–59; nay kỹ sư phần mềm chạm đích ở
+> **48,1** tuổi và bác sĩ ở **51,5** tuổi, nên dải đo lại — vẫn theo đúng lệ cũ, ±3 tuổi
+> quanh số đo rồi làm tròn ra ngoài — thành **45–55**. Đây là **một chỉ tiêu bị trượt**,
+> không phải một dải được cập nhật cho gọn: mục này muốn tự do tài chính tới ở tuổi trung
+> niên, mà kỹ sư nay chạm đích dưới sàn hai tuổi.
+>
+> Lý do đã biết và cùng một lý do cho cả hai dòng: mô hình giá mới đưa lãi thực của cổ
+> phiếu và bất động sản từ âm về dương, nên ai về đích thì về sớm hơn ba tới năm năm, và
+> người sống bằng tích luỹ đều hưởng lợi nhiều nhất. **Không chữa bằng cách hạ
+> `tangTruongThuc`** — +4% cho cổ phiếu và +1,5% cho bất động sản đã là con số khiêm tốn so
+> với ngoài đời, hạ nữa là bẻ cong thực tế cho vừa một cái bảng. Đòn bẩy đúng chỗ là
+> `tuDoTaiChinh.heSoToiThieu/heSoPhuThem`, và vặn nó là một vòng cân bằng riêng phải quét
+> lại cả sáu chỉ tiêu, không phải một con số nhét vào test.
+
 ### Vòng hiệu chỉnh là bắt buộc
 
 Các con số trong tài liệu này là **điểm xuất phát có căn cứ, không phải kết quả**. Bản
@@ -614,6 +785,40 @@ namGop: number
 namVoBaoLanh: number
 ```
 
+**Cập nhật ở v1.8 — mô hình giá mới.** Lý do và bảng số ở mục E; đây chỉ là danh sách
+trường:
+
+```ts
+// TaiSan GỠ ba trường của mô hình cũ:
+//   bienDongMin, bienDongMax, bamLamPhat
+
+// TaiSan thêm năm trường:
+/** mức tăng THỰC của giá trị thật mỗi năm — chính là lãi thực dài hạn của kênh */
+tangTruongThuc: number
+/** true nếu giá trị thật bám lạm phát; trái phiếu để false */
+theoLamPhat: boolean
+/** độ dài chu kỳ giá tính bằng năm; 0 nghĩa là không có chu kỳ */
+chuKyNam: number
+/** độ dai của chu kỳ, bắt buộc nằm trong [0, 1) */
+damChuKy: number
+/** độ lớn cú hích ngẫu nhiên mỗi năm vào độ lệch — "độ rung" của kênh */
+nhieuGia: number
+
+// GameState thêm ba trường:
+/** giá trị thật của một đơn vị — cái neo, người chơi KHÔNG nhìn thấy */
+giaTriTaiSan: Record<AssetId, number>
+/** độ lệch loga giữa giá thị trường và giá trị thật */
+lechGia: Record<AssetId, number>
+/** độ lệch của năm trước — con lắc cần hai điểm mới biết đang đi hướng nào */
+lechGiaTruoc: Record<AssetId, number>
+```
+
+`engine.ts` thêm hàm `buocGia` — một bước tiến của mô hình giá, dùng chung cho cả việc dựng
+chín năm quá khứ lúc tạo ván lẫn việc sang năm mới, để hai đường giá không thể lệch công
+thức — và thêm `rng.chuan()` cho số ngẫu nhiên phân phối chuẩn (cú hích giá cần đuôi dài;
+phân phối đều cắt cụt ở hai biên nên không bao giờ sinh nổi một năm sốc thật sự). `luu.ts`
+di trú ván v1.7 bằng cách coi giá đang cầm đúng bằng giá trị thật và độ lệch về không.
+
 ### `config.ts`
 
 Khối mới: `thue` (biểu bậc, giảm trừ, thuế lợi tức từng kênh), `suNghiep` (không còn
@@ -626,11 +831,18 @@ trường), `matBangSong` (chuẩn chi phí), `chamSocTuoiGia`.
 `luu.ts`. Ván v1.6 thiếu `namVoBaoLanh` và `DoanhNghiep.namGop` nên `taiVan` trả `null`
 — cùng cách các bản trước đã xử lý.
 
+*Cập nhật ở v1.8:* bốn con số `thiTruong.tacDong[*].doLechGia` được căn lại quanh phân
+phối dừng (xem mục E). `luuKey` **giữ nguyên** ở `dong-tien-luu-v1-7`: ván cũ di trú được
+nên không cần bỏ, khác với các lần trước.
+
 ### `content.ts`
 
 Ba nghề đổi `luong`, `chiPhi`, thêm `duongCongSuNghiep`. Bốn xuất thân đổi
 `tyLeVonBanDau`. Năm tài sản thêm `thueLoiTuc`. Ba cơ hội nhỏ mới; toàn bộ cơ hội kinh
 doanh đổi `thuNhapMoiNam` theo dải 12–18%.
+
+*Cập nhật ở v1.8:* năm tài sản gỡ ba trường biến động cũ và nhận năm trường của mô hình
+giá mới, kèm `nhayChuKy` hạ ở cả bốn kênh có chu kỳ — bảng đầy đủ ở mục E.
 
 ### `engine.ts`
 
@@ -667,6 +879,13 @@ buộc thật với nó), bot đòn bẩy **nhận**.
 
 Viết lại theo bảng mục J. Thêm hai phép đo chưa từng có: tỉ lệ ván sống trọn tới tuổi
 100, và phân loại lý do thua (hạnh phúc / phá sản lần hai / hết đời chưa tự do).
+
+*Cập nhật ở v1.8:* dải của chỉ tiêu 1 và chỉ tiêu 2 đo lại, chỉ tiêu 5 và 6 nâng mẫu lên
+1000 ván mỗi ô — chi tiết ở mục con cuối của mục L. Thêm tệp test mới
+**`biendong-dau-tu.test.ts`** dành riêng cho mô hình giá: nó gọi thẳng `buocGia` thay vì
+chơi cả ván, vì bot mô phỏng chỉ sống trung bình tám năm — không đủ dài để thấy một chu kỳ
+mười bốn năm của bất động sản, và tám năm đầu luôn khởi hành từ 😐 bình thường nên mẫu lệch
+hẳn khỏi phân phối dừng.
 
 ---
 
@@ -783,6 +1002,13 @@ cách ấy lấy một điểm; nó chỉ trượt cả ba nghề xuống cùng 
 thủng đáy dải của chỉ tiêu 2. Mức gần nhất còn qua được mốc 8% là 1,8+2,0 (9,0%), và nó
 mua mốc ấy bằng việc đẩy tuổi thắng kỹ sư xuống 51,8 — hụt dải — mà vẫn không cứu nổi bài
 bốn xuất thân.
+
+> **Đính chính ở v1.8.** Câu in đậm mở đầu đoạn trên đã sai, và sai vì phạm vi thí nghiệm
+> chứ không vì số liệu: nó chỉ quét đúng một đòn bẩy là hệ số an toàn. Khoảng cách ấy đã
+> co từ 44,5 điểm xuống 37 rồi xuống **24,6 điểm** qua hai lần sửa chu kỳ và mô hình giá,
+> mà không ai đụng tới hệ số an toàn lấy một lần. Nó **không phải khoảng cách giữa hai
+> nghề**; nó là khoảng cách giữa người sống nhờ tích luỹ và người sống nhờ thu nhập, và nó
+> chỉ co lại khi kênh tích luỹ thôi âm lãi thực. Xem mục con cuối cùng.
 
 Điều này cũng **bác bỏ một dự đoán của chính mục L**: mục con "Trần 15 điểm" bên dưới suy
 ra rằng hạ hệ số an toàn sẽ làm chênh lệch *rộng* ra. Điều đó đúng với chênh lệch **xuất
@@ -1037,3 +1263,49 @@ chơi theo lối bot khó tính — nên cả hai con số cùng tụt: **1,2% s
 thắng 5 ván và lật thua 7 ván. Bức tranh không đổi, chỉ đậm hơn. Và đó chính là chỗ nên đặt
 bài: nếu một gói dịch vụ nhỏ mua đứt được điều kiện thua duy nhất của game, nó phải lộ ra ở
 đây trước tiên.
+
+### Đo lại ở v1.8 — hai lần chữa mô hình giá
+
+Hai thay đổi đi liên tiếp và được đo riêng từng bước để thấy đòn nào dời cái gì. Cột **Căn
+giữa** là sau khi bốn con số độ lệch giá của mục E được căn lại quanh phân phối dừng; cột
+**Mô hình mới** là sau khi giá được neo vào giá trị thật. Mẫu **1000 ván** mỗi nghề — đợt 2
+dùng 200, và ở mẫu ấy thì sự kiện hiếm đo ra tròn 0.
+
+| Chỉ số | Đợt 2 (v1.7) | Căn giữa | **Mô hình mới** | |
+|---|---|---|---|---|
+| Tỉ lệ thắng — 👨‍🏫 giáo viên | 6,0% | 16,0% | **27,7%** | ❌ vẫn dưới dải 45–55% |
+| Tỉ lệ thắng — 👩‍⚕️ bác sĩ | 49,0% | 48,5% | **50,9%** | ✅ |
+| Tỉ lệ thắng — 👨‍💻 kỹ sư phần mềm | 50,5% | 53,0% | **52,3%** | ✅ |
+| Chênh lệch ba nghề | 44,5 điểm | 37 điểm | **24,6 điểm** | — *(đã gỡ khỏi chỉ tiêu)* |
+| Tuổi thắng — 👩‍⚕️ bác sĩ | 55,3 | — | **51,5** | ✅ trong dải mới |
+| Tuổi thắng — 👨‍💻 kỹ sư phần mềm | 53,5 | — | **48,1** | ❌ **trượt** khỏi 50–59 |
+| Phá sản, bot cân bằng — 👨‍🏫 giáo viên | 0,5% *(n=200)* | — | **0,10%** *(n=1000)* | ❌ |
+
+**Chỉ tiêu 1 dời dải, và dời đúng ở một mình giáo viên.** Cả hai lần. Dải chốt trong
+`balance.test.ts` vì vậy đo lại thành **20–36%** cho giáo viên (trước là 2–14%), còn hai
+nghề kia giữ nguyên 41–57% và 43–59%. Cơ chế là một và giống nhau ở cả hai lần: kênh tích
+luỹ thôi âm lãi thực. Người thu nhập thấp về đích bằng tích luỹ đều nên hưởng gần trọn phần
+chênh ấy; người thu nhập cao vốn về đích bằng lương và doanh nghiệp nên gần như không đổi.
+
+Kết luận cũ của mục này — rằng 6,0% là "sự thật của nghề" mà không đòn bẩy nào chữa nổi —
+đúng **trong phạm vi nó đã thử**, tức là vặn hệ số an toàn. Chỗ hỏng thật nằm ở chu kỳ kinh
+tế và ở mô hình giá, hai nơi không ai ngờ tới lúc đó. 27,7% vẫn chưa vào dải, nhưng nó là
+con số của một nghề *khó*, không còn là con số của một nghề *bất khả thi*.
+
+**Chỉ tiêu 2 trượt, và trượt theo đúng cái hướng mà thành công của chỉ tiêu 1 kéo theo.**
+Lãi thực dương nghĩa là ai về đích thì về sớm hơn ba tới năm năm. Dải đo lại thành **45–55**
+theo đúng lệ cũ, nhưng phải đọc nó là **một chỉ tiêu bị trượt** chứ không phải một dải được
+cập nhật cho gọn: mục J muốn tự do tài chính tới ở tuổi trung niên 50–59, mà kỹ sư nay chạm
+đích ở 48,1 — dưới sàn hai tuổi. Cách chữa **không** phải hạ `tangTruongThuc` của các kênh;
+đòn bẩy đúng chỗ là `tuDoTaiChinh.heSoToiThieu/heSoPhuThem`, và bảng quét bảy mức ở mục con
+"Chênh lệch ba nghề" cho thấy vặn nó lên đẩy tuổi thắng lên và tỉ lệ thắng xuống ở cả ba
+nghề cùng lúc. Đó là một vòng cân bằng riêng, phải quét lại cả sáu chỉ tiêu.
+
+**Chỉ tiêu 5 và 6 phải nâng mẫu, không được nới ngưỡng.** Người chơi dư dả hơn nên cái ô
+duy nhất khác 0 mỏng đi: giáo viên chơi lối cân bằng từ 0,5% (1 trên 200 ván) xuống 0,10%
+(1 trên 1000). Ở mẫu 200 thì đo ra tròn 0 và phép so `> 0` đỏ. Cách chữa đúng là chạy 1000
+ván mỗi ô chứ không phải hạ phép so xuống `>= 0` — một phép so như thế xanh kể cả khi cơ
+chế vỡ nợ bị gỡ hẳn khỏi engine. Cái giá là bài này chạy 6000 ván nên chậm hơn hẳn phần còn
+lại của tệp. Cần nói rõ: 0,10% **không** phải thành tựu, nó cách sàn 8% của mục J xa hơn
+trước. Ràng buộc thật vẫn cắn ở nấc 2 như đã phân tích ở trên, chưa ai đụng tới, và mô hình
+giá mới không liên quan gì tới nó ngoài việc làm người chơi giàu hơn nên ít chạm đáy hơn.

@@ -237,6 +237,19 @@ export const KHOA_HOC: KhoaHoc[] = [
 /** ---------------- Tài sản đầu tư ----------------
  * Giá một đơn vị chênh nhau rất lớn → các hạng tự mở khoá dần
  * theo độ giàu, không cần hệ thống level riêng.
+ *
+ * ---------- Cách đọc năm con số của mô hình giá (v1.8) ----------
+ * `tangTruongThuc` là LÃI THỰC DÀI HẠN của kênh, đo ra đúng bằng số đặt vào.
+ * Bốn con số còn lại chỉ quyết định đường đi gập ghềnh tới đó, không đụng tới
+ * đích: `chuKyNam` là khoảng cách trung bình giữa hai đỉnh, `damChuKy` là độ dai
+ * của sóng, `nhieuGia` là độ rung mỗi năm, `nhayChuKy` là mức ăn theo chu kỳ
+ * kinh tế chung. Muốn một kênh dữ dội hơn thì nâng `nhieuGia` — nó KHÔNG làm
+ * kênh ấy nghèo đi, khác hẳn mô hình cũ.
+ *
+ * Độ dài chu kỳ lấy theo ngoài đời: tiền mã hoá bốn năm một nhịp quanh kỳ giảm
+ * phát thưởng khối, cổ phiếu bảy tới mười năm một chu kỳ kinh doanh, vàng đi
+ * nhịp dài hơn cổ phiếu một chút, còn nhà đất nổi tiếng với chu kỳ mười tám năm
+ * — rút xuống mười bốn để một ván bốn mươi năm còn kịp thấy hai lần lên đỉnh.
  */
 export const TAI_SAN: TaiSan[] = [
   {
@@ -246,11 +259,19 @@ export const TAI_SAN: TaiSan[] = [
     moTa: 'An toàn nhất. Lãi đều đặn, giá gần như không đổi. Nơi giữ tiền chờ cơ hội.',
     giaDonVi: 1 * TRIEU,
     donViTen: 'phần',
-    bienDongMin: -0.01,
-    bienDongMax: 0.01,
     loiTucMin: 0.05,
     loiTucMax: 0.07,
-    bamLamPhat: false,
+    // `theoLamPhat: false` cộng `tangTruongThuc: 0` nghĩa là gốc ĐỨNG YÊN theo giá
+    // danh nghĩa — một triệu gửi hôm nay vẫn là một triệu, còn giá cả thì không.
+    // Đo được −7,4% lãi thực mỗi năm và đó chính là bài học về gửi tiết kiệm:
+    // an toàn danh nghĩa không phải an toàn thật. Lợi tức 5–7% miễn thuế mới là
+    // thứ bù lại, và nó chỉ vừa đủ hoà.
+    tangTruongThuc: 0,
+    theoLamPhat: false,
+    /** không có chu kỳ: giá bám sát giá trị thật, chỉ rung nhẹ */
+    chuKyNam: 0,
+    damChuKy: 0,
+    nhieuGia: 0.006,
     /** miễn nhiễm — đây là lý do tồn tại của nó */
     nhayChuKy: 0,
     /** lãi tiền gửi tiết kiệm cá nhân KHÔNG chịu thuế thu nhập cá nhân */
@@ -263,13 +284,20 @@ export const TAI_SAN: TaiSan[] = [
     moTa: 'Biến động mạnh cả hai chiều, có cổ tức. Vào được ngay từ năm đầu.',
     giaDonVi: 50_000,
     donViTen: 'cổ phiếu',
-    bienDongMin: -0.25,
-    bienDongMax: 0.35,
     loiTucMin: 0,
     loiTucMax: 0.06,
-    bamLamPhat: false,
+    // +4% lãi thực mỗi năm, cộng cổ tức 0–6%: khớp với lợi suất thật của thị
+    // trường chứng khoán trong một thế kỷ. Nhưng đường đi tới đó rất xóc — đo
+    // được 35% số năm là năm giảm và có ván sụt 88% từ đỉnh. Ai mua đúng lúc
+    // đỉnh rồi bán lúc hoảng vẫn mất sạch, đúng như đời thật.
+    tangTruongThuc: 0.04,
+    theoLamPhat: true,
+    /** chu kỳ kinh doanh bảy tới mười năm */
+    chuKyNam: 8,
+    damChuKy: 0.78,
+    nhieuGia: 0.13,
     /** nhạy hơn nền kinh tế, đúng như chỉ số chứng khoán */
-    nhayChuKy: 1.4,
+    nhayChuKy: 0.7,
     /** cổ tức chịu thuế thu nhập cá nhân 5% */
     thueLoiTuc: 0.05,
   },
@@ -280,13 +308,34 @@ export const TAI_SAN: TaiSan[] = [
     moTa: 'Giữ giá theo lạm phát, không sinh lãi. Chỗ trú ẩn khi thị trường xấu.',
     giaDonVi: 8.5 * TRIEU,
     donViTen: 'chỉ',
-    bienDongMin: -0.12,
-    bienDongMax: 0.2,
     loiTucMin: 0,
     loiTucMax: 0,
-    bamLamPhat: true,
-    /** NGHỊCH chu kỳ — càng hoảng loạn càng đắt */
-    nhayChuKy: -0.5,
+    // +0,8% lãi thực: vàng giữ sức mua qua nhiều thế kỷ chứ gần như không sinh
+    // lời, đúng như câu mô tả ngay trên. Đây là chỗ mô hình mới trả lời dứt điểm
+    // lỗi của v1.7 — hồi đó vàng ăn +8,63% lãi thực và không có nổi một năm giảm
+    // trong suy thoái lẫn khủng hoảng, tức mua vàng là không thể thua. Nay con
+    // số ấy là một tham số đọc thẳng ra được, không còn là kết quả phụ của biên
+    // độ nhân độ nhạy chu kỳ mà phải mô phỏng cả trăm năm mới biết.
+    tangTruongThuc: 0.008,
+    theoLamPhat: true,
+    /** đi nhịp dài hơn cổ phiếu một chút */
+    chuKyNam: 9,
+    damChuKy: 0.8,
+    nhieuGia: 0.13,
+    /**
+     * NGHỊCH chu kỳ — càng hoảng loạn càng đắt. Vẫn là chỗ trú ẩn, chỉ thôi là
+     * chỗ trú ẩn KHÔNG rủi ro.
+     *
+     * Hạ từ −0,5 xuống −0,3 vì `biendong-dau-tu.test.ts` bắt được vàng chỉ giảm
+     * 52/1217 năm khủng hoảng, tức 4,3% — vẫn là cược gần như chắc thắng, đúng
+     * cái lỗi đang phải chữa, chỉ nhẹ hơn. Gốc là cú hích nghịch chu kỳ trong
+     * khủng hoảng (0,45 × 0,5 = +0,225) lớn gấp đôi độ rung 0,11 của vàng, nên
+     * gần như không cú rung nào đủ sức kéo giá xuống. Nay cú hích còn +0,135 so
+     * với độ rung 0,13 — vàng vẫn thường lên khi kinh tế sập, chỉ thôi là luôn
+     * lên. Vàng sập trong khủng hoảng là chuyện có thật: năm 2008 nó mất ba mươi
+     * phần trăm trong đợt tháo chạy tìm tiền mặt trước khi tăng trở lại.
+     */
+    nhayChuKy: -0.3,
     // không sinh lợi tức nên con số này không bao giờ được dùng tới
     thueLoiTuc: 0,
   },
@@ -297,16 +346,22 @@ export const TAI_SAN: TaiSan[] = [
     moTa: 'Có thể nhân nhiều lần hoặc bốc hơi. Chỉ nên chơi bằng tiền nhàn rỗi.',
     giaDonVi: 250 * TRIEU,
     donViTen: 'đơn vị',
-    // Cân bằng v1.2: hạ biên độ 1.5 → 1.1 và −0.6 → −0.65 để trung bình nhân
-    // của giá còn ≈ +10%/năm — vẫn là kênh sinh lời cao nhất nhưng không còn
-    // trội tuyệt đối so với cổ phiếu hay bất động sản.
-    bienDongMin: -0.65,
-    bienDongMax: 1.1,
     loiTucMin: 0,
     loiTucMax: 0,
-    bamLamPhat: false,
+    // Vẫn là kênh sinh lời cao nhất (+6% lãi thực) và vẫn dữ dội nhất — `nhieuGia`
+    // 0,34 gấp gần ba lần cổ phiếu, đo được có ván sụt 99% từ đỉnh. Điểm khác v1.7:
+    // độ dữ dội KHÔNG còn phải trả giá bằng lãi. Mô hình cũ bốc ngẫu nhiên độc lập
+    // nên biên càng rộng thì hao hụt dao động càng lớn, và tiền mã hoá kết cục là
+    // kênh thua chắc −10,85% lãi thực. Nay muốn dữ dội tới đâu cũng được mà không
+    // đụng tới đích, vì độ lệch luôn bị kéo về giá trị thật.
+    tangTruongThuc: 0.06,
+    theoLamPhat: true,
+    /** bốn năm một nhịp quanh kỳ giảm phát thưởng khối — đúng như quan sát ngoài đời */
+    chuKyNam: 5,
+    damChuKy: 0.84,
+    nhieuGia: 0.34,
     /** khuếch đại mạnh nhất theo cả hai chiều */
-    nhayChuKy: 2.0,
+    nhayChuKy: 1.1,
     // không sinh lợi tức nên con số này không bao giờ được dùng tới
     thueLoiTuc: 0,
   },
@@ -317,13 +372,30 @@ export const TAI_SAN: TaiSan[] = [
     moTa: 'Vốn lớn, tăng giá đều và có tiền thuê hàng năm. Mở khoá khi đã đủ giàu.',
     giaDonVi: 2 * TY,
     donViTen: 'căn',
-    bienDongMin: -0.05,
-    bienDongMax: 0.15,
     loiTucMin: 0.04,
     loiTucMax: 0.07,
-    bamLamPhat: true,
-    /** đi cùng nền kinh tế, thêm quán tính từ lạm phát */
-    nhayChuKy: 1.0,
+    // +1,5% lãi thực cộng tiền thuê 4–7%: nhà đất giàu lên chủ yếu nhờ dòng tiền
+    // cho thuê chứ không nhờ giá đất, đúng như ngoài đời. Kênh êm nhất trong bốn
+    // kênh có rủi ro — chỉ 27% số năm là năm giảm — nhưng chu kỳ dài mười bốn năm
+    // nghĩa là lỡ mua đúng đỉnh thì phải ôm gần một thập kỷ mới về bờ.
+    tangTruongThuc: 0.015,
+    theoLamPhat: true,
+    /** chu kỳ nhà đất ngoài đời khoảng mười tám năm, rút lại cho vừa một ván */
+    chuKyNam: 14,
+    damChuKy: 0.82,
+    nhieuGia: 0.07,
+    /**
+     * Đi cùng nền kinh tế nhưng chậm chạp hơn cổ phiếu.
+     *
+     * Hạ từ 0,35 xuống 0,2 và nâng `nhieuGia` từ 0,05 lên 0,07 vì phép thử đột
+     * biến bắt được nhà đất chỉ giảm 6,8% số năm THỊNH VƯỢNG — cùng một lỗi với
+     * vàng trong khủng hoảng, chỉ nhẹ hơn và ở đầu kia của chu kỳ. Gốc y hệt: cú
+     * hích chu kỳ trong năm thịnh vượng (0,26 × 0,35 = +0,091) lớn gần gấp đôi độ
+     * rung 0,05, nên hầu như không cú rung nào kéo nổi giá xuống. Nay cú hích còn
+     * +0,052 so với độ rung 0,07. Nhà đất vẫn là kênh êm nhất trong bốn kênh có
+     * rủi ro, chỉ thôi là kênh không thể lỗ trong năm kinh tế đẹp.
+     */
+    nhayChuKy: 0.2,
     /** cho thuê nhà chịu 10% (5% giá trị gia tăng + 5% thu nhập cá nhân) */
     thueLoiTuc: 0.1,
   },

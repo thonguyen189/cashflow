@@ -53,6 +53,19 @@ export function taoRng(seed: number, cursor: number) {
   return {
     next,
     khoang: (min: number, max: number) => min + next() * (max - min),
+    /**
+     * Số ngẫu nhiên theo phân phối CHUẨN, trung bình 0 và độ lệch chuẩn 1.
+     *
+     * Cú hích giá hằng năm cần đuôi dài: phân phối đều cắt cụt ở hai biên nên
+     * không bao giờ sinh nổi một năm sốc thật sự, mà năm sốc hiếm-nhưng-sâu mới
+     * là thứ tạo nên hình dáng của chu kỳ giá. Tiêu đúng hai bước con trỏ nên
+     * ván lưu rồi nạp lại vẫn ra y hệt.
+     */
+    chuan: () => {
+      const u = Math.max(1e-12, next())
+      const v = next()
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
+    },
     nguyen: (min: number, max: number) => Math.floor(min + next() * (max - min + 1)),
     chon<T>(arr: readonly T[]): T {
       return arr[Math.floor(next() * arr.length)]!
@@ -866,20 +879,47 @@ export function taoGameMoi(
   const giaTaiSan = {} as Record<AssetId, Tien>
   const soHuu = {} as Record<AssetId, number>
   const lichSuGia = {} as Record<AssetId, Tien[]>
+  const giaTriTaiSan = {} as Record<AssetId, number>
+  const lechGia = {} as Record<AssetId, number>
+  const lechGiaTruoc = {} as Record<AssetId, number>
+
+  // Chín năm "quá khứ" phải dùng CHUNG một dòng lịch sử kinh tế cho cả năm kênh.
+  // Nếu mỗi kênh bốc chu kỳ riêng thì vàng có thể đang trú ẩn khỏi một cuộc khủng
+  // hoảng mà cổ phiếu chưa từng trải qua — biểu đồ năm đầu sẽ kể chuyện vô lý.
+  const quaKhuKinhTe: { lamPhat: number; doLechGia: number }[] = []
+  let ttQuaKhu: TrangThaiThiTruong = CONFIG.thiTruong.banDau
+  for (let i = 0; i < CONFIG.soDiemGiaQuaKhu; i++) {
+    ttQuaKhu = chuyenTrangThaiThiTruong(rng, ttQuaKhu)
+    const td = CONFIG.thiTruong.tacDong[ttQuaKhu]
+    quaKhuKinhTe.push({
+      lamPhat: rng.khoang(CONFIG.lamPhatMin, CONFIG.lamPhatMax) + td.lechLamPhat,
+      doLechGia: td.doLechGia,
+    })
+  }
+
   for (const ts of TAI_SAN) {
-    giaTaiSan[ts.id] = ts.giaDonVi
     soHuu[ts.id] = 0
-    // Dựng chuỗi giá "quá khứ" bằng cách đi lùi từ giá năm 1, biên độ mỗi
-    // bước tỉ lệ theo độ biến động thật của tài sản nhưng chặn ở ±15% để
-    // chỉ số thay đổi hiển thị năm đầu không bị thổi phồng phi lý.
-    const bienDoQuaKhu = Math.min(0.15, (ts.bienDongMax - ts.bienDongMin) / 4)
+    // Dựng chuỗi giá "quá khứ" bằng cách chạy CHÍNH mô hình giá tiến chín năm rồi
+    // kéo cả chuỗi về sao cho điểm cuối đúng bằng `giaDonVi`. Hai cái lợi:
+    //  (1) đường giá năm đầu trông y hệt đường giá mọi năm sau vì cùng một công
+    //      thức sinh ra, thay vì là một chuỗi ngẫu nhiên trang trí;
+    //  (2) mỗi ván khởi hành ở một PHA ngẫu nhiên của chu kỳ. Nếu để độ lệch bằng
+    //      không ở năm 1 thì ván nào cũng mở màn đúng ngay giá trị thật, và người
+    //      chơi thuộc lòng rằng năm đầu mua gì cũng không bao giờ hớ.
+    let buoc: BuocGia = { gia: ts.giaDonVi, giaTri: ts.giaDonVi, lech: 0, lechTruoc: 0 }
     const quaKhu: Tien[] = [ts.giaDonVi]
-    for (let i = 0; i < CONFIG.soDiemGiaQuaKhu; i++) {
-      const bienDong = rng.khoang(-bienDoQuaKhu, bienDoQuaKhu)
-      const giaTruoc = Math.max(1, Math.round(quaKhu[0]! / (1 + bienDong)))
-      quaKhu.unshift(giaTruoc)
+    for (const kt of quaKhuKinhTe) {
+      buoc = buocGia(ts, buoc, kt.lamPhat, kt.doLechGia, rng)
+      quaKhu.push(buoc.gia)
     }
-    lichSuGia[ts.id] = quaKhu
+    // Kéo cả chuỗi về mốc `giaDonVi` để giá năm 1 luôn đúng bằng bảng giá thiết
+    // kế — các hạng tài sản mở khoá theo độ giàu nên giá năm 1 không được trôi.
+    const heSo = ts.giaDonVi / buoc.gia
+    giaTaiSan[ts.id] = ts.giaDonVi
+    giaTriTaiSan[ts.id] = buoc.giaTri * heSo
+    lechGia[ts.id] = buoc.lech
+    lechGiaTruoc[ts.id] = buoc.lechTruoc
+    lichSuGia[ts.id] = quaKhu.map((g) => Math.max(1, Math.round(g * heSo)))
   }
 
   const theConLai = rutThe(rng, rng.nguyen(CONFIG.soTheMoiNamMin, CONFIG.soTheMoiNamMax), {
@@ -925,6 +965,9 @@ export function taoGameMoi(
     soHuu,
     giaTaiSan,
     lichSuGia,
+    giaTriTaiSan,
+    lechGia,
+    lechGiaTruoc,
 
     khoaHocDaMua: [],
     uocNguyenDaMua: [],
@@ -1102,6 +1145,80 @@ const DANH_SACH_THI_TRUONG: readonly TrangThaiThiTruong[] = [
   'khungHoang',
 ]
 
+/** Trạng thái giá của MỘT tài sản tại một thời điểm. */
+export interface BuocGia {
+  gia: Tien
+  /** giá trị thật — cái neo, người chơi không nhìn thấy */
+  giaTri: number
+  /** độ lệch loga so với giá trị thật */
+  lech: number
+  lechTruoc: number
+}
+
+/**
+ * Một bước tiến của mô hình giá — dùng CHUNG cho cả việc dựng chín năm quá khứ
+ * lúc tạo ván lẫn việc sang năm mới, để hai đường giá không thể lệch công thức.
+ *
+ * ---------- Mô hình ----------
+ * `gia = giaTri × e^lech`. Giá trị thật đi lên đều đặn mỗi năm; độ lệch dao động
+ * quanh số không như một con lắc có ma sát: `heSoDa` là quán tính thừa hưởng từ
+ * năm ngoái, `heSoKeoVe` là lực kéo ngược. Cặp hệ số ấy tạo ra sóng có đỉnh cách
+ * nhau trung bình `chuKyNam` năm, biên độ ngẫu nhiên và pha không đoán trước.
+ *
+ * ---------- Vì sao phải neo vào giá trị thật ----------
+ * Tới v1.7 giá được bốc ngẫu nhiên ĐỘC LẬP từng năm. Hệ quả là lãi thực dài hạn
+ * của mỗi kênh chỉ là sản phẩm phụ của biên độ trừ đi hao hụt dao động — không
+ * đọc bảng số mà biết được, phải mô phỏng cả trăm năm mới lòi ra, và cả năm kênh
+ * đều âm lãi thực mà không ai hay. Nặng hơn: giá vừa sập không hàm ý gì về tương
+ * lai, nên MUA LÚC RẺ bị phạt (đo được lãi ba năm sau khi sập +23% so với +37%
+ * khi mua bừa) — một trò chơi dạy tài chính mà dạy ngược.
+ *
+ * Neo vào giá trị thật sửa cả hai: độ lệch không trôi đi đâu được nên lãi thực
+ * dài hạn đúng bằng `tangTruongThuc`, và giá dưới giá trị thật thì sớm muộn cũng
+ * bị kéo lên nên bắt đáy được thưởng thật (đo lại: +231% so với +77%).
+ */
+export function buocGia(
+  ts: TaiSan,
+  truoc: BuocGia,
+  lamPhat: number,
+  doLechGia: number,
+  rng: Rng,
+): BuocGia & { bienDong: number } {
+  // NHÂN chứ không cộng: nếu cộng thì `tangTruongThuc` bị lạm phát pha loãng
+  // thành `tangTruongThuc / (1 + lamPhat)` và con số đặt vào không còn là con số
+  // đo được nữa — mất đúng cái tính chất khiến mô hình này đáng đổi sang.
+  const giaTri = truoc.giaTri * (ts.theoLamPhat ? 1 + lamPhat : 1) * (1 + ts.tangTruongThuc)
+
+  let lech: number
+  if (ts.chuKyNam > 0) {
+    const heSoDa = 2 * ts.damChuKy * Math.cos((2 * Math.PI) / ts.chuKyNam)
+    const heSoKeoVe = -ts.damChuKy * ts.damChuKy
+    lech =
+      heSoDa * truoc.lech +
+      heSoKeoVe * truoc.lechTruoc +
+      rng.chuan() * ts.nhieuGia +
+      // Chu kỳ kinh tế chung đẩy vào độ lệch chứ không đẩy vào giá trị thật:
+      // khủng hoảng làm giá RẺ ĐI so với giá trị, chứ không làm nhà máy bốc hơi.
+      // Nhờ vậy khủng hoảng vừa đau vừa là cơ hội, đúng như đời thật.
+      doLechGia * ts.nhayChuKy
+  } else {
+    // Không chu kỳ: giá bám sát giá trị thật, chỉ rung nhẹ. Đây là trái phiếu.
+    lech = rng.chuan() * ts.nhieuGia
+  }
+
+  let gia = Math.max(1, Math.round(giaTri * Math.exp(lech)))
+  // Sàn "sập chín phần mười nhưng không về không" chặn ở GIÁ, rồi kéo độ lệch về
+  // cho khớp. Nếu chỉ chặn con số báo cáo mà để độ lệch tự do thì trạng thái con
+  // lắc và giá thật kể hai câu chuyện khác nhau ngay từ năm sau.
+  const sanGia = Math.max(1, Math.round(truoc.gia * (1 + CONFIG.thiTruong.sanBienDong)))
+  if (gia < sanGia) {
+    gia = sanGia
+    lech = Math.log(gia / giaTri)
+  }
+
+  return { gia, giaTri, lech, lechTruoc: truoc.lech, bienDong: gia / truoc.gia - 1 }
+}
+
 export const tacDongThiTruong = (t: TrangThaiThiTruong) => CONFIG.thiTruong.tacDong[t]
 
 /**
@@ -1189,6 +1306,9 @@ function chuyenNam(s: GameState): GameState {
   /* --- 2. Lợi tức tài sản, tính trên giá TRƯỚC khi biến động --- */
   const giaMoi = { ...s.giaTaiSan }
   const lichSuGia = { ...s.lichSuGia }
+  const giaTriMoi = { ...s.giaTriTaiSan }
+  const lechMoi = { ...s.lechGia }
+  const lechTruocMoi = { ...s.lechGiaTruoc }
   const bienDongTaiSan: TongKetNam['bienDongTaiSan'] = []
 
   for (const ts of TAI_SAN) {
@@ -1207,12 +1327,24 @@ function chuyenNam(s: GameState): GameState {
     const loiTuc = Math.round(soLuong * giaCu * tyLeLoiTuc * (1 - ts.thueLoiTuc))
     tienMat += loiTuc
 
-    let bienDong = rng.khoang(ts.bienDongMin, ts.bienDongMax)
-    bienDong += tacDong.doLechGia * ts.nhayChuKy
-    if (ts.bamLamPhat) bienDong += lamPhat
-    bienDong = Math.max(CONFIG.thiTruong.sanBienDong, bienDong)
-    giaMoi[ts.id] = Math.max(1, Math.round(giaCu * (1 + bienDong)))
-    lichSuGia[ts.id] = [...(s.lichSuGia[ts.id] ?? []), giaMoi[ts.id]].slice(-15)
+    const buoc = buocGia(
+      ts,
+      {
+        gia: giaCu,
+        giaTri: s.giaTriTaiSan[ts.id],
+        lech: s.lechGia[ts.id],
+        lechTruoc: s.lechGiaTruoc[ts.id],
+      },
+      lamPhat,
+      tacDong.doLechGia,
+      rng,
+    )
+    const bienDong = buoc.bienDong
+    giaMoi[ts.id] = buoc.gia
+    giaTriMoi[ts.id] = buoc.giaTri
+    lechMoi[ts.id] = buoc.lech
+    lechTruocMoi[ts.id] = buoc.lechTruoc
+    lichSuGia[ts.id] = [...(s.lichSuGia[ts.id] ?? []), buoc.gia].slice(-15)
 
     // Ghi lại CẢ NĂM kênh kèm cờ đang nắm giữ. Bảng tổng kết dựa vào cờ này để
     // tách "danh mục của bạn" khỏi "tin thị trường" — trước đây cổ phiếu bị nhét
@@ -2299,6 +2431,9 @@ function chuyenNam(s: GameState): GameState {
     soHuu,
     giaTaiSan: giaMoi,
     lichSuGia,
+    giaTriTaiSan: giaTriMoi,
+    lechGia: lechMoi,
+    lechGiaTruoc: lechTruocMoi,
     uocNguyenDaMua,
     uocNguyenDaMat,
     // Ba trường chuyên gia còn lại chỉ đổi trong reducer nên đi theo phép trải

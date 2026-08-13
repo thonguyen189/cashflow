@@ -7,14 +7,23 @@ function so(x: number): string {
   return lamTron.toLocaleString('vi-VN')
 }
 
-/** Định dạng tiền kiểu Việt Nam, không viết tắt: 12,5 tỷ · 350 triệu · 500 nghìn · 900 đồng.
+/** Định dạng tiền kiểu Việt Nam, không viết tắt: 9,8 nghìn tỷ · 12,5 tỷ · 350 triệu
+ * · 500 nghìn · 900 đồng.
  * Ngưỡng chọn bậc đặt tại 999,5 của bậc dưới để giá trị làm tròn lên tròn bậc
- * (999.500 đồng) ra "1 triệu" chứ không thành "1000 nghìn". */
+ * (999.500 đồng) ra "1 triệu" chứ không thành "1000 nghìn".
+ *
+ * Bậc "nghìn tỷ" thêm ở v1.8. Trước đó "tỷ" là bậc cao nhất, nên một ván tám mươi
+ * năm — lạm phát khoảng 8% mỗi năm dồn lại gấp bốn trăm lần — in ra những chuỗi
+ * như "11.090 tỷ" hay "830.000 tỷ": vẫn đúng, nhưng dài và khó đọc, mà cái sai
+ * nặng hơn là dấu chấm phân cách nghìn đứng cạnh dấu phẩy thập phân của "12,5 tỷ"
+ * ngay trên cùng màn hình. Đây KHÔNG phải trường hợp hiếm: giá trung vị một căn
+ * nhà ở năm 79 đo được 2.792 tỷ. */
 export function dinhDangTien(v: number): string {
   const am = v < 0
   const x = Math.abs(v)
   let s: string
-  if (x >= 999_500_000) s = `${so(x / TY)} tỷ`
+  if (x >= 999_500_000_000) s = `${so(x / (1000 * TY))} nghìn tỷ`
+  else if (x >= 999_500_000) s = `${so(x / TY)} tỷ`
   else if (x >= 999_500) s = `${so(x / TRIEU)} triệu`
   else if (x >= 999.5) s = `${so(x / 1000)} nghìn`
   else s = `${Math.round(x)} đồng`

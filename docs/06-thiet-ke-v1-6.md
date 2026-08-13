@@ -167,6 +167,16 @@ Mỗi trạng thái mang bốn con số, áp lên toàn bộ nền kinh tế cù
 
 **Giá tài sản.** Mỗi tài sản có thêm trường `nhayChuKy` — độ nhạy riêng với chu kỳ:
 
+> **Công thức này đã bị thay hẳn ở bản v1.8 — mô hình mới ở mục E của tài liệu v1.7.**
+> Ba trường `bienDongMin`, `bienDongMax` và `bamLamPhat` đã được gỡ khỏi `TaiSan`; giá
+> nay là **giá trị thật nhân với luỹ thừa của một độ lệch dao động quanh số không**, chứ
+> không còn là một con số ngẫu nhiên bốc độc lập mỗi năm. Bốn con số **độ lệch giá** ở
+> bảng ngay trên và năm con số `nhayChuKy` ở bảng ngay dưới cũng đã bị vặn lại: một lần ở
+> v1.7 cho chu kỳ khắc nghiệt hơn, một lần nữa ở v1.8 để căn giữa quanh phân bố dừng.
+> Giữ nguyên văn ở đây vì đây là tài liệu của bản v1.6, và vì phần *lý do* mỗi kênh có độ
+> nhạy như thế — trái phiếu miễn nhiễm, vàng nghịch chu kỳ — vẫn còn nguyên hiệu lực; chỉ
+> có đường mà con số ấy đi vào giá là đổi.
+
 ```
 bienDong = rng.khoang(min, max) + doLechChuKy × nhayChuKy + (bamLamPhat ? lamPhat : 0)
 ```

@@ -12,11 +12,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import TabTrangChu from './TabTrangChu'
 import TabSoSach from './TabSoSach'
 import TabKinhDoanh from './TabKinhDoanh'
+import TabDauTu from './TabDauTu'
 import ChonNghe from './ChonNghe'
 import Hud from './Hud'
 import TongKetModal from './TongKetModal'
 import { CONFIG, TRIEU } from '../game/config'
-import { NGHE } from '../game/content'
+import { NGHE, TAI_SAN } from '../game/content'
 import {
   giaThucTe,
   heSoBaoHoa,
@@ -70,6 +71,163 @@ const canhCanKiemTra: [string, (s: GameState) => GameState][] = [
     (s) => ({ ...s, hanhPhuc: 55, triLieuDenNam: s.nam + 2, soLanTriLieu: 1 }),
   ],
 ]
+
+describe('v1.8 — thẻ đầu tư đọc giá hiện tại, không đọc giá năm 1', () => {
+  /**
+   * `TAI_SAN[].giaDonVi` là giá NĂM 1 và nó đứng yên suốt ván. Cổng "🔒 Chưa mở
+   * khoá" từng lọc theo con số ấy, trong khi dòng chữ ngay bên dưới lại in giá
+   * hiện tại — hai con số khác nhau.
+   *
+   * Tới v1.8 chúng tách xa nhau thật: mô hình giá mới cho phép giá nằm dưới mốc
+   * năm 1 nhiều năm liền (tiền mã hoá 5,7% số năm, có đợt kéo 15 năm). Khi ấy
+   * màn hình tự mâu thuẫn — thẻ nằm trong mục "Chưa mở khoá" mà lại ghi "Cần 120
+   * triệu" trong lúc người chơi đang cầm 150 triệu — và tệ hơn, nó khoá cửa đúng
+   * vào lúc giá rẻ, chặn ngay nước đi mà mô hình mới dựng lên để thưởng.
+   */
+  const dungGiaTaiSan = (s: GameState, id: string, gia: number): GameState => ({
+    ...s,
+    giaTaiSan: { ...s.giaTaiSan, [id]: gia },
+  })
+
+  /** "Trái phiếu & tiền gửi" ra HTML thành "Trái phiếu &amp; tiền gửi". */
+  const nhuTrongHtml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  it('giá sập xuống dưới mốc năm 1 thì kênh phải MỞ, không bị khoá', () => {
+    const goc = taoGameMoi('kySu', 4242)
+    for (const ts of TAI_SAN) {
+      // Giá còn một nửa mốc năm 1, và người chơi cầm đúng đủ tiền mua một đơn vị
+      // theo giá ĐANG NIÊM YẾT — nhưng vẫn thiếu so với mốc năm 1.
+      const giaRe = Math.round(ts.giaDonVi / 2)
+      const s = dungGiaTaiSan({ ...goc, tienMat: giaRe }, ts.id, giaRe)
+      const html = renderToStaticMarkup(
+        createElement(TabDauTu, { state: s, dispatch: () => {} }),
+      )
+      const viTriKhoa = html.indexOf('Chưa mở khoá')
+      const viTriKenh = html.indexOf(nhuTrongHtml(ts.ten))
+      expect(viTriKenh).toBeGreaterThanOrEqual(0)
+      // Kênh phải xuất hiện TRƯỚC mục khoá; nếu mục khoá không có thì càng đúng.
+      if (viTriKhoa >= 0) expect(viTriKenh).toBeLessThan(viTriKhoa)
+    }
+  })
+
+  it('giá vọt lên trên số tiền đang có thì kênh vẫn phải bị khoá', () => {
+    // Mặt còn lại của cùng một quy tắc: đọc giá hiện tại nghĩa là giá TĂNG cũng
+    // phải đóng cửa lại, chứ không phải chỉ nới ra một chiều.
+    const goc = taoGameMoi('kySu', 4242)
+    const ts = TAI_SAN.find((t) => t.id === 'batDongSan')!
+    const s = dungGiaTaiSan({ ...goc, tienMat: ts.giaDonVi }, ts.id, ts.giaDonVi * 4)
+    const html = renderToStaticMarkup(
+      createElement(TabDauTu, { state: s, dispatch: () => {} }),
+    )
+    expect(html).toContain('Chưa mở khoá')
+    expect(html.indexOf(ts.ten)).toBeGreaterThan(html.indexOf('Chưa mở khoá'))
+  })
+
+  it('câu "Cần ... cho một ..." phải khớp đúng con số mà cổng khoá dùng', () => {
+    // Đây là bất biến gốc: nếu hai chỗ đọc hai nguồn khác nhau thì lỗi cũ quay lại
+    // dù các khẳng định trên vẫn xanh.
+    const goc = taoGameMoi('giaoVien', 4242)
+    const ts = TAI_SAN.find((t) => t.id === 'crypto')!
+    const giaMoi = Math.round(ts.giaDonVi * 0.4)
+    const s = dungGiaTaiSan({ ...goc, tienMat: 0 }, ts.id, giaMoi)
+    const html = renderToStaticMarkup(
+      createElement(TabDauTu, { state: s, dispatch: () => {} }),
+    )
+    expect(html).toContain('Chưa mở khoá')
+    expect(html).toContain(`Cần ${dinhDangTien(giaMoi)}`)
+    expect(html).not.toContain(`Cần ${dinhDangTien(ts.giaDonVi)}`)
+  })
+})
+
+describe('v1.8 — thẻ đầu tư kể đúng chuyện giá', () => {
+  /**
+   * `lichSuGia` là cửa sổ TRƯỢT mười lăm năm. Lấy `lichSu[0]` làm mốc so sánh thì
+   * mẫu số tự đi mỗi năm, và với biên độ giá của v1.8 con số hiển thị có trung vị
+   * +390% ở cổ phiếu, lại ĐI XUỐNG trong 30% những năm giá ĐI LÊN. Vì đây là con
+   * số phần trăm duy nhất trên tab đầu tư, người chơi đọc nó thành lãi của mình.
+   */
+  const vanVoiLichSu = (id: string, lichSu: number[]): GameState => {
+    const s = taoGameMoi('kySu', 4242)
+    return {
+      ...s,
+      tienMat: 10_000_000_000_000,
+      giaTaiSan: { ...s.giaTaiSan, [id]: lichSu[lichSu.length - 1]! },
+      lichSuGia: { ...s.lichSuGia, [id]: lichSu },
+    }
+  }
+  const ve = (s: GameState) =>
+    renderToStaticMarkup(createElement(TabDauTu, { state: s, dispatch: () => {} }))
+
+  it('phần trăm là biến động MỘT NĂM và có nhãn mốc thời gian', () => {
+    // Cửa sổ đi từ 10 lên 100 rồi sập còn 50: so hai đầu cửa sổ ra +400%, so với
+    // năm ngoái ra −50%. Con số đúng là con số thứ hai.
+    const lichSu = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 50].map((v) => v * 1_000_000)
+    const html = ve(vanVoiLichSu('coPhieu', lichSu))
+    expect(html).toContain('−50,0%')
+    expect(html).not.toContain('+400,0%')
+    expect(html).toContain('so với năm ngoái')
+  })
+
+  it('năm giá sập thì đường biểu đồ phải ĐỎ, dù cả cửa sổ vẫn đi lên', () => {
+    // Đây là ca mà cách tô màu cũ nói dối: điểm cuối 50 vẫn cao hơn điểm đầu 10
+    // nên nó tô xanh, trong khi người chơi vừa mất một nửa trong đúng năm nay.
+    const lichSu = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 50].map((v) => v * 1_000_000)
+    const html = ve(vanVoiLichSu('coPhieu', lichSu))
+    const the = html.slice(html.indexOf('Cổ phiếu'))
+    expect(the.slice(0, the.indexOf('</svg>'))).toContain('var(--do)')
+  })
+
+  it('năm giá lên thì vẫn XANH, dù cả cửa sổ đang đi xuống', () => {
+    // Mặt còn lại của cùng quy tắc — nếu chỉ đảo dấu thì bài trên vẫn xanh.
+    const lichSu = [100, 95, 90, 85, 80, 75, 70, 65, 60, 40, 60].map((v) => v * 1_000_000)
+    const html = ve(vanVoiLichSu('coPhieu', lichSu))
+    const the = html.slice(html.indexOf('Cổ phiếu'))
+    expect(the.slice(0, the.indexOf('</svg>'))).toContain('var(--xanh)')
+    expect(html).toContain('+50,0%')
+  })
+})
+
+describe('v1.8 — màu phải hỏi dấu, không được gán cứng', () => {
+  /**
+   * Cùng loại lỗi với biểu đồ tô xanh trong năm giá sập: một lớp màu gán cứng
+   * hoặc đọc từ nguồn khác với con số nó đang tô.
+   */
+  it('tổng tài sản ÂM không được tô xanh ở bảng Sổ sách', () => {
+    // Tiền mặt âm mà chưa tới ngưỡng phá sản là chuyện có thật: engine chỉ tuyên
+    // phá sản khi thâm hụt vượt cả năm chi phí, dưới mức đó thì bắn "Túng thiếu"
+    // và để nguyên tiền mặt âm. Những năm đầu ván chưa có tài sản nào để bán.
+    const goc = taoGameMoi('giaoVien', 4242)
+    const tung: GameState = { ...goc, tienMat: -12 * TRIEU }
+    const html = renderToStaticMarkup(createElement(TabSoSach, { state: tung }))
+    const viTri = html.indexOf('Tổng tài sản')
+    expect(viTri).toBeGreaterThanOrEqual(0)
+    const doan = html.slice(viTri, viTri + 200)
+    expect(doan).toContain('−12 triệu')
+    expect(doan).toContain('hang-gia-tri am')
+    expect(doan).not.toContain('hang-gia-tri duong')
+  })
+
+  it('tổng tài sản DƯƠNG vẫn tô xanh như cũ', () => {
+    const goc = taoGameMoi('giaoVien', 4242)
+    const html = renderToStaticMarkup(
+      createElement(TabSoSach, { state: { ...goc, tienMat: 50 * TRIEU } }),
+    )
+    const viTri = html.indexOf('Tổng tài sản')
+    expect(html.slice(viTri, viTri + 200)).toContain('hang-gia-tri duong')
+  })
+
+  it('phần trăm tự do trên thanh chỉ số tô màu theo dòng tiền HIỆN TẠI', () => {
+    // `state.daTuDo` là cờ chỉ bật chứ không bao giờ tắt lại. Người chơi đạt tự do
+    // rồi bấm "Chơi tiếp", sau đó khủng hoảng kéo dòng tiền thụ động xuống — màu
+    // đọc cờ dính sẽ vẫn xanh trong khi con số đã tụt.
+    const goc = taoGameMoi('giaoVien', 4242)
+    const dinhCo: GameState = { ...goc, daTuDo: true }
+    const html = renderToStaticMarkup(createElement(Hud, { state: dinhCo }))
+    const oTuDo = html.slice(0, html.indexOf('Tự do'))
+    expect(oTuDo).not.toContain('var(--xanh)')
+  })
+})
 
 describe('giao diện kết xuất được', () => {
   for (const ngheId of ['giaoVien', 'bacSi', 'kySuPhanMem']) {

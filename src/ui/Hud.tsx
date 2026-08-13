@@ -1,5 +1,5 @@
 import { CONFIG } from '../game/config'
-import { dangTriLieu, giaTriDauTu, tienDoTuDo } from '../game/engine'
+import { daTuDoTaiChinh, dangTriLieu, giaTriDauTu, tienDoTuDo } from '../game/engine'
 import { dinhDangTien } from '../game/format'
 import type { GameState } from '../game/types'
 
@@ -50,7 +50,16 @@ export default function Hud({ state }: { state: GameState }) {
   return (
     <div className="hud">
       <div className="hud-o">
-        <div className="hud-so" style={state.daTuDo ? { color: 'var(--xanh)' } : undefined}>
+        {/* Màu và số phải đọc CÙNG MỘT nguồn. Trước đây màu đọc `state.daTuDo` —
+          * một cờ chỉ bật lên chứ không bao giờ tắt lại — còn con số đọc
+          * `tienDoTuDo` vốn sống động và tụt được. Ca xảy ra: người chơi đạt tự
+          * do rồi bấm "Chơi tiếp", sau đó khủng hoảng kinh tế hoặc doanh nghiệp
+          * đóng cửa kéo dòng tiền thụ động xuống — thanh chỉ số hiện "71%" màu
+          * xanh trong khi tab Sổ sách ngay dưới ghi còn thiếu bao nhiêu mỗi năm. */}
+        <div
+          className="hud-so"
+          style={daTuDoTaiChinh(state) ? { color: 'var(--xanh)' } : undefined}
+        >
           {(tuDo * 100).toFixed(0)}%
         </div>
         <div className="hud-nhan">🕊️ Tự do</div>

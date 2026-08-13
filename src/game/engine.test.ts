@@ -2007,15 +2007,20 @@ describe('chuyên gia đồng hành', () => {
   it('kiệt sức xét SAU cột mốc tài sản: leo lên trên ngưỡng nhờ mốc thì không kể', () => {
     // 400 triệu vượt đúng mốc đầu của giáo viên (300 triệu) mà chưa tới mốc hai
     // (700 triệu), nên năm này chạm đúng một cột mốc và được cộng 5 điểm ở bước 12.
-    // Điểm khởi đầu 66 (không phải 63) để chừa chỗ cho một "sự cố đời sống"
-    // (−3 hạnh phúc) mà seed này còn rút phải ở bước 7, ngoài khoản phạt khát
-    // vọng (−5) — mở ra ở 58, dưới ngưỡng cảnh báo, đúng ý test.
+    // Điểm khởi đầu 63 để năm mở ra ở 58 sau khoản phạt khát vọng (−5) — dưới
+    // ngưỡng cảnh báo, đúng ý test.
+    //
+    // Từng phải để 66 vì seed này còn rút thêm một "sự cố đời sống" (−3 hạnh
+    // phúc) ở bước 7. Mô hình giá v1.8 tiêu số bước con trỏ khác bản cũ (mỗi tài
+    // sản gọi `rng.chuan` hai bước thay vì `rng.khoang` một bước) nên dòng ngẫu
+    // nhiên dịch đi và seed này không còn rút phải sự cố ấy. Con số neo là 58 và
+    // 63 ở dưới, không phải điểm khởi đầu.
     for (const coBanDau of [false, true]) {
-      const goc = vanDuTien(66)
+      const goc = vanDuTien(63)
       const leoLai: GameState = {
         ...duyetHetThe(goc, false),
         tienMat: 400 * TRIEU,
-        hanhPhuc: 66,
+        hanhPhuc: 63,
         daCanhBaoKietSuc: coBanDau,
       }
       const sau = reducer(leoLai, { type: 'ketThucNam' })

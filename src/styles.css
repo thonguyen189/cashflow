@@ -158,6 +158,14 @@ body {
   font-size: 15px;
   font-weight: 800;
   line-height: 1.25;
+  /* Ô này rộng khoảng 47px chỗ chữ trên màn 360px. Chữ vốn đã tự xuống dòng ở
+   * dấu cách vì không khoá `nowrap`, nên "9,8 nghìn tỷ" không phải vấn đề — thứ
+   * tràn được ra ngoài viền là một CỤM CHỮ SỐ không có chỗ ngắt. Trước v1.8, khi
+   * "tỷ" còn là bậc cao nhất, cuối ván in ra "830.000 tỷ" và riêng cụm "830.000"
+   * đã rộng hơn ô. Bậc "nghìn tỷ" rút cụm ấy về ba tới năm ký tự nên vừa chỗ;
+   * dòng này là chốt chặn cho những ca chưa ai lường tới. Tiền là thứ tuyệt đối
+   * không được cắt bớt cho vừa ô, nên ngắt dòng chứ không bao giờ ẩn bớt. */
+  overflow-wrap: break-word;
 }
 .hud-nhan {
   font-size: 11px;

@@ -158,7 +158,10 @@ export default function TabSoSach({ state }: { state: GameState }) {
         {coDoanhNghiep && (
           <div className="hang">
             <span className="hang-nhan">Khoảng có thể nhận năm nay</span>
-            <span className="hang-gia-tri">
+            {/* Đúng nội dung này ở `TabKinhDoanh.tsx` dùng `hang-gia-tri-dai` —
+              * lớp sinh ra chính vì hai con số tiền ghép lại thì không được khoá
+              * `nowrap`. Ở đây trước dùng nhầm lớp ngắn. */}
+            <span className="hang-gia-tri-dai">
               {dinhDangTien(bienDo.thap)} – {dinhDangTien(bienDo.cao)}
             </span>
           </div>
@@ -310,7 +313,11 @@ export default function TabSoSach({ state }: { state: GameState }) {
           <span className="hang-nhan">
             <strong>Tổng tài sản</strong>
           </span>
-          <span className="hang-gia-tri duong">{dinhDangTien(tong)}</span>
+          {/* Màu hỏi dấu, cùng lý do với bảng Tổng kết: tổng tài sản âm được
+            * thật khi tiền mặt âm mà chưa tới ngưỡng phá sản. */}
+          <span className={`hang-gia-tri ${tong < 0 ? 'am' : 'duong'}`}>
+            {dinhDangTien(tong)}
+          </span>
         </div>
         <div className="hang">
           <span className="hang-nhan">Trong đó danh mục đầu tư</span>

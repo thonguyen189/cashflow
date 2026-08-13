@@ -227,17 +227,52 @@ hiệu. Giờ cả nền kinh tế cùng chuyển trạng thái mỗi năm theo 
 
 | Từ ↓ Sang → | 📈 Thịnh vượng | 😐 Bình thường | 📉 Suy thoái | 💥 Khủng hoảng |
 |---|---|---|---|---|
-| 📈 Thịnh vượng | 52% | 34% | 11% | 3% |
-| 😐 Bình thường | 24% | 54% | 18% | 4% |
-| 📉 Suy thoái | 5% | 40% | 33% | 22% |
-| 💥 Khủng hoảng | 0% | 28% | 47% | 25% |
+| 📈 Thịnh vượng | 42% | 34% | 16% | 8% |
+| 😐 Bình thường | 20% | 46% | 24% | 10% |
+| 📉 Suy thoái | 4% | 30% | 36% | 30% |
+| 💥 Khủng hoảng | 0% | 22% | 43% | 35% |
 
 Khủng hoảng không bao giờ nhảy thẳng lên thịnh vượng — kinh tế hồi phục dần, không bật
-dậy. Khủng hoảng cắt biến động giá xuống, giảm lợi tức và thu nhập doanh nghiệp còn một
-nửa, đẩy lạm phát cao hơn 5 điểm phần trăm, và siết tăng lương thực. 🥇 Vàng thì ngược
-lại — nghịch chu kỳ, càng hoảng loạn càng đắt. Trạng thái hiện hành công khai ngay trên
-thanh chỉ số, và mọi phép tính của một năm dùng trạng thái người chơi **đã nhìn thấy**
-suốt năm đó, không phải trạng thái mới bốc ra lúc chuyển năm.
+dậy. Khủng hoảng kéo giá rẻ đi so với giá trị thật, cắt lợi tức và thu nhập doanh nghiệp
+xuống còn một phần tư, đẩy lạm phát cao hơn 7 điểm phần trăm, và chặn hẳn tăng lương.
+🥇 Vàng thì ngược lại — nghịch chu kỳ, càng hoảng loạn càng đắt, tuy nay vẫn có 10% số
+năm khủng hoảng là năm vàng mất giá. Trạng thái hiện hành công khai ngay trên thanh chỉ
+số, và mọi phép tính của một năm dùng trạng thái người chơi **đã nhìn thấy** suốt năm
+đó, không phải trạng thái mới bốc ra lúc chuyển năm.
+
+### Giá tài sản — dao động quanh giá trị thật, mỗi kênh một nhịp chu kỳ
+
+Tới bản v1.7, giá mỗi năm được bốc ngẫu nhiên độc lập trong một biên độ cố định. Hệ quả
+là thị trường không có trí nhớ: giá vừa sập không hàm ý gì về tương lai, nên **mua lúc
+rẻ bị phạt** — đo được lãi ba năm sau khi sập chỉ +23% so với +37% khi mua bừa. Tệ hơn,
+lãi thực dài hạn của mỗi kênh chỉ là sản phẩm phụ của biên độ trừ đi hao hụt dao động,
+và đo ra thì **cả năm kênh đều âm**.
+
+Từ v1.8, mỗi tài sản có một **giá trị thật** đi lên đều đặn mỗi năm. Giá thị trường lệch
+khỏi giá trị ấy, và độ lệch dao động như một con lắc có ma sát — có đà thừa hưởng từ năm
+trước, có lực kéo ngược — với chu kỳ riêng từng kênh. Vì độ lệch không trôi đi đâu được,
+**lãi thực dài hạn đúng bằng con số đặt trong bảng**:
+
+| Kênh | Lãi thực/năm | Chu kỳ | % năm giảm | Sụt sâu nhất đo được |
+|---|---|---|---|---|
+| 🏦 Trái phiếu & tiền gửi | −7,4% | không có | 50% | 4% |
+| 📈 Cổ phiếu | +4,0% | 8 năm | 36% | 83% |
+| 🥇 Vàng | +0,8% | 9 năm | 35% | 84% |
+| ⚡ Tiền mã hoá | +6,0% | 5 năm | 43% | 97% |
+| 🏢 Bất động sản | +1,5% | 14 năm | 28% | 78% |
+
+Độ dài chu kỳ lấy theo ngoài đời: tiền mã hoá bốn tới năm năm một nhịp, cổ phiếu một chu
+kỳ kinh doanh, nhà đất chậm nhất. Vì mỗi kênh đi một nhịp riêng nên chia trứng nhiều giỏ
+lần đầu thật sự giảm được rủi ro.
+
+Hai điều đổi hẳn cách chơi. **Bắt đáy được thưởng** — mua sau khi giá sập rồi giữ ba năm
+lãi +227% so với +77% khi mua bừa, nên biểu đồ giá trên thẻ đầu tư lần đầu là thông tin
+chứ không phải trang trí. Và **biến động thành miễn phí**: tiền mã hoá có ván sụt 97% từ
+đỉnh mà vẫn không phải kênh thua chắc, vì độ dữ dội không còn phải trả giá bằng lãi.
+
+Trái phiếu cố ý đứng ngoài mô hình chu kỳ: gốc gửi tiết kiệm đứng yên theo giá danh
+nghĩa, nên −7,4% lãi thực mỗi năm chính là bài học về gửi tiết kiệm — an toàn danh nghĩa
+không phải an toàn thật.
 
 ### Sáu biến cố lớn, mỗi cái có một lá chắn riêng
 

@@ -121,16 +121,45 @@ export interface TaiSan {
   /** giá một đơn vị ở năm 1 */
   giaDonVi: Tien
   donViTen: string
-  /** biên độ biến động giá mỗi năm */
-  bienDongMin: number
-  bienDongMax: number
   /** tỉ suất cổ tức / tiền thuê / lãi hàng năm */
   loiTucMin: number
   loiTucMax: number
-  /** true nếu giá bám theo lạm phát (vàng, bất động sản) */
-  bamLamPhat: boolean
+
+  /* ---------- Mô hình giá v1.8: giá dao động quanh GIÁ TRỊ THẬT ----------
+   * Giá thị trường = giá trị thật × e^(độ lệch). Giá trị thật đi lên đều đặn
+   * theo `theoLamPhat` và `tangTruongThuc`; độ lệch dao động như con lắc quanh
+   * số không với chu kỳ `chuKyNam`. Vì độ lệch không trôi đi đâu được, lãi thực
+   * dài hạn của kênh ĐÚNG BẰNG `tangTruongThuc` — đặt số nào ra số đó.
+   *
+   * Mô hình cũ bốc biến động ngẫu nhiên độc lập từng năm nên lãi thực chỉ là sản
+   * phẩm phụ của biên độ trừ hao hụt dao động, không ai đọc bảng số mà đoán ra
+   * được. Đó là lý do lỗi "vàng không thể thua" sống sót qua bảy phiên bản.
+   */
+
   /**
-   * Độ nhạy với chu kỳ kinh tế. Biến động mỗi năm cộng thêm
+   * Mức tăng THỰC của giá trị thật mỗi năm, đã trừ lạm phát. Chính là lãi thực
+   * dài hạn của kênh. Số âm nghĩa là kênh bào mòn của cải kể cả khi mua đúng lúc.
+   */
+  tangTruongThuc: number
+  /**
+   * true nếu giá trị thật bám lạm phát. Trái phiếu để `false`: gốc gửi tiết kiệm
+   * đứng yên theo giá danh nghĩa, và đó chính là bài học về gửi tiết kiệm.
+   */
+  theoLamPhat: boolean
+  /**
+   * Độ dài chu kỳ giá, tính bằng năm — thời gian trung bình giữa hai lần lập đỉnh.
+   * Số 0 nghĩa là không có chu kỳ, giá bám sát giá trị thật (trái phiếu).
+   */
+  chuKyNam: number
+  /**
+   * Độ dai của chu kỳ, trong khoảng [0, 1). Càng gần 1 thì sóng càng dai và biên
+   * độ lệch càng rộng. Từ 1 trở lên là giá phát tán vô hạn — không bao giờ được.
+   */
+  damChuKy: number
+  /** Độ lớn cú hích ngẫu nhiên mỗi năm vào độ lệch. Đây là "độ rung" của kênh. */
+  nhieuGia: number
+  /**
+   * Độ nhạy với chu kỳ kinh tế. Mỗi năm độ lệch bị đẩy thêm
    * `doLechGia × nhayChuKy`. Số âm nghĩa là NGHỊCH chu kỳ — càng hoảng loạn
    * càng đắt, đó là vàng. Số 0 nghĩa là miễn nhiễm, đó là trái phiếu và cũng
    * chính là lý do tồn tại của nó.
@@ -335,6 +364,19 @@ export interface GameState {
   soHuu: Record<AssetId, number>
   giaTaiSan: Record<AssetId, Tien>
   lichSuGia: Record<AssetId, Tien[]>
+  /**
+   * Giá trị thật của một đơn vị tài sản — cái neo mà giá thị trường dao động
+   * quanh. Người chơi KHÔNG nhìn thấy con số này; nếu thấy thì hết trò chơi, vì
+   * "mua khi giá dưới giá trị thật" sẽ thành công thức máy móc.
+   *
+   * Để `number` chứ không phải `Tien`: đây là đại lượng của mô hình chứ không
+   * phải tiền người chơi cầm, và làm tròn nó mỗi năm sẽ tích luỹ sai số.
+   */
+  giaTriTaiSan: Record<AssetId, number>
+  /** Độ lệch loga giữa giá thị trường và giá trị thật: `gia = giaTri × e^lech`. */
+  lechGia: Record<AssetId, number>
+  /** Độ lệch của năm trước — con lắc phải có hai điểm mới biết mình đang đi hướng nào. */
+  lechGiaTruoc: Record<AssetId, number>
 
   khoaHocDaMua: string[]
   uocNguyenDaMua: string[]

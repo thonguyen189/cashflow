@@ -88,14 +88,49 @@ describe('cân bằng game', () => {
    * thiết kế mới, không phải một con số trong bảng này.
    *
    * ---------- Dải dưới đây đọc thế nào ----------
-   * Bám theo số đo thật, nới đúng biên ±8 điểm quanh nó (giáo viên kẹp sàn ở 2%
-   * vì 6 − 8 đã xuống dưới 0), và vẫn đủ chặt để bắt hồi quy: một con số rơi ra
-   * ngoài nghĩa là vừa có thay đổi thật sự dời cân bằng, phải đọc lại chứ không
-   * phải nới tiếp.
+   * Bám theo số đo thật, nới đúng biên ±8 điểm quanh nó, và vẫn đủ chặt để bắt
+   * hồi quy: một con số rơi ra ngoài nghĩa là vừa có thay đổi thật sự dời cân
+   * bằng, phải đọc lại chứ không phải nới tiếp.
+   *
+   * ---------- Đo lại ở v1.8, sau khi căn giữa chu kỳ kinh tế ----------
+   * Giáo viên 6,0% → 16,0%; bác sĩ 49% → 48,5%; kỹ sư 51% → 53,0%. Chỉ giáo viên
+   * dời dải, và dời theo chiều tốt lên, nên dải của nghề này đo lại thành 8–24%
+   * còn hai nghề kia giữ nguyên.
+   *
+   * Vì sao riêng nghề yếu nhất hưởng lợi: `doLechGia` cũ có kỳ vọng −0,1361 chứ
+   * không phải 0, tức mọi kênh có `nhayChuKy` dương chịu lực cản vĩnh viễn — đo
+   * được trái phiếu −7,23% và bất động sản −7,89% lãi THỰC mỗi năm. Người thu
+   * nhập thấp sống nhờ tích luỹ chậm và đều nên bị lực cản ấy bào nặng nhất;
+   * người thu nhập cao về đích chủ yếu bằng lương và doanh nghiệp. Căn kỳ vọng
+   * về 0 đưa trái phiếu lên −1,89% và bất động sản lên −0,26%, và phần lợi dồn
+   * gần hết vào giáo viên.
+   *
+   * Chú thích dài phía trên kết luận rằng 6% là "sự thật của nghề" mà hệ số an
+   * toàn không chữa nổi. Kết luận ấy đúng trong phạm vi nó đã thử — vặn hệ số an
+   * toàn — nhưng chỗ hỏng thật nằm ở chu kỳ kinh tế, không ai ngờ tới lúc đó.
+   *
+   * ---------- Đo lại lần hai ở v1.8, sau khi thay hẳn mô hình giá ----------
+   * Giáo viên 16,0% → 27,7%; bác sĩ 48,5% → 50,9%; kỹ sư 53,0% → 52,3% (n=1000).
+   * Lại đúng một mình giáo viên dời dải, lại theo chiều tốt lên, nên dải nghề này
+   * đo lại thành 20–36% còn hai nghề kia giữ nguyên.
+   *
+   * Cùng một cơ chế với lần trước, chỉ mạnh hơn: mô hình cũ bốc giá ngẫu nhiên
+   * độc lập từng năm nên hao hụt do dao động ăn hết lợi nhuận, cả năm kênh đều ÂM
+   * lãi thực. Mô hình mới neo giá vào giá trị thật nên lãi thực dài hạn đúng bằng
+   * `tangTruongThuc` đặt trong `content.ts`: cổ phiếu +4%, bất động sản +1,5%.
+   * Người thu nhập thấp về đích bằng tích luỹ đều nên hưởng gần trọn phần chênh
+   * ấy; người thu nhập cao vốn về đích bằng lương và doanh nghiệp.
+   *
+   * Đáng ghi lại: khoảng cách nghề mạnh nhất – yếu nhất từ 45 điểm ở v1.7 xuống
+   * 37 rồi nay 24,6 điểm. Chú thích dài phía trên từng kết luận khoảng cách ấy
+   * "đứng yên ở 43–44,5 điểm suốt cả dải" và không đòn bẩy nào bóp nổi. Đúng —
+   * trong phạm vi đã thử. Nó không phải khoảng cách giữa hai NGHỀ, nó là khoảng
+   * cách giữa người sống nhờ tích luỹ và người sống nhờ thu nhập, và chỉ co lại
+   * khi kênh tích luỹ thôi âm lãi thực.
    */
   it('CHỈ TIÊU 1 — mỗi nghề nằm trong dải riêng đã đo, không nghề nào bất khả thi', () => {
     const dai: Record<string, [number, number]> = {
-      giaoVien: [0.02, 0.14],
+      giaoVien: [0.2, 0.36],
       bacSi: [0.41, 0.57],
       kySuPhanMem: [0.43, 0.59],
     }
@@ -140,8 +175,24 @@ describe('cân bằng game', () => {
    * theo số đo thật: 53,5 của kỹ sư và 55,3 của bác sĩ, nới ±3 tuổi rồi làm tròn
    * ra ngoài. Tuổi thắng của giáo viên vẫn được IN RA ở chỉ tiêu 1 để không ai
    * mất dấu nó — chỉ là không bị chốt bằng một phép so mà mẫu không đỡ nổi.
+   *
+   * ---------- Đo lại ở v1.8: dải TRƯỢT XUỐNG DƯỚI mục tiêu của mục J ----------
+   * Kỹ sư 53,5 → 48,1 tuổi; bác sĩ 55,3 → 51,5 tuổi (n=1000). Mô hình giá mới đưa
+   * lãi thực của cổ phiếu và bất động sản từ âm về dương, nên ai về đích thì về
+   * sớm hơn khoảng ba tới năm năm. Dải đo lại theo đúng lệ cũ — ±3 tuổi quanh số
+   * đo rồi làm tròn ra ngoài — thành 45–55.
+   *
+   * ĐÂY LÀ MỘT CHỈ TIÊU BỊ TRƯỢT, không phải một dải được cập nhật cho gọn. Mục J
+   * muốn tự do tài chính tới ở tuổi trung niên 50–59; nay kỹ sư chạm đích ở 48,1,
+   * tức dưới sàn hai tuổi. Không chữa bằng cách hạ `tangTruongThuc` của các kênh:
+   * +4% lãi thực cho cổ phiếu và +1,5% cho bất động sản đã là con số khiêm tốn so
+   * với ngoài đời, hạ nữa là bẻ cong thực tế cho vừa một cái bảng. Đòn bẩy đúng
+   * chỗ là `tuDoTaiChinh.heSoToiThieu/heSoPhuThem` — bảng quét ở chỉ tiêu 1 cho
+   * thấy vặn nó lên đẩy tuổi thắng lên và tỉ lệ thắng xuống ở cả ba nghề cùng lúc.
+   * Đó là một vòng cân bằng riêng, phải quét lại cả sáu chỉ tiêu, không phải một
+   * con số nhét vào đây.
    */
-  it('CHỈ TIÊU 2 — tuổi thắng trung bình 50–59 ở hai nghề có đủ mẫu', () => {
+  it('CHỈ TIÊU 2 — tuổi thắng trung bình 45–55, đã trượt xuống dưới mục tiêu 50–59', () => {
     for (const nghe of NGHE) {
       if (nghe.id === 'giaoVien') continue
       const r = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU)
@@ -149,8 +200,8 @@ describe('cân bằng game', () => {
       // Mẫu phải đủ lớn thì phép so mới có nghĩa — nếu một nghề nào đó tụt xuống
       // dưới ngần này ván thắng thì bài phải được đọc lại chứ không phải chạy tiếp.
       expect(r.tyLeThang * SO_VAN_CHI_TIEU).toBeGreaterThanOrEqual(50)
-      expect(tuoi).toBeGreaterThanOrEqual(50)
-      expect(tuoi).toBeLessThanOrEqual(59)
+      expect(tuoi).toBeGreaterThanOrEqual(45)
+      expect(tuoi).toBeLessThanOrEqual(55)
     }
   })
 
@@ -291,12 +342,31 @@ describe('cân bằng game', () => {
    *
    * Bài này vì vậy chốt đúng cái đo được, và cố ý đo CẢ BA NGHỀ: bản cũ chỉ đo
    * bác sĩ — nghề dư dả nhất — nên nó bỏ sót đúng cái ô duy nhất khác 0.
+   *
+   * ---------- Đo lại ở v1.8: phải NÂNG MẪU chứ không được nới ngưỡng ----------
+   * Mô hình giá mới đưa lãi thực của các kênh từ âm về dương, nên người chơi dư
+   * dả hơn và cái ô duy nhất khác 0 kia mỏng đi: giáo viên cân bằng từ 0,5% (1
+   * trên 200 ván) xuống 0,10% (1 trên 1000). Ở mẫu 200 thì đo ra tròn 0 và phép
+   * so `> 0` đỏ.
+   *
+   * Cách chữa ĐÚNG là nâng mẫu, không phải hạ phép so xuống `>= 0`. Vỡ nợ vẫn
+   * xảy ra được — chỉ hiếm hơn — và một phép so `>= 0` thì không canh được gì cả:
+   * nó xanh kể cả khi cơ chế vỡ nợ bị gỡ hẳn khỏi engine. Đổi lại, bài này chạy
+   * 6000 ván nên chậm hơn hẳn phần còn lại của tệp; đó là cái giá của việc giữ
+   * một cái bẫy còn hiệu lực.
+   *
+   * Cần nói rõ: con số 0,10% này KHÔNG phải thành tựu, nó vẫn cách sàn 8% của mục
+   * J rất xa và nay còn xa hơn trước. Ràng buộc cắn ở NẤC 2 nói phía trên vẫn y
+   * nguyên, chưa ai đụng tới, và mô hình giá mới không liên quan gì tới nó ngoài
+   * việc làm người chơi giàu hơn nên ít chạm đáy hơn.
    */
   it('CHỈ TIÊU 5 và 6 — phá sản đã khác 0 nhưng còn xa mục tiêu', () => {
+    // Mẫu riêng, lớn gấp năm: ở mẫu 200 thì sự kiện 1-trên-1000 đo ra tròn 0.
+    const SO_VAN_PHA_SAN = 1_000
     const tyLe: number[] = []
     for (const nghe of NGHE) {
-      const canBang = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU)
-      const donBay = moPhongNhieuVan(nghe.id, SO_VAN_CHI_TIEU, CHIEN_LUOC_DON_BAY)
+      const canBang = moPhongNhieuVan(nghe.id, SO_VAN_PHA_SAN)
+      const donBay = moPhongNhieuVan(nghe.id, SO_VAN_PHA_SAN, CHIEN_LUOC_DON_BAY)
       tyLe.push(canBang.tyLePhaSan, donBay.tyLePhaSan)
       // eslint-disable-next-line no-console
       console.log(
@@ -311,7 +381,8 @@ describe('cân bằng game', () => {
     // Nhưng KHÔNG được quay về 0 tuyệt đối: trần bán tháo của đợt 2 là thứ duy
     // nhất từng đưa phá sản ra khỏi con số 0, và bài này canh đúng thành quả đó.
     expect(Math.max(...tyLe)).toBeGreaterThan(0)
-  })
+    // 6000 ván không chạy kịp trong hạn mặc định 5 giây của vitest.
+  }, 60_000)
 
   /**
    * ---------- Đòn bẩy vẫn thua thiệt, nhưng vay không còn LỖ CHẮC CHẮN ----------

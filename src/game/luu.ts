@@ -1,4 +1,5 @@
 import { CONFIG } from './config'
+import { TAI_SAN } from './content'
 import type { GameState } from './types'
 
 /** Khoá lưu của các phiên bản cũ, dọn sạch khi nạp game. */
@@ -58,6 +59,25 @@ export function taiVan(): GameState | null {
     // trường của bản v1.7: thiếu nó thì khoản bảo lãnh không bao giờ vỡ và
     // `namVoBaoLanh > 0` so sánh với undefined ra false một cách âm thầm
     if (typeof s.namVoBaoLanh !== 'number') return null
+    // Thiếu `lichSuGia` thì thẻ đầu tư ném lỗi ngay khi mở tab: `s.lichSuGia[id]`
+    // là truy cập vào `undefined`, mà toán tử `??` phía sau không đỡ được — nó chỉ
+    // đỡ khi bản thân object tồn tại nhưng khuyết khoá.
+    if (!s.lichSuGia) return null
+    // Trường của bản v1.8: mô hình giá mới cần giá trị thật và độ lệch của từng
+    // kênh. Ván v1.7 chỉ có giá thị trường, nhưng đây là trường hợp DI TRÚ được
+    // chứ không phải bỏ ván: coi giá đang cầm đúng bằng giá trị thật, độ lệch về
+    // không. Người chơi mất pha chu kỳ đang dở — coi như thị trường vừa về đúng
+    // giá trị — nhưng giữ nguyên danh mục, tiền mặt và giá đang nắm.
+    if (!s.giaTriTaiSan || !s.lechGia || !s.lechGiaTruoc) {
+      s.giaTriTaiSan = {} as GameState['giaTriTaiSan']
+      s.lechGia = {} as GameState['lechGia']
+      s.lechGiaTruoc = {} as GameState['lechGiaTruoc']
+      for (const ts of TAI_SAN) {
+        s.giaTriTaiSan[ts.id] = s.giaTaiSan[ts.id]
+        s.lechGia[ts.id] = 0
+        s.lechGiaTruoc[ts.id] = 0
+      }
+    }
     return s
   } catch {
     return null

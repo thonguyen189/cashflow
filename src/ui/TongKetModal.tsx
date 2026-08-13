@@ -71,11 +71,22 @@ export default function TongKetModal({
         <div className="the">
           <div className="hang">
             <span className="hang-nhan">Tổng tài sản</span>
-            <span className="hang-gia-tri duong">{dinhDangTien(tk.tongTaiSan)}</span>
+            {/* Màu phải hỏi dấu. Lớp `duong` gán cứng là sai: tổng tài sản ÂM
+              * được thật — engine chỉ tuyên phá sản khi thâm hụt vượt cả năm chi
+              * phí, còn dưới mức đó thì bắn sự kiện "Túng thiếu" và để nguyên
+              * tiền mặt âm. Những năm đầu ván chưa có tài sản nào để bán nên tổng
+              * âm là chuyện thường. Khi ấy bảng này in "Túng thiếu" ở mục sự kiện
+              * mà ngay phía trên lại là "−12 triệu" màu xanh lá. */}
+            <span className={`hang-gia-tri ${tk.tongTaiSan < 0 ? 'am' : 'duong'}`}>
+              {dinhDangTien(tk.tongTaiSan)}
+            </span>
           </div>
           <div className="hang">
             <span className="hang-nhan">🕊️ Dòng tiền thụ động trên mức cần đạt</span>
-            <span className="hang-gia-tri">
+            {/* `hang-gia-tri-dai` chứ không `hang-gia-tri`: hai con số tiền ghép
+              * bằng chữ "trên" thì `nowrap` của lớp kia làm ô không co được, và
+              * modal mọc thanh cuộn ngang trên màn hẹp. */}
+            <span className="hang-gia-tri-dai">
               {dinhDangTien(dongTien)} trên {dinhDangTien(canCo)}
             </span>
           </div>
